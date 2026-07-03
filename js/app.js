@@ -108,11 +108,12 @@ function starsHtml(score) {
 
 function metersHtml(scores) {
   const labels = { love: "恋愛運", work: "仕事運", money: "金運", health: "健康運" };
+  const band = (v) => (v >= 4 ? "hi" : v >= 3 ? "mid" : "lo");
   return `<div class="meter-list">${Object.entries(scores).map(([k, v]) => `
     <div class="meter">
       <span class="meter-label">${labels[k]}</span>
-      <div class="meter-track"><div class="meter-fill" data-w="${v * 20}"></div></div>
-      <span class="meter-value">${v}.0</span>
+      <div class="meter-track"><div class="meter-fill ${band(v)}" data-w="${v * 20}"></div></div>
+      <span class="meter-value ${band(v)}">${v}.0</span>
     </div>`).join("")}</div>`;
 }
 
@@ -303,28 +304,51 @@ function updateStreak() {
   return v;
 }
 
-/* ---------- ホーム「今日のあなた」ミニカード ---------- */
+/* ---------- ホームFV: 会員はパーソナル羅針盤、未登録はブランド訴求 ---------- */
+const heroEl = document.querySelector("#view-home .hero");
+const heroContentEl = document.querySelector("#view-home .hero-content");
+const HERO_DEFAULT_HTML = heroContentEl ? heroContentEl.innerHTML : "";
+
+function orderNav() {
+  const nav = document.getElementById("nav");
+  const myBtn = nav?.querySelector('[data-nav="mypage"]');
+  if (!myBtn) return;
+  if (loadProfile()?.birthdate) nav.insertBefore(myBtn, nav.children[1]);
+  else nav.appendChild(myBtn);
+}
+
 function renderHomeDaily() {
-  const el = document.getElementById("home-daily");
   const p = loadProfile();
-  if (!p?.birthdate) { el.innerHTML = ""; return; }
-  const [, m, d] = p.birthdate.split("-").map(Number);
-  const z = getZodiac(m, d);
+  orderNav();
+  document.getElementById("home-daily").innerHTML = "";
+  if (!heroContentEl) return;
+
+  if (!p?.birthdate) {
+    heroEl.classList.remove("hero-member");
+    heroContentEl.innerHTML = HERO_DEFAULT_HTML;
+    return;
+  }
+
   const daily = dailyFortune(p.birthdate);
+  const visits = updateStreak() || {};
+  const phase = moonPhaseToday();
+  const d = new Date();
   const who = p.name ? `${esc(p.name)}さん` : "あなた";
-  el.innerHTML = `
-    <div class="home-daily-card">
-      <div class="home-daily-left">
-        <span class="home-daily-symbol">${z.symbol}︎</span>
-        <div>
-          <p class="home-daily-title">${who}の今日の運気</p>
-          <p class="home-daily-sub">「${daily.dayStar.name}」の日 ・ ラッキーカラーは${daily.luckyColor}</p>
-        </div>
-      </div>
-      <div class="home-daily-right">
-        <span class="home-daily-score">${daily.total.toFixed(1)}<small> / 5.0</small></span>
-        <button class="btn btn-ghost" data-nav="mypage">マイページへ</button>
-      </div>
+
+  heroEl.classList.add("hero-member");
+  heroContentEl.innerHTML = `
+    <p class="hero-eyebrow">Today's Compass — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
+    <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span><br /><span class="nw">今日は<em>「${daily.dayStar.name}」</em>の日。</span></h1>
+    <p class="hero-sub">${daily.dayStar.day}</p>
+    <div class="hero-score">
+      <span><span class="hs-num">${daily.total.toFixed(1)}</span><span class="hs-denom"> / 5.0</span></span>
+      ${starsHtml(Math.round(daily.total))}
+      <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
+      <span class="chip">連続 <strong>${visits.streak || 1}日目</strong></span>
+    </div>
+    <div class="hero-cta">
+      <button class="btn btn-primary btn-lg" data-nav="mypage">今日の羅針盤をひらく</button>
+      <button class="btn btn-ghost btn-lg" data-nav="tarot">今日の一枚を引く</button>
     </div>`;
 }
 

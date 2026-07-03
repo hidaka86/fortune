@@ -148,13 +148,37 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 }
 .hero-cta { display: flex; gap: 14px; justify-content: center; margin-top: 36px; flex-wrap: wrap; }
 
+/* 会員向けパーソナルFV */
+.hero.hero-member { min-height: min(60vh, 540px); }
+.nw { white-space: nowrap; }
+.hero-title-member {
+  font-size: clamp(27px, 4.6vw, 46px); line-height: 1.6; font-weight: 700;
+}
+.hero-score {
+  display: flex; align-items: center; justify-content: center;
+  gap: 12px 18px; flex-wrap: wrap; margin-top: 26px;
+}
+.hs-num {
+  font-family: var(--latin); font-size: 58px; font-weight: 700; line-height: 1;
+  color: var(--gold-bright); text-shadow: 0 0 32px rgba(217, 179, 106, 0.4);
+  font-variant-numeric: tabular-nums;
+}
+.hs-denom { color: var(--muted); font-size: 15px; margin-left: -8px; }
+.hero-register-hint {
+  margin-top: 22px; font-size: 13px; color: var(--muted); letter-spacing: .04em;
+}
+.hero-register-hint button {
+  border: none; background: none; color: var(--gold-bright); font-size: 13px;
+  text-decoration: underline; text-underline-offset: 3px; padding: 0;
+}
+
 /* ---------- ステータスバー(今日の暦) ---------- */
 .status-bar { font-family: inherit;
   display: flex; align-items: center; justify-content: center; gap: 10px 28px;
   flex-wrap: wrap;
   padding: 18px 12px; margin: 0 -24px;
   border-bottom: 1px solid var(--hairline);
-  font-size: 13.5px; color: var(--muted); letter-spacing: .06em;
+  font-size: 14px; color: var(--muted); letter-spacing: .06em;
 }
 .status-item { display: flex; align-items: center; gap: 8px; }
 .status-item .moon { font-size: 16px; }
@@ -355,11 +379,16 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   background: linear-gradient(90deg, var(--gold-deep), var(--gold-bright));
   width: 0; transition: width 1s cubic-bezier(.22, 1, .36, 1);
 }
+.meter-fill.lo { background: linear-gradient(90deg, #4d5871, #7c88a6); }
+.meter-fill.mid { background: linear-gradient(90deg, #8a7a55, #c2ad7d); }
+.meter-fill.hi { box-shadow: 0 0 12px rgba(237, 217, 163, 0.45); }
 .meter-value {
   font-family: var(--latin); font-size: 16px; font-weight: 700;
   color: var(--gold-bright); text-align: right;
   font-variant-numeric: tabular-nums;
 }
+.meter-value.lo { color: var(--muted); }
+.meter-value.mid { color: #cbb98a; }
 
 .total-score { text-align: center; margin-bottom: 14px; }
 .total-score .num {
@@ -478,7 +507,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .tarot-front .no { font-family: var(--serif); font-size: 12px; letter-spacing: .3em; color: var(--gold); }
 .tarot-front .sym { font-size: 44px; margin: 8px 0 4px; }
 .tarot-front .nm { font-family: var(--serif); font-size: 17px; font-weight: 700; letter-spacing: .1em; }
-.tarot-front .en { font-size: 9.5px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+.tarot-front .en { font-size: 10.5px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
 .tarot-front .ori { margin-top: 10px; font-size: 11px; font-weight: 700; padding: 2px 12px; border-radius: 99px; letter-spacing: .1em; }
 .tarot-front .ori.up { border: 1px solid rgba(94, 234, 212, 0.4); color: var(--teal); }
 .tarot-front .ori.rev { border: 1px solid rgba(232, 121, 166, 0.4); color: var(--rose); }
@@ -499,7 +528,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   stroke: var(--gold-bright); stroke-width: 4;
   filter: drop-shadow(0 0 7px rgba(217, 179, 106, 0.8));
 }
-.palm-hint { font-size: 12px; color: var(--muted); margin-top: 10px; letter-spacing: .06em; }
+.palm-hint { font-size: 13px; color: var(--muted); margin-top: 10px; letter-spacing: .06em; }
 .palm-form { max-width: none; }
 .palm-q { margin-bottom: 24px; }
 .palm-q-title { font-family: var(--serif); font-size: 16px; font-weight: 700; letter-spacing: .08em; }
@@ -537,7 +566,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 }
 .week-day.is-today { border-color: var(--gold); background: rgba(217, 179, 106, 0.07); }
 .week-day.is-best { border-color: rgba(237, 217, 163, 0.65); }
-.wd-date { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.wd-date { font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .wd-date small { font-size: 10px; }
 .wd-kanshi { font-family: var(--serif); font-size: 17px; font-weight: 700; letter-spacing: .1em; }
 .wd-star { font-size: 12.5px; color: var(--gold-bright); letter-spacing: .06em; }
@@ -580,13 +609,13 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   background: rgba(217, 179, 106, 0.08);
   box-shadow: 0 0 24px rgba(217, 179, 106, 0.12);
 }
-.lf-tag { font-size: 10.5px; letter-spacing: .16em; color: var(--muted); }
+.lf-tag { font-size: 11.5px; letter-spacing: .16em; color: var(--muted); }
 .lf-main {
   font-family: var(--serif); font-size: clamp(20px, 3vw, 26px); font-weight: 700;
   letter-spacing: .1em; line-height: 1.4; color: var(--ink);
 }
 .lf-result .lf-main { color: var(--gold-bright); }
-.lf-sub { font-size: 11px; color: var(--muted); letter-spacing: .04em; }
+.lf-sub { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
 .lf-op {
   align-self: center; font-family: var(--latin);
   font-size: 22px; color: var(--gold); font-weight: 600;
@@ -597,8 +626,8 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   background: rgba(0, 0, 0, 0.16);
 }
 .explain summary {
-  cursor: pointer; padding: 10px 16px;
-  font-size: 12.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted);
+  cursor: pointer; padding: 11px 16px;
+  font-size: 13.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted);
   list-style: none; display: flex; align-items: center; gap: 8px;
 }
 .explain summary::before { content: "?"; display: grid; place-items: center;
@@ -632,13 +661,13 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .footer-nav { display: flex; gap: 4px 20px; flex-wrap: wrap; }
 .footer-nav button {
   border: none; background: transparent; color: var(--muted);
-  font-size: 12.5px; letter-spacing: .06em; padding: 4px 0;
+  font-size: 13.5px; letter-spacing: .06em; padding: 4px 0;
   transition: color .25s ease;
 }
 .footer-nav button:hover { color: var(--gold-bright); }
 .footer-note {
   max-width: 1120px; margin: 32px auto 0;
-  font-size: 11px; color: rgba(150, 160, 185, 0.6); letter-spacing: .05em;
+  font-size: 12px; color: rgba(169, 179, 201, 0.75); letter-spacing: .05em;
 }
 
 /* ---------- フォーカス ---------- */
