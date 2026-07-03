@@ -192,17 +192,24 @@
       <div class="view-head">
         <p class="view-eyebrow">TAROT READING</p>
         <h2>タロット</h2>
-        <p class="view-sub">深呼吸をひとつ。心の中で問いを思い浮かべて、カードをめくってください。</p>
+        <p class="view-sub">何を占うかで、同じカードでも意味が変わります。まずテーマを選び、問いを心に浮かべてください。</p>
       </div>
 
       <div class="tarot-controls panel">
-        <div class="seg" role="tablist" aria-label="スプレッド選択">
-          <button class="seg-btn active" data-spread="1" role="tab">今日の一枚</button>
-          <button class="seg-btn" data-spread="3" role="tab">過去・現在・未来</button>
+        <div class="seg" id="tarot-theme-seg" role="tablist" aria-label="テーマ選択">
+          <button class="seg-btn active" data-theme="daily" role="tab">今日の運勢</button>
+          <button class="seg-btn" data-theme="love" role="tab">恋愛</button>
+          <button class="seg-btn" data-theme="work" role="tab">仕事・面接</button>
+          <button class="seg-btn" data-theme="money" role="tab">金運</button>
+        </div>
+        <div class="seg" id="tarot-spread-seg" role="tablist" aria-label="スプレッド選択">
+          <button class="seg-btn" data-spread="1" role="tab">一枚引き</button>
+          <button class="seg-btn" data-spread="3" role="tab">三枚引き</button>
         </div>
         <button class="btn btn-ghost" id="tarot-reset">カードを引き直す</button>
       </div>
 
+      <p class="tarot-guide" id="tarot-guide"></p>
       <div class="tarot-board" id="tarot-board"></div>
       <div id="tarot-summary" class="result-area" hidden></div>
     </section>

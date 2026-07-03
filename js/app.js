@@ -850,67 +850,195 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
 /* ---------- タロット ---------- */
 const tarotBoard = document.getElementById("tarot-board");
 const tarotSummary = document.getElementById("tarot-summary");
+const tarotThemeSeg = document.getElementById("tarot-theme-seg");
+const tarotSpreadSeg = document.getElementById("tarot-spread-seg");
+const tarotGuide = document.getElementById("tarot-guide");
+const tarotReset = document.getElementById("tarot-reset");
+
+let tarotTheme = "daily";
 let tarotSpread = 1;
 let tarotCards = [];
-let tarotFlipped = 0;
+let tarotPicked = 0;
 
-const SPREAD_LABELS = { 1: ["TODAY"], 3: ["PAST", "PRESENT", "FUTURE"] };
-const SPREAD_LABELS_JA = { 1: ["今日のあなたへ"], 3: ["過去", "現在", "未来"] };
+const DAILY_CARD_KEY = "fortuna:dailycard";
+const ROMAN = ["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"];
+const TAROT_ICONS = ["🃏","🎩","📖","👑","🏛","🔑","💞","🏇","🦁","🏮","🎡","⚖️","🙃","🦋","🏺","⛓","🗼","⭐","🌙","☀️","🎺","🌍"];
+
+function themeMeaning(card) {
+  const t = TAROT_THEMES[card.n]?.[tarotTheme];
+  if (tarotTheme === "daily" || !t) return card.reversed ? card.rev : card.up;
+  return card.reversed ? t.rev : t.up;
+}
+
+function loadDailyCard() {
+  try {
+    const v = JSON.parse(localStorage.getItem(DAILY_CARD_KEY));
+    return v?.date === todayKey() ? v : null;
+  } catch { return null; }
+}
+
+function saveDailyCard(c) {
+  try { localStorage.setItem(DAILY_CARD_KEY, JSON.stringify({ date: todayKey(), n: c.n, reversed: c.reversed })); } catch { /* noop */ }
+}
+
+function revealedCardHtml(c) {
+  return `
+    <div class="tarot-reveal ${c.reversed ? "is-rev" : ""}">
+      <span class="no">${ROMAN[c.n]}</span>
+      <span class="sym">${TAROT_ICONS[c.n]}</span>
+      <span class="nm">${c.name}</span>
+      <span class="en">${c.en}</span>
+      <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span>
+    </div>`;
+}
+
+function currentSpreadConf() {
+  return TAROT_SPREADS[tarotTheme].spreads[tarotSpread];
+}
+
+function renderTarotBoard(allRevealed) {
+  const conf = currentSpreadConf();
+  const slots = tarotCards.map((c, i) => `
+    <div class="tarot-slot">
+      <div class="tarot-slot-label">${conf.en[i]}<small>${conf.ja[i]}</small></div>
+      <div class="tarot-slot-body" data-slot="${i}">
+        ${(allRevealed || i < tarotPicked) ? revealedCardHtml(c) : '<div class="tarot-slot-empty">✦</div>'}
+      </div>
+    </div>`).join("");
+
+  const remaining = tarotCards.length - tarotPicked;
+  const fan = (!allRevealed && remaining > 0) ? `
+    <p class="fan-instruction">カードが呼んでいます — 直感で <strong>${remaining}</strong> 枚選んでください</p>
+    <div class="deck-fan">${Array.from({ length: 16 }, (_, k) => {
+      const r = (k - 7.5) * 3.2;
+      const y = Math.abs(k - 7.5) * 5;
+      return `<button class="fan-card" data-k="${k}" style="--r:${r}deg;--y:${y}px;--d:${(k * 0.19).toFixed(2)}s" aria-label="カードを選ぶ">✦</button>`;
+    }).join("")}</div>` : "";
+
+  tarotBoard.innerHTML = `<div class="tarot-slots">${slots}</div>${fan}`;
+}
 
 function dealTarot() {
-  tarotCards = drawTarot(tarotSpread);
-  tarotFlipped = 0;
+  const theme = TAROT_SPREADS[tarotTheme];
+  const spreads = Object.keys(theme.spreads).map(Number);
+  if (!spreads.includes(tarotSpread)) tarotSpread = spreads[0];
+
+  tarotSpreadSeg.style.visibility = spreads.length > 1 ? "visible" : "hidden";
+  tarotSpreadSeg.querySelectorAll(".seg-btn").forEach((b) => {
+    b.classList.toggle("active", Number(b.dataset.spread) === tarotSpread);
+  });
+  tarotGuide.textContent = theme.guide;
   tarotSummary.hidden = true;
-  tarotBoard.innerHTML = tarotCards.map((c, i) => `
-    <div class="tarot-slot">
-      <div class="tarot-slot-label">${SPREAD_LABELS[tarotSpread][i]}</div>
-      <button class="tarot-card" data-i="${i}" aria-label="カードをめくる">
-        <div class="tarot-face tarot-back">✦</div>
-        <div class="tarot-face tarot-front ${c.reversed ? "is-rev" : ""}">
-          <span class="no">${["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"][c.n]}</span>
-          <span class="sym">${["🃏","🎩","📖","👑","🏛","🔑","💞","🏇","🦁","🏮","🎡","⚖️","🙃","🦋","🏺","⛓","🗼","⭐","🌙","☀️","🎺","🌍"][c.n]}</span>
-          <span class="nm">${c.name}</span>
-          <span class="en">${c.en}</span>
-          <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span>
-        </div>
-      </button>
-    </div>
-  `).join("");
+
+  if (theme.once) {
+    const saved = loadDailyCard();
+    if (saved) {
+      const base = TAROT.find((t) => t.n === saved.n);
+      tarotCards = [{ ...base, reversed: saved.reversed }];
+      tarotPicked = 1;
+      renderTarotBoard(true);
+      showTarotSummary(true);
+      tarotReset.disabled = true;
+      tarotReset.textContent = "また明日、新しい一枚を";
+      return;
+    }
+    tarotReset.disabled = true;
+    tarotReset.textContent = "今日の一枚は1日1回";
+  } else {
+    tarotReset.disabled = false;
+    tarotReset.textContent = "カードを引き直す";
+  }
+
+  tarotCards = drawTarot(tarotSpread);
+  tarotPicked = 0;
+  renderTarotBoard(false);
 }
 
 tarotBoard.addEventListener("click", (e) => {
-  const cardEl = e.target.closest(".tarot-card");
-  if (!cardEl || cardEl.classList.contains("flipped")) return;
-  cardEl.classList.add("flipped");
-  tarotFlipped++;
-  if (tarotFlipped === tarotCards.length) {
-    setTimeout(showTarotSummary, 800);
-  }
+  const fanCard = e.target.closest(".fan-card");
+  if (!fanCard || fanCard.classList.contains("fan-taken")) return;
+  fanCard.classList.add("fan-taken");
+
+  const card = tarotCards[tarotPicked];
+  const slotBody = tarotBoard.querySelector(`[data-slot="${tarotPicked}"]`);
+  tarotPicked++;
+
+  setTimeout(() => {
+    if (slotBody) slotBody.innerHTML = revealedCardHtml(card);
+    const inst = tarotBoard.querySelector(".fan-instruction strong");
+    if (inst) inst.textContent = tarotCards.length - tarotPicked;
+
+    if (tarotPicked === tarotCards.length) {
+      if (TAROT_SPREADS[tarotTheme].once) saveDailyCard(card);
+      const fanEl = tarotBoard.querySelector(".deck-fan");
+      const instEl = tarotBoard.querySelector(".fan-instruction");
+      fanEl?.classList.add("fan-done");
+      if (instEl) instEl.textContent = "カードが出そろいました…";
+      setTimeout(() => showTarotSummary(false), 1100);
+    }
+  }, 240);
 });
 
-function showTarotSummary() {
-  const items = tarotCards.map((c, i) => {
-    const meaning = c.reversed ? c.rev : c.up;
-    return `
-      <div class="result-card">
-        ${cardH4(SPREAD_LABELS[tarotSpread][i], SPREAD_LABELS_JA[tarotSpread][i])}
-        <p><strong style="color:var(--gold-bright)">${c.name}(${c.reversed ? "逆位置" : "正位置"})</strong></p>
-        <p class="sub" style="margin-top:6px">${meaning}</p>
-        <p style="margin-top:12px">${c.advice}</p>
-      </div>`;
-  }).join("");
-  showResult(tarotSummary, `<div class="result-grid">${items}</div>${crossLinksHtml("tarot")}`);
+function tarotOverallHtml() {
+  if (tarotCards.length < 3) return "";
+  const revCount = tarotCards.filter((c) => c.reversed).length;
+  const tone = [
+    "三枚とも正位置。強い追い風が吹いています。迷いを手放して、そのまま進んで大丈夫。",
+    "おおむね順調な流れです。逆位置のカードが示す一点だけ整えれば、道はまっすぐ開けます。",
+    "行きつ戻りつの時期。焦って進めるより、逆位置のカードが示す課題から順に片付けるのが近道です。",
+    "三枚とも逆位置。いまは動くより整える時。この時期を丁寧に過ごした人から、流れは変わりはじめます。",
+  ][revCount];
+  return `
+    <div class="result-card span-all">
+      ${cardH4("OVERALL", "全体の流れ")}
+      <p>${tone}</p>
+    </div>`;
 }
 
-document.querySelectorAll(".seg-btn").forEach((btn) => {
+function showTarotSummary(restored) {
+  const conf = currentSpreadConf();
+  const themeLabel = TAROT_SPREADS[tarotTheme].label;
+  const items = tarotCards.map((c, i) => `
+    <div class="result-card">
+      ${cardH4(conf.en[i], conf.ja[i])}
+      <p><strong style="color:var(--gold-bright)">${c.name}(${c.reversed ? "逆位置" : "正位置"})</strong></p>
+      <p style="margin-top:8px">${themeMeaning(c)}</p>
+      <p class="sub" style="margin-top:12px">${c.advice}</p>
+    </div>`).join("");
+
+  const dailyNote = TAROT_SPREADS[tarotTheme].once ? `
+    <div class="result-card span-all daily-note">
+      <p>${restored ? "今日の一枚は、すでにあなたのそばにあります。" : "これが、今日のあなたの一枚。"}カードの言葉を一日の中で確かめてみてください。引き直しはできません — <strong>また明日、新しい一枚を。</strong></p>
+    </div>` : "";
+
+  showResult(tarotSummary, `
+    <div class="result-hero" style="text-align:center">
+      <span class="result-symbol">☾</span>
+      <p class="result-eyebrow">TAROT — ${themeLabel}</p>
+      <h3 class="result-title">${tarotTheme === "daily" ? "今日のあなたへの一枚" : `「${themeLabel}」の答え`}</h3>
+      <p class="result-lead" style="margin-inline:auto">正位置はエネルギーが素直に巡っている状態、逆位置は不安やエゴが混ざっている状態を表します。</p>
+    </div>
+    <div class="result-grid">${items}${tarotOverallHtml()}${dailyNote}</div>
+    ${crossLinksHtml("tarot")}
+  `);
+}
+
+tarotThemeSeg.querySelectorAll(".seg-btn").forEach((btn) => {
   btn.addEventListener("click", () => {
-    document.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("active"));
+    tarotThemeSeg.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("active"));
     btn.classList.add("active");
+    tarotTheme = btn.dataset.theme;
+    tarotSpread = tarotTheme === "daily" ? 1 : 3;
+    dealTarot();
+  });
+});
+tarotSpreadSeg.querySelectorAll(".seg-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
     tarotSpread = Number(btn.dataset.spread);
     dealTarot();
   });
 });
-document.getElementById("tarot-reset").addEventListener("click", dealTarot);
+tarotReset.addEventListener("click", dealTarot);
 dealTarot();
 
 /* ---------- 手相 ---------- */
