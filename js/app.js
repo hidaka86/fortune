@@ -73,6 +73,80 @@ function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
+/* ---------- プロフィール記憶(localStorage) ---------- */
+const PROFILE_KEY = "fortuna:profile";
+
+function loadProfile() {
+  try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || null; }
+  catch { return null; }
+}
+
+function saveProfile(p) {
+  try { localStorage.setItem(PROFILE_KEY, JSON.stringify(p)); } catch { /* private mode等は無視 */ }
+}
+
+function prefillForms(p) {
+  if (!p?.birthdate) return;
+  document.querySelectorAll('input[name="birthdate"]').forEach((el) => { el.value = p.birthdate; });
+  const nameInput = document.querySelector('#integrated-form input[name="name"]');
+  if (nameInput && p.name) nameInput.value = p.name;
+  if (p.theme) {
+    const themeSel = document.querySelector('#integrated-form select[name="theme"]');
+    if (themeSel) themeSel.value = p.theme;
+  }
+}
+
+/* ---------- ホーム「今日のあなた」ミニカード ---------- */
+function renderHomeDaily() {
+  const el = document.getElementById("home-daily");
+  const p = loadProfile();
+  if (!p?.birthdate) { el.innerHTML = ""; return; }
+  const [, m, d] = p.birthdate.split("-").map(Number);
+  const z = getZodiac(m, d);
+  const daily = dailyFortune(p.birthdate);
+  const who = p.name ? `${esc(p.name)}さん` : "あなた";
+  el.innerHTML = `
+    <div class="home-daily-card">
+      <div class="home-daily-left">
+        <span class="home-daily-symbol">${z.symbol}︎</span>
+        <div>
+          <p class="home-daily-title">${who}の今日の運気</p>
+          <p class="home-daily-sub">${z.name} ・ ラッキーカラーは${daily.luckyColor}</p>
+        </div>
+      </div>
+      <div class="home-daily-right">
+        <span class="home-daily-score">${daily.total.toFixed(1)}<small> / 5.0</small></span>
+        <button class="btn btn-ghost" data-nav="integrated">詳しく見る</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- 結果コピー ---------- */
+function buildShareText(r) {
+  const ori = r.card.reversed ? "逆位置" : "正位置";
+  return [
+    `【Fortuna 統合鑑定】${r.name ? r.name + "さん" : ""}`,
+    `☉ ${r.zodiac.name}(${r.zodiac.keyword}) × ☯ ${r.kyusei.name}`,
+    `干支: ${r.jikkan}${r.eto.name}(${r.eto.animal})`,
+    `今日の運気: ${r.daily.total.toFixed(1)} / 5.0`,
+    `導きの一枚: ${r.card.name}(${ori}) — ${r.card.advice}`,
+    `ラッキーカラー: ${r.daily.luckyColor} / ラッキーアイテム: ${r.daily.luckyItem}`,
+  ].join("\n");
+}
+
+document.addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-copy]");
+  if (!btn) return;
+  try {
+    await navigator.clipboard.writeText(btn.dataset.copy);
+    const orig = btn.textContent;
+    btn.textContent = "コピーしました ✓";
+    setTimeout(() => { btn.textContent = orig; }, 1600);
+  } catch {
+    btn.textContent = "コピーできませんでした";
+  }
+});
+
 /* ---------- 統合鑑定 ---------- */
 document.getElementById("integrated-form").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -82,6 +156,9 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
     birthdate: fd.get("birthdate"),
     theme: fd.get("theme"),
   });
+
+  saveProfile({ name: r.name, birthdate: fd.get("birthdate"), theme: r.theme });
+  renderHomeDaily();
 
   const who = r.name ? `${esc(r.name)}さん` : "あなた";
   const ori = r.card.reversed ? "逆位置" : "正位置";
@@ -98,6 +175,9 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
         <span class="chip">★ ${r.kyusei.name}</span>
       </div>
       <p class="result-lead">${r.elementNote}</p>
+      <div class="chip-row" style="margin-top:18px">
+        <button class="btn btn-ghost" data-copy="${esc(buildShareText(r))}">結果をコピーして共有</button>
+      </div>
     </div>
     <div class="result-grid">
       <div class="result-card">
@@ -298,6 +378,10 @@ palmQuestionsEl.addEventListener("change", (e) => {
   document.getElementById("palm-hint").textContent =
     `${PALM_QUESTIONS.find((p) => p.lineId === q.dataset.line)?.name}をハイライト中`;
 });
+
+/* ---------- 初期化:保存済みプロフィールの反映 ---------- */
+prefillForms(loadProfile());
+renderHomeDaily();
 
 document.getElementById("palm-form").addEventListener("submit", (e) => {
   e.preventDefault();
