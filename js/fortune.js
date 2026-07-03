@@ -102,6 +102,84 @@ function drawTarot(count, seedStr) {
   return drawn;
 }
 
+/* ---------- 暦計算(ユリウス通日) ---------- */
+function toJDN(y, m, d) {
+  const a = Math.floor((14 - m) / 12);
+  const y2 = y + 4800 - a;
+  const m2 = m + 12 * a - 3;
+  return d + Math.floor((153 * m2 + 2) / 5) + 365 * y2 +
+    Math.floor(y2 / 4) - Math.floor(y2 / 100) + Math.floor(y2 / 400) - 32045;
+}
+
+/* ---------- 四柱推命(年柱・月柱・日柱) ---------- */
+// 日柱: ユリウス通日から六十干支を連続計算(検証: 1900-01-01=甲戌, 2000-01-01=戊午)
+function dayPillar(y, m, d) {
+  const idx = ((toJDN(y, m, d) + 49) % 60 + 60) % 60;
+  return { kan: JIKKAN[idx % 10], shi: JUNISHI[idx % 12] };
+}
+
+// 月柱: 節入り(簡易日付)で月支を決め、五虎遁で月干を求める
+function monthPillar(y, m, d) {
+  // 生まれ日がどの節月に属するか
+  let idx = SETSU_TABLE.findIndex(([sm, sd]) => m < sm || (m === sm && d < sd));
+  if (idx === -1) idx = 0; // 12/7以降は子月
+  idx = (idx - 1 + 12) % 12;
+  const shi = SETSU_TABLE[idx][2];
+
+  const yearKanIdx = JIKKAN.indexOf(getJikkan(y, m, d));
+  const toraKan = ((yearKanIdx % 5) * 2 + 2) % 10; // 五虎遁: 寅月の干
+  const branchOrder = ["寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑"];
+  const monthsFromTora = branchOrder.indexOf(shi);
+  return { kan: JIKKAN[(toraKan + monthsFromTora) % 10], shi };
+}
+
+function fourPillars(y, m, d) {
+  const yearP = { kan: getJikkan(y, m, d), shi: getEto(y, m, d).name };
+  const monthP = monthPillar(y, m, d);
+  const dayP = dayPillar(y, m, d);
+  const nikkan = NIKKAN_DESC[dayP.kan];
+  return { year: yearP, month: monthP, day: dayP, nikkan };
+}
+
+/* ---------- 月星座(月の黄経の略算) ---------- */
+// 正午(JST)時点の月の黄経から星座を判定。誤差±1°程度(境界日は前後の可能性あり)
+function moonSign(y, m, d) {
+  const jd = toJDN(y, m, d) - 0.375; // 正午JST = 03:00 UTC
+  const t = jd - 2451545.0;
+  const rad = Math.PI / 180;
+  const Lp = 218.316 + 13.176396 * t;      // 月の平均黄経
+  const M = 357.529 + 0.98560028 * t;      // 太陽の平均近点角
+  const Mp = 134.963 + 13.064993 * t;      // 月の平均近点角
+  const D = 297.850 + 12.190749 * t;       // 平均離角
+  const F = 93.272 + 13.229350 * t;        // 平均昇交点黄経差
+  let lon = Lp
+    + 6.289 * Math.sin(Mp * rad)
+    + 1.274 * Math.sin((2 * D - Mp) * rad)
+    + 0.658 * Math.sin(2 * D * rad)
+    + 0.214 * Math.sin(2 * Mp * rad)
+    - 0.186 * Math.sin(M * rad)
+    - 0.114 * Math.sin(2 * F * rad);
+  lon = ((lon % 360) + 360) % 360;
+  const order = ["牡羊座", "牡牛座", "双子座", "蟹座", "獅子座", "乙女座", "天秤座", "蠍座", "射手座", "山羊座", "水瓶座", "魚座"];
+  const name = order[Math.floor(lon / 30)];
+  const zodiac = ZODIAC.find((z) => z.name === name);
+  return { name, symbol: zodiac.symbol, desc: MOONSIGN_DESC[name], longitude: lon };
+}
+
+/* ---------- 月相(今日の月) ---------- */
+function moonPhaseToday() {
+  const now = new Date();
+  const jd = toJDN(now.getFullYear(), now.getMonth() + 1, now.getDate()) - 0.375;
+  const age = (((jd - 2451550.1) % 29.530588853) + 29.530588853) % 29.530588853;
+  const idx = Math.floor((age / 29.530588853) * 8 + 0.5) % 8;
+  return { ...MOON_PHASES[idx], age: Math.round(age) };
+}
+
+/* ---------- 今日の言葉(日替わり) ---------- */
+function dailyQuote() {
+  return DAILY_QUOTES[hashString(todayKey()) % DAILY_QUOTES.length];
+}
+
 /* ---------- 相性診断 ---------- */
 const GOGYO_KOKU = { "木": "土", "土": "水", "水": "火", "火": "金", "金": "木" }; // 相剋
 const SHIGOU_PAIRS = [["子", "丑"], ["寅", "亥"], ["卯", "戌"], ["辰", "酉"], ["巳", "申"], ["午", "未"]]; // 支合
@@ -176,6 +254,8 @@ function integratedReading({ name, birthdate, theme }) {
   const eto = getEto(y, m, d);
   const jikkan = getJikkan(y, m, d);
   const kyusei = getKyusei(y, m, d);
+  const pillars = fourPillars(y, m, d);
+  const moon = moonSign(y, m, d);
   const daily = dailyFortune(birthdate);
   const [card] = drawTarot(1, `${birthdate}::tarot::${todayKey()}`);
 
@@ -192,5 +272,5 @@ function integratedReading({ name, birthdate, theme }) {
     ? SCORE_COMMENT.work[Math.min(4, Math.max(0, Math.round(daily.total) - 1))]
     : SCORE_COMMENT[theme][themeScore - 1];
 
-  return { name, zodiac, eto, jikkan, kyusei, daily, card, theme, themeScore, themeComment, elementNote };
+  return { name, zodiac, eto, jikkan, kyusei, pillars, moon, daily, card, theme, themeScore, themeComment, elementNote };
 }
