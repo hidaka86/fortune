@@ -129,6 +129,40 @@ function cardH4(en, ja) {
   return `<h4>${en}<span class="h4-ja">${ja}</span></h4>`;
 }
 
+/* ロジックの可視化: 「A × B = C」を図解する */
+function logicFlowHtml(items) {
+  return `<div class="logic-flow">${items.map((it) =>
+    typeof it === "string"
+      ? `<span class="lf-op">${it}</span>`
+      : `<div class="lf-node ${it.result ? "lf-result" : ""}">
+          <span class="lf-tag">${it.tag}</span>
+          <span class="lf-main">${it.main}</span>
+          <span class="lf-sub">${it.sub || ""}</span>
+        </div>`
+  ).join("")}</div>`;
+}
+
+function explainHtml(summary, body) {
+  return `<details class="explain"><summary>${summary}</summary><p>${body}</p></details>`;
+}
+
+const EXPLAIN_TSUHENSEI = "四柱推命では、生まれた日の十干(=日主)があなた自身を表します。そこに毎日・毎月めぐってくる干支との関係を「通変星」という10タイプで読み、その日の追い風・向かい風を判断します。同じ日でも人によって吹く風が違う——それがこのスコアの根拠です。";
+
+/* 今日の気流ブロック(数式図+ひとこと+解説) */
+function todayLogicHtml(daily) {
+  const d = new Date();
+  return `
+    ${logicFlowHtml([
+      { tag: "あなたの日主", main: daily.myKan, sub: daily.mySymbol },
+      "×",
+      { tag: "今日の干支", main: daily.dayKanshi, sub: `${d.getMonth() + 1}/${d.getDate()}` },
+      "=",
+      { tag: "今日の気流", main: daily.dayStar.name, sub: daily.dayStar.day.split("。")[0], result: true },
+    ])}
+    <p class="sub">${daily.dayStar.day}</p>
+    ${explainHtml(`「${daily.dayStar.name}」って何?通変星のしくみ`, EXPLAIN_TSUHENSEI)}`;
+}
+
 /* 回遊導線:結果の下に「次の扉」を提示 */
 const CROSS_SUGGEST = {
   integrated: [["tarot", "3枚スプレッドで深掘りする"], ["aisho", "気になる人との相性をみる"], ["palm", "手相で資質を確かめる"]],
@@ -406,19 +440,25 @@ function renderMypage() {
     <div class="result-grid">
       <div class="result-card span-all">
         ${cardH4("TODAY'S KI", "今日の気流")}
-        <p><strong style="color:var(--gold-bright)">「${flow.day.star.name}」の日(${daily.dayKanshi})</strong> — ${flow.day.star.day}</p>
-        <div style="margin-top:16px">${metersHtml(daily.scores)}</div>
+        ${todayLogicHtml(daily)}
+        <div style="margin-top:18px">${metersHtml(daily.scores)}</div>
       </div>
 
       <div class="result-card span-all">
         ${cardH4("7 DAYS", "一週間の気流")}
         <div class="week-strip">${weekHtml}</div>
-        <p class="sub" style="margin-top:12px">◎は今週いちばん追い風が吹く日。大事な予定はこの日に。</p>
+        <p class="sub" style="margin-top:12px">◎は今週いちばん追い風が吹く日。大事な予定はこの日に。日付の下は「その日の干支」と、あなたから見た「通変星」です。</p>
       </div>
 
       <div class="result-card">
         ${cardH4("THIS MONTH", "今月の立ち回り")}
-        <p><strong style="color:var(--gold-bright)">${flow.month.pillar.kan}${flow.month.pillar.shi}の月</strong></p>
+        ${logicFlowHtml([
+          { tag: "あなたの日主", main: flow.myKan, sub: flow.nikkan.symbol },
+          "×",
+          { tag: "今月の干支", main: flow.month.pillar.kan + flow.month.pillar.shi, sub: `${now.getMonth() + 1}月` },
+          "=",
+          { tag: "今月の気流", main: flow.month.star.name, sub: "", result: true },
+        ])}
         <p style="margin-top:8px">${flow.month.star.month}</p>
         <p class="sub" style="margin-top:12px">今年は「${flow.year.star.name}」の年 — ${flow.year.star.month.replace(/^「.+?」の月 — /, "").replace(/月/g, "年")}</p>
       </div>
@@ -426,6 +466,11 @@ function renderMypage() {
       <div class="result-card">
         ${cardH4("DIRECTIONS", "今月の吉方位")}
         <div class="compass-wrap">${compassSvg(kichi)}</div>
+        <div class="legend">
+          <span><i class="dot-good"></i>吉方位</span>
+          <span><i class="dot-bad"></i>凶方位(五黄殺など)</span>
+          <span><i class="dot-flat"></i>平運</span>
+        </div>
         <div class="chip-row" style="justify-content:center">${goodList}</div>
         <div style="margin-top:16px">
           ${themeLine("恋愛", themes.love, "心が安らぐ場所で会うのが吉。")}
@@ -433,7 +478,7 @@ function renderMypage() {
           ${themeLine("金運", themes.money, "散財を避けて守りの月に。")}
           ${themeLine("健康", themes.health, "近所の散歩と早寝がいちばんの薬。")}
         </div>
-        <p class="sub" style="margin-top:12px">※ 九星気学の月盤(簡易計算)によるもので、自宅から見た方角です。</p>
+        ${explainHtml("吉方位はどう決まる?", "九星気学では、9つの星が毎月方位盤の上を巡ります。あなたの本命星(" + kyusei.name + ")と相性の良い星が巡る方角が吉方位。誰にとっても凶となる五黄殺・暗剣殺と、あなた固有の本命殺・本命的殺は除いています。自宅から見た方角で使ってください。")}
       </div>
     </div>
 
@@ -503,8 +548,8 @@ async function makeShareImage(r) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
 
-  try { await document.fonts.load('700 64px "Shippori Mincho"'); } catch { /* フォールバックで描画 */ }
-  const serif = '"Shippori Mincho", "Hiragino Mincho ProN", serif';
+  try { await document.fonts.load('700 64px "Zen Old Mincho"'); } catch { /* フォールバックで描画 */ }
+  const serif = '"Zen Old Mincho", "Hiragino Mincho ProN", serif';
 
   // 背景
   const bg = ctx.createLinearGradient(0, 0, 0, H);
@@ -670,7 +715,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
         ${cardH4("TODAY", "今日の運気")}
         <div class="total-score"><span class="num" data-count="${r.daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
         ${metersHtml(r.daily.scores)}
-        <p class="sub" style="margin-top:14px">${r.daily.reason}</p>
+        <div style="margin-top:18px">${todayLogicHtml(r.daily)}</div>
       </div>
       <div class="result-card">
         ${cardH4("TAROT", "導きの一枚")}
@@ -722,7 +767,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         ${cardH4("TODAY", "今日の運気")}
         <div class="total-score"><span class="num" data-count="${daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
         ${metersHtml(daily.scores)}
-        <p class="sub" style="margin-top:14px">${daily.reason}</p>
+        <div style="margin-top:18px">${todayLogicHtml(daily)}</div>
       </div>
       <div class="result-card">
         ${cardH4("LUCKY GUIDE", "今日の開運キー")}
@@ -771,7 +816,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
         ${cardH4("TODAY", "今日の運気")}
         <div class="total-score"><span class="num" data-count="${daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
         ${metersHtml(daily.scores)}
-        <p class="sub" style="margin-top:14px">${daily.reason}</p>
+        <div style="margin-top:18px">${todayLogicHtml(daily)}</div>
       </div>
     </div>
     ${crossLinksHtml("eastern")}
@@ -939,6 +984,18 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <p class="result-keyword">${r.band}</p>
       <div class="total-score" style="margin-top:14px"><span class="num" data-count="${r.total}">0</span><span class="denom"> / 100</span></div>
       <p class="result-lead" style="margin-inline:auto">${r.advice}</p>
+    </div>
+    <div class="result-card span-all" style="margin-bottom:18px">
+      ${cardH4("HOW IT WORKS", "総合スコアの計算式")}
+      ${logicFlowHtml([
+        { tag: "星座エレメント", main: String(r.zodiac.score), sub: "× 40%" },
+        "+",
+        { tag: "九星の五行", main: String(r.gogyo.score), sub: "× 30%" },
+        "+",
+        { tag: "干支の配置", main: String(r.eto.score), sub: "× 30%" },
+        "=",
+        { tag: "総合", main: String(r.total), sub: "/ 100", result: true },
+      ])}
     </div>
     <div class="result-grid">${breakdown}</div>
     ${crossLinksHtml("aisho")}

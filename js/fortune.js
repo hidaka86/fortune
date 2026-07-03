@@ -100,6 +100,8 @@ function dailyFortune(birthdate) {
   return {
     scores,
     total,
+    myKan: flow.myKan,
+    mySymbol: flow.nikkan.symbol,
     dayStar: flow.day.star,
     monthStar: flow.month.star,
     dayKanshi: flow.day.pillar.kan + flow.day.pillar.shi,
