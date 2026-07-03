@@ -89,7 +89,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
 
   showResult(document.getElementById("integrated-result"), `
     <div class="result-hero">
-      <div class="result-symbol">${r.zodiac.symbol}</div>
+      <div class="result-symbol">${r.zodiac.symbol}︎</div>
       <h3 class="result-title">${who}の統合鑑定レポート</h3>
       <p class="result-keyword">${r.zodiac.keyword} × ${r.kyusei.name}</p>
       <div class="chip-row">
@@ -138,7 +138,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
 
   showResult(document.getElementById("western-result"), `
     <div class="result-hero">
-      <div class="result-symbol">${z.symbol}</div>
+      <div class="result-symbol">${z.symbol}︎</div>
       <h3 class="result-title">${z.name} <span style="font-size:.55em;color:var(--muted)">${z.en}</span></h3>
       <p class="result-keyword">${z.keyword}</p>
       <div class="chip-row">
