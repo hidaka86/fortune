@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fortuna — あなたの毎日に、確かな指針を</title>
+  <meta name="description" content="西洋占星術・東洋占術・タロット・手相を統合したパーソナル占いアプリ" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div class="bg-stars" aria-hidden="true"></div>
+
+  <header class="header">
+    <div class="header-inner">
+      <a class="brand" href="#" data-nav="home">
+        <span class="brand-mark">✦</span>
+        <span class="brand-name">Fortuna</span>
+      </a>
+      <nav class="nav" id="nav">
+        <button class="nav-btn active" data-nav="home">ホーム</button>
+        <button class="nav-btn" data-nav="integrated">統合鑑定</button>
+        <button class="nav-btn" data-nav="western">西洋占星術</button>
+        <button class="nav-btn" data-nav="eastern">東洋占術</button>
+        <button class="nav-btn" data-nav="tarot">タロット</button>
+        <button class="nav-btn" data-nav="palm">手相</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="main">
+
+    <!-- ============ HOME ============ -->
+    <section class="view active" id="view-home">
+      <div class="hero">
+        <p class="hero-eyebrow">PERSONAL DIVINATION PLATFORM</p>
+        <h1 class="hero-title">あなたの毎日に、<br /><span class="grad-text">確かな指針</span>を。</h1>
+        <p class="hero-sub">西洋占星術、東洋占術、タロット、手相。<br class="sp-only" />4つの占術をひとつに統合した、新しい占い体験。</p>
+        <div class="hero-cta">
+          <button class="btn btn-primary btn-lg" data-nav="integrated">統合鑑定をはじめる</button>
+          <button class="btn btn-ghost btn-lg" data-nav="tarot">今日の一枚を引く</button>
+        </div>
+      </div>
+
+      <div class="date-banner" id="today-banner"></div>
+
+      <div class="grid-cards">
+        <button class="feature-card" data-nav="western">
+          <div class="feature-icon" style="--fc:#8b7cf6">☉</div>
+          <h3>西洋占星術</h3>
+          <p>生年月日から導く12星座のホロスコープ。性格・相性・今日の運勢。</p>
+          <span class="feature-link">占う →</span>
+        </button>
+        <button class="feature-card" data-nav="eastern">
+          <div class="feature-icon" style="--fc:#e8c66a">☯</div>
+          <h3>東洋占術</h3>
+          <p>九星気学と干支・五行から、生まれ持った気質と運気の流れを読む。</p>
+          <span class="feature-link">占う →</span>
+        </button>
+        <button class="feature-card" data-nav="tarot">
+          <div class="feature-icon" style="--fc:#ec7cb8">🃏</div>
+          <h3>タロット</h3>
+          <p>大アルカナ22枚から引くリーディング。今日の一枚、過去・現在・未来。</p>
+          <span class="feature-link">カードを引く →</span>
+        </button>
+        <button class="feature-card" data-nav="palm">
+          <div class="feature-icon" style="--fc:#6ad0c8">✋</div>
+          <h3>手相</h3>
+          <p>生命線・頭脳線・感情線・運命線。4つの線からあなたの資質を診断。</p>
+          <span class="feature-link">診断する →</span>
+        </button>
+      </div>
+
+      <div class="home-integrated">
+        <div class="home-integrated-text">
+          <h2>4つの視点を、<span class="grad-text">ひとつの答え</span>に。</h2>
+          <p>占術ごとにバラバラな結果に迷ったことはありませんか？ Fortunaの統合鑑定は、西洋・東洋・タロットの結果を掛け合わせて、いま必要なメッセージをひとつのレポートにまとめます。</p>
+          <button class="btn btn-primary" data-nav="integrated">統合鑑定へ</button>
+        </div>
+        <div class="home-integrated-visual" aria-hidden="true">
+          <div class="orbit">
+            <span class="orbit-item" style="--i:0">☉</span>
+            <span class="orbit-item" style="--i:1">☯</span>
+            <span class="orbit-item" style="--i:2">🃏</span>
+            <span class="orbit-item" style="--i:3">✋</span>
+            <span class="orbit-center">✦</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ INTEGRATED ============ -->
+    <section class="view" id="view-integrated">
+      <div class="view-head">
+        <p class="view-eyebrow">INTEGRATED READING</p>
+        <h2>統合鑑定</h2>
+        <p class="view-sub">生年月日から西洋・東洋の両面を読み解き、タロットの導きを重ねた総合レポートをお届けします。</p>
+      </div>
+
+      <form class="panel form" id="integrated-form">
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">お名前(ニックネーム可・任意)</span>
+            <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
+          </label>
+          <label class="field">
+            <span class="field-label">生年月日 <em>必須</em></span>
+            <input type="date" name="birthdate" required min="1920-01-01" />
+          </label>
+          <label class="field">
+            <span class="field-label">知りたいテーマ</span>
+            <select name="theme">
+              <option value="total">総合運</option>
+              <option value="love">恋愛運</option>
+              <option value="work">仕事運</option>
+              <option value="money">金運</option>
+              <option value="health">健康運</option>
+            </select>
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">鑑定する</button>
+      </form>
+
+      <div id="integrated-result" class="result-area" hidden></div>
+    </section>
+
+    <!-- ============ WESTERN ============ -->
+    <section class="view" id="view-western">
+      <div class="view-head">
+        <p class="view-eyebrow">WESTERN ASTROLOGY</p>
+        <h2>西洋占星術</h2>
+        <p class="view-sub">太陽星座からあなたの本質と今日のバイオリズムを読み解きます。</p>
+      </div>
+
+      <form class="panel form" id="western-form">
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">生年月日 <em>必須</em></span>
+            <input type="date" name="birthdate" required min="1920-01-01" />
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">星座を調べる</button>
+      </form>
+
+      <div id="western-result" class="result-area" hidden></div>
+    </section>
+
+    <!-- ============ EASTERN ============ -->
+    <section class="view" id="view-eastern">
+      <div class="view-head">
+        <p class="view-eyebrow">EASTERN DIVINATION</p>
+        <h2>東洋占術</h2>
+        <p class="view-sub">九星気学の本命星と干支・五行から、生まれ持った気質と運気のリズムを鑑定します。</p>
+      </div>
+
+      <form class="panel form" id="eastern-form">
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">生年月日 <em>必須</em></span>
+            <input type="date" name="birthdate" required min="1920-01-01" />
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">鑑定する</button>
+      </form>
+
+      <div id="eastern-result" class="result-area" hidden></div>
+    </section>
+
+    <!-- ============ TAROT ============ -->
+    <section class="view" id="view-tarot">
+      <div class="view-head">
+        <p class="view-eyebrow">TAROT READING</p>
+        <h2>タロット</h2>
+        <p class="view-sub">心の中で問いを思い浮かべて、カードをタップしてください。</p>
+      </div>
+
+      <div class="tarot-controls panel">
+        <div class="seg" role="tablist" aria-label="スプレッド選択">
+          <button class="seg-btn active" data-spread="1" role="tab">今日の一枚</button>
+          <button class="seg-btn" data-spread="3" role="tab">過去・現在・未来</button>
+        </div>
+        <button class="btn btn-ghost" id="tarot-reset">カードを引き直す</button>
+      </div>
+
+      <div class="tarot-board" id="tarot-board"></div>
+      <div id="tarot-summary" class="result-area" hidden></div>
+    </section>
+
+    <!-- ============ PALM ============ -->
+    <section class="view" id="view-palm">
+      <div class="view-head">
+        <p class="view-eyebrow">PALMISTRY</p>
+        <h2>手相診断</h2>
+        <p class="view-sub">利き手ではない方の手のひらを見ながら、4つの線の特徴を選んでください。</p>
+      </div>
+
+      <div class="palm-layout">
+        <div class="panel palm-figure-wrap">
+          <svg id="palm-svg" viewBox="0 0 300 340" role="img" aria-label="手のひらの図">
+            <defs>
+              <linearGradient id="palmGrad" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%" stop-color="rgba(139,124,246,.18)" />
+                <stop offset="100%" stop-color="rgba(236,124,184,.12)" />
+              </linearGradient>
+            </defs>
+            <!-- palm + fingers (stylized) -->
+            <path class="palm-shape" d="M96 320 C70 300 58 268 58 230 L58 150 C58 138 66 130 76 130 C86 130 92 138 92 148 L92 118 C92 104 100 96 110 96 C120 96 128 104 128 116 L128 92 C128 78 136 70 146 70 C156 70 164 78 164 92 L164 112 C164 100 172 92 182 92 C192 92 200 100 200 112 L200 170 C200 160 208 150 220 152 C232 154 236 164 234 176 L226 240 C220 282 200 310 172 322 C148 332 116 334 96 320 Z" fill="url(#palmGrad)" stroke="rgba(255,255,255,.25)" stroke-width="2" />
+            <!-- lines -->
+            <path id="line-life" class="palm-line" d="M112 150 C100 190 100 240 128 290" />
+            <path id="line-head" class="palm-line" d="M110 165 C140 175 170 185 205 205" />
+            <path id="line-heart" class="palm-line" d="M100 140 C140 130 175 132 210 150" />
+            <path id="line-fate" class="palm-line" d="M158 300 C155 250 152 200 150 150" />
+          </svg>
+          <p class="palm-hint" id="palm-hint">線を選ぶと図でハイライトされます</p>
+        </div>
+
+        <form class="panel form palm-form" id="palm-form">
+          <div id="palm-questions"></div>
+          <button class="btn btn-primary btn-lg btn-block" type="submit">診断する</button>
+        </form>
+      </div>
+
+      <div id="palm-result" class="result-area" hidden></div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <p>Fortuna — 占い結果はエンターテインメントとしてお楽しみください。</p>
+    <p class="footer-sub">© 2026 Fortuna Prototype</p>
+  </footer>
+
+  <script src="js/data.js"></script>
+  <script src="js/fortune.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
