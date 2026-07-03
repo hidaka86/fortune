@@ -88,8 +88,12 @@ function saveProfile(p) {
 function prefillForms(p) {
   if (!p?.birthdate) return;
   document.querySelectorAll('input[name="birthdate"]').forEach((el) => { el.value = p.birthdate; });
+  const aisho1 = document.querySelector('#aisho-form input[name="birthdate1"]');
+  if (aisho1) aisho1.value = p.birthdate;
   const nameInput = document.querySelector('#integrated-form input[name="name"]');
   if (nameInput && p.name) nameInput.value = p.name;
+  const aishoName = document.querySelector('#aisho-form input[name="name1"]');
+  if (aishoName && p.name) aishoName.value = p.name;
   if (p.theme) {
     const themeSel = document.querySelector('#integrated-form select[name="theme"]');
     if (themeSel) themeSel.value = p.theme;
@@ -377,6 +381,45 @@ palmQuestionsEl.addEventListener("change", (e) => {
   document.getElementById(q.dataset.line)?.classList.add("hl");
   document.getElementById("palm-hint").textContent =
     `${PALM_QUESTIONS.find((p) => p.lineId === q.dataset.line)?.name}をハイライト中`;
+});
+
+/* ---------- 相性診断 ---------- */
+document.getElementById("aisho-form").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const r = compatibilityReading(
+    { name: fd.get("name1")?.trim(), birthdate: fd.get("birthdate1") },
+    { name: fd.get("name2")?.trim(), birthdate: fd.get("birthdate2") },
+  );
+  const nameA = r.a.name ? esc(r.a.name) : "あなた";
+  const nameB = r.b.name ? esc(r.b.name) : "お相手";
+
+  const breakdown = [
+    { title: "ZODIAC — 星座エレメント", pair: `${r.a.zodiac.name}(${r.a.zodiac.element}) × ${r.b.zodiac.name}(${r.b.zodiac.element})`, ...r.zodiac },
+    { title: "GOGYO — 九星の五行", pair: `${r.a.kyusei.name} × ${r.b.kyusei.name}`, ...r.gogyo },
+    { title: "ETO — 干支の配置", pair: `${r.a.eto.name}(${r.a.eto.animal}) × ${r.b.eto.name}(${r.b.eto.animal})`, ...r.eto },
+  ].map((x) => `
+    <div class="result-card">
+      <h4>${x.title}</h4>
+      <p><strong>${x.pair}</strong></p>
+      <div class="meter" style="margin-top:10px">
+        <span class="meter-label">相性度</span>
+        <div class="meter-track"><div class="meter-fill" data-w="${x.score}"></div></div>
+        <span class="meter-value">${x.score}</span>
+      </div>
+      <p class="sub" style="margin-top:10px">${x.note}</p>
+    </div>`).join("");
+
+  showResult(document.getElementById("aisho-result"), `
+    <div class="result-hero">
+      <div class="result-symbol">♥</div>
+      <h3 class="result-title">${nameA} × ${nameB}</h3>
+      <p class="result-keyword">${r.band}</p>
+      <div class="total-score" style="margin-top:10px"><span class="num">${r.total}</span><span class="denom"> / 100</span></div>
+      <p class="result-lead" style="text-align:center">${r.advice}</p>
+    </div>
+    <div class="result-grid">${breakdown}</div>
+  `);
 });
 
 /* ---------- 初期化:保存済みプロフィールの反映 ---------- */

@@ -102,6 +102,73 @@ function drawTarot(count, seedStr) {
   return drawn;
 }
 
+/* ---------- 相性診断 ---------- */
+const GOGYO_KOKU = { "木": "土", "土": "水", "水": "火", "火": "金", "金": "木" }; // 相剋
+const SHIGOU_PAIRS = [["子", "丑"], ["寅", "亥"], ["卯", "戌"], ["辰", "酉"], ["巳", "申"], ["午", "未"]]; // 支合
+
+function zodiacCompatScore(e1, e2) {
+  if (e1 === e2) return { score: 88, note: "同じエレメント同士。価値観や行動のリズムが自然と噛み合う組み合わせです。" };
+  const pair = [e1, e2].sort().join("");
+  if (pair === "火風") return { score: 92, note: "火と風は互いを高め合う最高の相性。一緒にいると行動力も発想力も倍増します。" };
+  if (pair === "地水") return { score: 90, note: "地と水は育み合う相性。安心感と情緒が調和し、長続きする関係を築けます。" };
+  if (pair === "水風") return { score: 62, note: "感性の水と理性の風。テンポは違いますが、違いを面白がれれば良い刺激になります。" };
+  if (pair === "地火") return { score: 58, note: "堅実な地と情熱の火。ペースの違いを認め合うことが関係を深める鍵です。" };
+  if (pair === "水火") return { score: 55, note: "水と火は正反対の気質。だからこそ、お互いにない魅力に強く惹かれ合う関係です。" };
+  return { score: 56, note: "風と地は自由と安定のコンビ。役割分担がうまくいくと最強のチームになります。" }; // 風地
+}
+
+function gogyoCompatScore(k1, k2) {
+  const e1 = k1.element, e2 = k2.element;
+  if (e1 === e2) return { score: 80, note: `どちらも「${e1}」の気を持つ比和の関係。似た者同士で居心地の良い組み合わせです。` };
+  if (GOGYO_RELATION[e1]?.boosts === e2 || GOGYO_RELATION[e2]?.boosts === e1)
+    return { score: 90, note: `「${e1}」と「${e2}」は相生(そうじょう)の関係。一方がもう一方の運気を自然に育てます。` };
+  if (GOGYO_KOKU[e1] === e2 || GOGYO_KOKU[e2] === e1)
+    return { score: 55, note: `「${e1}」と「${e2}」は相剋(そうこく)の関係。ぶつかりやすい分、乗り越えれば強い絆になります。` };
+  return { score: 70, note: `「${e1}」と「${e2}」は程よい距離感の関係。互いのペースを尊重できる組み合わせです。` };
+}
+
+function etoCompatScore(eto1, eto2) {
+  const i = ETO.findIndex((e) => e.name === eto1.name);
+  const j = ETO.findIndex((e) => e.name === eto2.name);
+  const diff = ((i - j) % 12 + 12) % 12;
+  const isShigou = SHIGOU_PAIRS.some(([a, b]) =>
+    (a === eto1.name && b === eto2.name) || (a === eto2.name && b === eto1.name));
+  if (isShigou) return { score: 88, note: `${eto1.name}と${eto2.name}は「支合」。互いを引き立て合う、縁の深い組み合わせです。` };
+  if (diff === 0) return { score: 85, note: "同じ干支同士。考え方の癖まで似ていて、言葉にしなくても通じ合えます。" };
+  if (diff === 4 || diff === 8) return { score: 90, note: `${eto1.name}と${eto2.name}は「三合」の吉配置。一緒に何かを成し遂げる力に恵まれます。` };
+  if (diff === 6) return { score: 52, note: "正反対に位置する「冲」の関係。衝突もありますが、自分にない視点をくれる貴重な相手です。" };
+  if (diff === 1 || diff === 11) return { score: 72, note: "隣り合う干支同士。近すぎず遠すぎず、日常を心地よく共有できる関係です。" };
+  return { score: 66, note: "穏やかな中間の相性。共通の目標を持つことで絆がぐっと深まります。" };
+}
+
+function compatibilityReading(p1, p2) {
+  const parse = (p) => {
+    const [y, m, d] = p.birthdate.split("-").map(Number);
+    return {
+      name: p.name,
+      zodiac: getZodiac(m, d),
+      eto: getEto(y, m, d),
+      kyusei: getKyusei(y, m, d),
+    };
+  };
+  const a = parse(p1), b = parse(p2);
+  const zodiac = zodiacCompatScore(a.zodiac.element, b.zodiac.element);
+  const gogyo = gogyoCompatScore(a.kyusei, b.kyusei);
+  const eto = etoCompatScore(a.eto, b.eto);
+  const total = Math.round(zodiac.score * 0.4 + gogyo.score * 0.3 + eto.score * 0.3);
+
+  const band = total >= 85 ? "運命的な好相性" : total >= 72 ? "とても良い相性" : total >= 60 ? "磨けば光る相性" : "刺激し合う成長の相性";
+  const advice = total >= 85
+    ? "自然体のままで息の合う二人。感謝を言葉にする習慣が、この良い流れをさらに長続きさせます。"
+    : total >= 72
+      ? "土台のしっかりした組み合わせ。小さなすれ違いは早めに話し合えば、絆はむしろ深まります。"
+      : total >= 60
+        ? "違いが目につく時期もありますが、それは伸びしろの証。相手の得意分野を頼ってみると関係が好転します。"
+        : "正反対だからこそ学びの多い二人。「自分と違う」を「面白い」に変換できれば、唯一無二のパートナーになります。";
+
+  return { a, b, zodiac, gogyo, eto, total, band, advice };
+}
+
 /* ---------- 統合鑑定 ---------- */
 function integratedReading({ name, birthdate, theme }) {
   const [y, m, d] = birthdate.split("-").map(Number);

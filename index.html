@@ -30,6 +30,7 @@
         <button class="nav-btn" data-nav="eastern">東洋占術</button>
         <button class="nav-btn" data-nav="tarot">タロット</button>
         <button class="nav-btn" data-nav="palm">手相</button>
+        <button class="nav-btn" data-nav="aisho">相性診断</button>
       </nav>
     </div>
   </header>
@@ -75,6 +76,12 @@
           <div class="feature-icon" style="--fc:#6ad0c8">✋</div>
           <h3>手相</h3>
           <p>生命線・頭脳線・感情線・運命線。4つの線からあなたの資質を診断。</p>
+          <span class="feature-link">診断する →</span>
+        </button>
+        <button class="feature-card" data-nav="aisho">
+          <div class="feature-icon" style="--fc:#e89a7d">♥</div>
+          <h3>相性診断</h3>
+          <p>二人の生年月日から、星座×五行×干支の三面で相性を読み解く。</p>
           <span class="feature-link">診断する →</span>
         </button>
       </div>
@@ -236,6 +243,41 @@
       </div>
 
       <div id="palm-result" class="result-area" hidden></div>
+    </section>
+
+    <!-- ============ COMPATIBILITY ============ -->
+    <section class="view" id="view-aisho">
+      <div class="view-head">
+        <p class="view-eyebrow">COMPATIBILITY</p>
+        <h2>相性診断</h2>
+        <p class="view-sub">星座のエレメント、九星の五行、干支の配置。3つの角度から二人の相性を診断します。</p>
+      </div>
+
+      <form class="panel form" id="aisho-form">
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">あなたの名前(任意)</span>
+            <input type="text" name="name1" placeholder="例:ヒナタ" maxlength="20" />
+          </label>
+          <label class="field">
+            <span class="field-label">あなたの生年月日 <em>必須</em></span>
+            <input type="date" name="birthdate1" required min="1920-01-01" />
+          </label>
+        </div>
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">お相手の名前(任意)</span>
+            <input type="text" name="name2" placeholder="例:ソラ" maxlength="20" />
+          </label>
+          <label class="field">
+            <span class="field-label">お相手の生年月日 <em>必須</em></span>
+            <input type="date" name="birthdate2" required min="1920-01-01" />
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">相性を診断する</button>
+      </form>
+
+      <div id="aisho-result" class="result-area" hidden></div>
     </section>
 
   </main>
