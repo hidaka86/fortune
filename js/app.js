@@ -7,6 +7,7 @@ const views = document.querySelectorAll(".view");
 const navBtns = document.querySelectorAll(".nav-btn");
 
 function navigate(target) {
+  if (target === "mypage") renderMypage();
   views.forEach((v) => v.classList.toggle("active", v.id === `view-${target}`));
   navBtns.forEach((b) => b.classList.toggle("active", b.dataset.nav === target));
   window.scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" });
@@ -175,8 +176,61 @@ function showResult(el, html) {
   el.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "start" });
 }
 
+/* ---------- 生年月日セレクト(iOSのdate入力の分かりにくさ対策) ---------- */
+function setupBirthdateSelects() {
+  const thisYear = new Date().getFullYear();
+  document.querySelectorAll(".bd-select").forEach((box) => {
+    const name = box.dataset.bd;
+    let opts = "";
+    for (let y = thisYear; y >= 1920; y--) opts += `<option value="${y}">${y}</option>`;
+    let mopts = "";
+    for (let m = 1; m <= 12; m++) mopts += `<option value="${m}">${m}</option>`;
+    box.innerHTML = `
+      <select class="bd-y" aria-label="年" required><option value="">年</option>${opts}</select>
+      <select class="bd-m" aria-label="月" required><option value="">月</option>${mopts}</select>
+      <select class="bd-d" aria-label="日" required><option value="">日</option></select>
+      <input type="hidden" name="${name}" />`;
+    const [ySel, mSel, dSel] = box.querySelectorAll("select");
+    const hidden = box.querySelector("input[type=hidden]");
+
+    function rebuildDays() {
+      const y = Number(ySel.value) || 2000;
+      const m = Number(mSel.value) || 1;
+      const days = new Date(y, m, 0).getDate();
+      const cur = dSel.value;
+      let dopts = '<option value="">日</option>';
+      for (let d = 1; d <= days; d++) dopts += `<option value="${d}">${d}</option>`;
+      dSel.innerHTML = dopts;
+      if (cur && Number(cur) <= days) dSel.value = cur;
+    }
+    rebuildDays();
+
+    box.addEventListener("change", () => {
+      rebuildDays();
+      const [y, m, d] = [ySel.value, mSel.value, dSel.value];
+      hidden.value = (y && m && d)
+        ? `${y}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`
+        : "";
+    });
+  });
+}
+
+function setBirthdateSelect(name, value) {
+  const box = document.querySelector(`.bd-select[data-bd="${name}"]`);
+  if (!box || !value) return;
+  const [y, m, d] = value.split("-").map(Number);
+  const [ySel, mSel, dSel] = box.querySelectorAll("select");
+  ySel.value = y; mSel.value = m;
+  box.dispatchEvent(new Event("change")); // 日の選択肢を作る
+  dSel.value = d;
+  box.dispatchEvent(new Event("change"));
+}
+
+setupBirthdateSelects();
+
 /* ---------- プロフィール記憶(localStorage) ---------- */
 const PROFILE_KEY = "fortuna:profile";
+const VISIT_KEY = "fortuna:visits";
 
 function loadProfile() {
   try { return JSON.parse(localStorage.getItem(PROFILE_KEY)) || null; }
@@ -189,13 +243,30 @@ function saveProfile(p) {
 
 function prefillForms(p) {
   if (!p?.birthdate) return;
-  document.querySelectorAll('input[name="birthdate"]').forEach((el) => { el.value = p.birthdate; });
-  const aisho1 = document.querySelector('#aisho-form input[name="birthdate1"]');
-  if (aisho1) aisho1.value = p.birthdate;
+  setBirthdateSelect("birthdate", p.birthdate);
+  setBirthdateSelect("birthdate1", p.birthdate);
   const nameInput = document.querySelector('#integrated-form input[name="name"]');
   if (nameInput && p.name) nameInput.value = p.name;
   const aishoName = document.querySelector('#aisho-form input[name="name1"]');
   if (aishoName && p.name) aishoName.value = p.name;
+}
+
+/* ---------- 来訪記録(連続日数) ---------- */
+function updateStreak() {
+  if (!loadProfile()?.birthdate) return null;
+  let v;
+  try { v = JSON.parse(localStorage.getItem(VISIT_KEY)) || {}; } catch { v = {}; }
+  const today = todayKey();
+  if (v.last !== today) {
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, "0")}-${String(yesterday.getDate()).padStart(2, "0")}`;
+    v.streak = v.last === yKey ? (v.streak || 0) + 1 : 1;
+    v.total = (v.total || 0) + 1;
+    v.last = today;
+    try { localStorage.setItem(VISIT_KEY, JSON.stringify(v)); } catch { /* noop */ }
+  }
+  return v;
 }
 
 /* ---------- ホーム「今日のあなた」ミニカード ---------- */
@@ -213,14 +284,187 @@ function renderHomeDaily() {
         <span class="home-daily-symbol">${z.symbol}︎</span>
         <div>
           <p class="home-daily-title">${who}の今日の運気</p>
-          <p class="home-daily-sub">${z.name} ・ ラッキーカラーは${daily.luckyColor}</p>
+          <p class="home-daily-sub">「${daily.dayStar.name}」の日 ・ ラッキーカラーは${daily.luckyColor}</p>
         </div>
       </div>
       <div class="home-daily-right">
         <span class="home-daily-score">${daily.total.toFixed(1)}<small> / 5.0</small></span>
-        <button class="btn btn-ghost" data-nav="integrated">詳しく見る</button>
+        <button class="btn btn-ghost" data-nav="mypage">マイページへ</button>
       </div>
     </div>`;
+}
+
+/* ---------- マイページ(簡易会員) ---------- */
+function compassSvg(kichi) {
+  const cx = 140, cy = 140, r = 96;
+  let marks = "";
+  for (const dir of DIRECTIONS) {
+    const rad = (dir.angle - 90) * Math.PI / 180;
+    const lx = cx + Math.cos(rad) * (r + 26);
+    const ly = cy + Math.sin(rad) * (r + 26);
+    const dx = cx + Math.cos(rad) * r;
+    const dy = cy + Math.sin(rad) * r;
+    const good = kichi.good.find((g) => g.dir === dir.name);
+    const bad = kichi.bad[dir.name];
+    const color = good ? (good.grade === "大吉" ? "#edd9a3" : "#d9b36a") : bad ? "#a25a4d" : "rgba(240,237,228,.25)";
+    const size = good ? 7 : 4;
+    marks += `
+      <circle cx="${dx}" cy="${dy}" r="${size}" fill="${color}" />
+      <text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="14" fill="${good ? "#edd9a3" : bad ? "#a25a4d" : "#96a0b9"}" font-weight="${good ? 700 : 400}">${dir.name}</text>`;
+  }
+  return `<svg viewBox="0 0 280 280" class="compass" role="img" aria-label="今月の方位盤">
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(240,237,228,.16)" stroke-width="1" />
+    <circle cx="${cx}" cy="${cy}" r="${r - 22}" fill="none" stroke="rgba(240,237,228,.08)" stroke-width="1" />
+    <circle cx="${cx}" cy="${cy}" r="3" fill="#d9b36a" />
+    ${marks}
+  </svg>`;
+}
+
+function renderMypage() {
+  const root = document.getElementById("mypage-root");
+  const p = loadProfile();
+
+  if (!p?.birthdate) {
+    root.innerHTML = `
+      <div class="view-head">
+        <p class="view-eyebrow">MEMBERSHIP</p>
+        <h2>マイページ</h2>
+        <p class="view-sub">登録すると、あなた専用の「気の流れ」ダッシュボードが開きます。毎日ひらくたび、今日の指針がここに。</p>
+      </div>
+      <form class="panel form" id="register-form">
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">お名前(ニックネーム可)</span>
+            <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
+          </label>
+          <label class="field">
+            <span class="field-label">生年月日 <em>必須</em></span>
+            <div class="bd-select" data-bd="birthdate"></div>
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">無料で登録する</button>
+        <p class="form-note">登録情報はこの端末のブラウザ内(localStorage)にのみ保存され、サーバーには送信されません。</p>
+      </form>`;
+    setupBirthdateSelects();
+    document.getElementById("register-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      if (!fd.get("birthdate")) return;
+      saveProfile({ name: fd.get("name")?.trim(), birthdate: fd.get("birthdate"), theme: "total" });
+      prefillForms(loadProfile());
+      renderHomeDaily();
+      renderMypage();
+    });
+    return;
+  }
+
+  const visits = updateStreak() || {};
+  const who = p.name ? `${esc(p.name)}さん` : "あなた";
+  const flow = kiFlow(p.birthdate);
+  const week = weekFlow(p.birthdate);
+  const daily = dailyFortune(p.birthdate);
+  const [by, bm, bd] = p.birthdate.split("-").map(Number);
+  const kyusei = getKyusei(by, bm, bd);
+  const honmeiIdx = KYUSEI.indexOf(kyusei) + 1;
+  const now = new Date();
+  const kichi = kichiHoi(honmeiIdx, now.getFullYear(), now.getMonth() + 1, now.getDate());
+  const themes = themeDirections(kichi);
+  const phase = moonPhaseToday();
+
+  const best = [...week].sort((a, b) => b.power - a.power)[0];
+  const weekHtml = week.map((w) => `
+    <div class="week-day ${w.today ? "is-today" : ""} ${w === best ? "is-best" : ""}">
+      <span class="wd-date">${w.label}<small>(${w.wd})</small></span>
+      <span class="wd-kanshi">${w.kanshi}</span>
+      <span class="wd-star">${w.star.name}</span>
+      ${w === best ? '<span class="wd-badge">◎ 好機</span>' : ""}
+    </div>`).join("");
+
+  const goodList = kichi.good.length
+    ? kichi.good.map((g) => `<span class="chip"><strong>${g.dir}</strong> ${g.grade}(${g.star})</span>`).join("")
+    : '<span class="chip">今月は無理に動かないのが吉</span>';
+
+  const themeLine = (label, dir, fallback) => {
+    if (!dir) return `<p class="theme-dir"><span>${label}</span>今月は方位にこだわらず、${fallback}</p>`;
+    const dd = DIRECTIONS.find((x) => x.name === dir);
+    return `<p class="theme-dir"><span>${label}</span><strong>${dir}</strong> — ${dd.tip}</p>`;
+  };
+
+  root.innerHTML = `
+    <div class="result-hero mypage-hero">
+      <span class="result-symbol">${flow.myKan}</span>
+      <p class="result-eyebrow">MY PAGE — ${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} ${phase.emoji} ${phase.name}</p>
+      <h3 class="result-title">おかえりなさい、${who}。</h3>
+      <p class="result-keyword">連続 ${visits.streak || 1} 日目の羅針盤</p>
+      <div class="chip-row">
+        <span class="chip">日主 <strong>${flow.myKan}(${flow.nikkan.symbol})</strong></span>
+        <span class="chip">本命星 <strong>${kyusei.name}</strong></span>
+        <span class="chip">今日の総合 <strong>${daily.total.toFixed(1)} / 5.0</strong></span>
+      </div>
+    </div>
+
+    <div class="result-grid">
+      <div class="result-card span-all">
+        ${cardH4("TODAY'S KI", "今日の気流")}
+        <p><strong style="color:var(--gold-bright)">「${flow.day.star.name}」の日(${daily.dayKanshi})</strong> — ${flow.day.star.day}</p>
+        <div style="margin-top:16px">${metersHtml(daily.scores)}</div>
+      </div>
+
+      <div class="result-card span-all">
+        ${cardH4("7 DAYS", "一週間の気流")}
+        <div class="week-strip">${weekHtml}</div>
+        <p class="sub" style="margin-top:12px">◎は今週いちばん追い風が吹く日。大事な予定はこの日に。</p>
+      </div>
+
+      <div class="result-card">
+        ${cardH4("THIS MONTH", "今月の立ち回り")}
+        <p><strong style="color:var(--gold-bright)">${flow.month.pillar.kan}${flow.month.pillar.shi}の月</strong></p>
+        <p style="margin-top:8px">${flow.month.star.month}</p>
+        <p class="sub" style="margin-top:12px">今年は「${flow.year.star.name}」の年 — ${flow.year.star.month.replace(/^「.+?」の月 — /, "").replace(/月/g, "年")}</p>
+      </div>
+
+      <div class="result-card">
+        ${cardH4("DIRECTIONS", "今月の吉方位")}
+        <div class="compass-wrap">${compassSvg(kichi)}</div>
+        <div class="chip-row" style="justify-content:center">${goodList}</div>
+        <div style="margin-top:16px">
+          ${themeLine("恋愛", themes.love, "心が安らぐ場所で会うのが吉。")}
+          ${themeLine("仕事", themes.work, "いつもの場所で足元を固めて。")}
+          ${themeLine("金運", themes.money, "散財を避けて守りの月に。")}
+          ${themeLine("健康", themes.health, "近所の散歩と早寝がいちばんの薬。")}
+        </div>
+        <p class="sub" style="margin-top:12px">※ 九星気学の月盤(簡易計算)によるもので、自宅から見た方角です。</p>
+      </div>
+    </div>
+
+    <div class="crosslinks">
+      <span class="crosslinks-label">─ 旅はつづく</span>
+      <button data-nav="integrated">統合鑑定を受ける</button>
+      <button data-nav="tarot">今日の一枚を引く</button>
+      <button id="edit-profile">プロフィール編集</button>
+      <button id="logout">登録情報を削除</button>
+    </div>`;
+
+  [...root.querySelectorAll(".result-hero, .result-card, .crosslinks")].forEach((n, i) => {
+    n.style.animationDelay = `${i * 90}ms`;
+    n.classList.add("reveal-item");
+  });
+  requestAnimationFrame(() => {
+    root.querySelectorAll(".meter-fill").forEach((m) => {
+      requestAnimationFrame(() => { m.style.width = `${m.dataset.w}%`; });
+    });
+  });
+
+  document.getElementById("logout").addEventListener("click", () => {
+    if (!confirm("この端末に保存された登録情報と来訪記録を削除します。よろしいですか?")) return;
+    try { localStorage.removeItem(PROFILE_KEY); localStorage.removeItem(VISIT_KEY); } catch { /* noop */ }
+    renderHomeDaily();
+    renderMypage();
+  });
+  document.getElementById("edit-profile").addEventListener("click", () => {
+    try { localStorage.removeItem(PROFILE_KEY); } catch { /* noop */ }
+    renderMypage();
+  });
 }
 
 /* ---------- 結果コピー ---------- */
@@ -426,6 +670,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
         ${cardH4("TODAY", "今日の運気")}
         <div class="total-score"><span class="num" data-count="${r.daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
         ${metersHtml(r.daily.scores)}
+        <p class="sub" style="margin-top:14px">${r.daily.reason}</p>
       </div>
       <div class="result-card">
         ${cardH4("TAROT", "導きの一枚")}
@@ -477,6 +722,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         ${cardH4("TODAY", "今日の運気")}
         <div class="total-score"><span class="num" data-count="${daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
         ${metersHtml(daily.scores)}
+        <p class="sub" style="margin-top:14px">${daily.reason}</p>
       </div>
       <div class="result-card">
         ${cardH4("LUCKY GUIDE", "今日の開運キー")}
@@ -495,7 +741,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
   const eto = getEto(y, m, d);
   const kyusei = getKyusei(y, m, d);
   const pillars = fourPillars(y, m, d);
-  const daily = dailyFortune(`${birthdate}::east`);
+  const daily = dailyFortune(birthdate);
 
   showResult(document.getElementById("eastern-result"), `
     <div class="result-hero">
@@ -525,6 +771,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
         ${cardH4("TODAY", "今日の運気")}
         <div class="total-score"><span class="num" data-count="${daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
         ${metersHtml(daily.scores)}
+        <p class="sub" style="margin-top:14px">${daily.reason}</p>
       </div>
     </div>
     ${crossLinksHtml("eastern")}
@@ -701,3 +948,4 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
 /* ---------- 初期化 ---------- */
 prefillForms(loadProfile());
 renderHomeDaily();
+updateStreak();

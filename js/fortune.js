@@ -71,17 +71,39 @@ function getKyusei(y, m, d) {
   return KYUSEI[star - 1];
 }
 
-/* ---------- 今日の運勢スコア(生年月日×日付で決定論的) ---------- */
+/* ---------- 今日の運勢スコア ----------
+   乱数ではなく命理で組み立てる:
+   基礎3点 + 日運の通変星(日主×今日の日干) + 月運の通変星(半分の重み)
+   + 月相の補正 + わずかな日替わりゆらぎ。理由も一緒に返す。 */
 function dailyFortune(birthdate) {
   const rng = seededRng(`${birthdate}::${todayKey()}`);
   const pick = (arr) => arr[Math.floor(rng() * arr.length)];
-  const score = () => 1 + Math.floor(rng() * 5); // 1〜5
 
-  const scores = { love: score(), work: score(), money: score(), health: score() };
+  const flow = kiFlow(birthdate);
+  const dayW = flow.day.star.weights;
+  const monthW = flow.month.star.weights;
+
+  const phase = moonPhaseToday();
+  const moonAdj = {
+    "新月": { work: 0.4 }, "三日月": { work: 0.3 }, "上弦の月": { work: 0.4, love: 0.2 },
+    "十三夜の月": { money: 0.3 }, "満月": { love: 0.5 }, "居待月": { health: 0.3 },
+    "下弦の月": { health: 0.4 }, "有明月": { health: 0.3, love: 0.2 },
+  }[phase.name] || {};
+
+  const scores = {};
+  for (const k of ["love", "work", "money", "health"]) {
+    let v = 3 + (dayW[k] || 0) + (monthW[k] || 0) * 0.5 + (moonAdj[k] || 0) + (rng() * 2 - 1) * 0.7;
+    scores[k] = Math.max(1, Math.min(5, Math.round(v)));
+  }
   const total = Math.round((scores.love + scores.work + scores.money + scores.health) / 4 * 10) / 10;
+
   return {
     scores,
     total,
+    dayStar: flow.day.star,
+    monthStar: flow.month.star,
+    dayKanshi: flow.day.pillar.kan + flow.day.pillar.shi,
+    reason: `今日は${flow.day.pillar.kan}${flow.day.pillar.shi}の日 — あなたの日主「${flow.myKan}」から見て「${flow.day.star.name}」にあたる日です。${flow.day.star.day}`,
     luckyColor: pick(LUCKY_COLORS),
     luckyItem: pick(LUCKY_ITEMS),
     luckyPlace: pick(LUCKY_PLACES),
@@ -164,6 +186,138 @@ function moonSign(y, m, d) {
   const name = order[Math.floor(lon / 30)];
   const zodiac = ZODIAC.find((z) => z.name === name);
   return { name, symbol: zodiac.symbol, desc: MOONSIGN_DESC[name], longitude: lon };
+}
+
+/* ---------- 通変星(日主から見た十干の関係) ---------- */
+const KAN_INFO = {
+  "甲": { element: "木", yang: true }, "乙": { element: "木", yang: false },
+  "丙": { element: "火", yang: true }, "丁": { element: "火", yang: false },
+  "戊": { element: "土", yang: true }, "己": { element: "土", yang: false },
+  "庚": { element: "金", yang: true }, "辛": { element: "金", yang: false },
+  "壬": { element: "水", yang: true }, "癸": { element: "水", yang: false },
+};
+const SEI_CYCLE = { "木": "火", "火": "土", "土": "金", "金": "水", "水": "木" }; // 相生
+const KOKU_CYCLE = { "木": "土", "土": "水", "水": "火", "火": "金", "金": "木" }; // 相剋
+
+function tsuhensei(dayKan, otherKan) {
+  const me = KAN_INFO[dayKan], other = KAN_INFO[otherKan];
+  const same = me.yang === other.yang;
+  let name;
+  if (me.element === other.element) name = same ? "比肩" : "劫財";
+  else if (SEI_CYCLE[me.element] === other.element) name = same ? "食神" : "傷官";
+  else if (KOKU_CYCLE[me.element] === other.element) name = same ? "偏財" : "正財";
+  else if (KOKU_CYCLE[other.element] === me.element) name = same ? "偏官" : "正官";
+  else name = same ? "偏印" : "印綬"; // 相手が自分を生じる
+  return { name, ...TSUHENSEI[name] };
+}
+
+/* ---------- 気の流れ(年運・月運・日運・週間) ---------- */
+function kiFlow(birthdate, baseDate = new Date()) {
+  const [by, bm, bd] = birthdate.split("-").map(Number);
+  const myKan = dayPillar(by, bm, bd).kan;
+  const y = baseDate.getFullYear(), m = baseDate.getMonth() + 1, d = baseDate.getDate();
+  const now = fourPillars(y, m, d);
+  return {
+    myKan,
+    nikkan: NIKKAN_DESC[myKan],
+    year: { pillar: now.year, star: tsuhensei(myKan, now.year.kan) },
+    month: { pillar: now.month, star: tsuhensei(myKan, now.month.kan) },
+    day: { pillar: now.day, star: tsuhensei(myKan, now.day.kan) },
+  };
+}
+
+function weekFlow(birthdate, days = 7) {
+  const [by, bm, bd] = birthdate.split("-").map(Number);
+  const myKan = dayPillar(by, bm, bd).kan;
+  const week = [];
+  const WD = ["日", "月", "火", "水", "木", "金", "土"];
+  for (let i = 0; i < days; i++) {
+    const t = new Date();
+    t.setDate(t.getDate() + i);
+    const p = dayPillar(t.getFullYear(), t.getMonth() + 1, t.getDate());
+    const star = tsuhensei(myKan, p.kan);
+    const w = star.weights;
+    const power = w.love + w.work + w.money + w.health;
+    week.push({
+      date: t, label: `${t.getMonth() + 1}/${t.getDate()}`, wd: WD[t.getDay()],
+      kanshi: p.kan + p.shi, star, power,
+      today: i === 0,
+    });
+  }
+  return week;
+}
+
+/* ---------- 九星気学:月盤と吉方位 ---------- */
+// 月盤の中宮星: 子午卯酉年→寅月は八白 / 辰戌丑未年→五黄 / 寅申巳亥年→二黒、以降毎月逆行
+function monthCenterStar(y, m, d) {
+  const yy = etoYear(y, m, d);
+  const branch = ETO[((yy - 4) % 12 + 12) % 12].name;
+  const start = "子午卯酉".includes(branch) ? 8 : "辰戌丑未".includes(branch) ? 5 : 2;
+  let idx = SETSU_TABLE.findIndex(([sm, sd]) => m < sm || (m === sm && d < sd));
+  if (idx === -1) idx = 0;
+  idx = (idx - 1 + 12) % 12;
+  const branchOrder = ["寅", "卯", "辰", "巳", "午", "未", "申", "酉", "戌", "亥", "子", "丑"];
+  const monthsFromTora = branchOrder.indexOf(SETSU_TABLE[idx][2]);
+  return ((start - 1 - monthsFromTora) % 9 + 9) % 9 + 1;
+}
+
+// 中宮星から各方位に回座する星を求める(後天定位からの平行移動)
+function directionBoard(center) {
+  const board = {};
+  for (const dir of DIRECTIONS) {
+    board[dir.name] = ((dir.teiiStar - 1 + center - 5) % 9 + 9) % 9 + 1;
+  }
+  return board;
+}
+
+// 本命星に対する今月の吉方位・凶方位(簡易版: 五黄殺・暗剣殺・本命殺・本命的殺を除外)
+function kichiHoi(honmeiIdx, y, m, d) {
+  const center = monthCenterStar(y, m, d);
+  const board = directionBoard(center);
+  const myElement = KYUSEI[honmeiIdx - 1].element;
+
+  const bad = {};
+  for (const [dir, star] of Object.entries(board)) {
+    if (star === 5) { bad[dir] = "五黄殺"; bad[OPPOSITE_DIR[dir]] = bad[OPPOSITE_DIR[dir]] || "暗剣殺"; }
+  }
+  for (const [dir, star] of Object.entries(board)) {
+    if (star === honmeiIdx) {
+      bad[dir] = bad[dir] || "本命殺";
+      bad[OPPOSITE_DIR[dir]] = bad[OPPOSITE_DIR[dir]] || "本命的殺";
+    }
+  }
+
+  const good = [];
+  for (const [dir, star] of Object.entries(board)) {
+    if (bad[dir]) continue;
+    const starElement = KYUSEI[star - 1].element;
+    const isShowsei = SEI_CYCLE[starElement] === myElement; // 生気(自分を生じる)
+    const isHiwa = starElement === myElement && star !== honmeiIdx; // 比和
+    const isTaiki = SEI_CYCLE[myElement] === starElement; // 退気(自分が生じる)
+    if (isShowsei || isHiwa || isTaiki) {
+      good.push({ dir, star: KYUSEI[star - 1].name, grade: isShowsei ? "大吉" : isHiwa ? "吉" : "小吉" });
+    }
+  }
+  good.sort((a, b) => ["大吉", "吉", "小吉"].indexOf(a.grade) - ["大吉", "吉", "小吉"].indexOf(b.grade));
+  return { center, board, good, bad };
+}
+
+// テーマ別のおすすめ方位(吉方位の中からテーマに合う定位の方位を選ぶ)
+function themeDirections(kichi) {
+  const prefer = {
+    love: ["南東", "北", "西"],
+    work: ["北西", "東", "北東"],
+    money: ["西", "北東", "南西"],
+    health: ["南西", "北", "南"],
+  };
+  const goodDirs = kichi.good.map((g) => g.dir);
+  const pick = (list) => list.find((dir) => goodDirs.includes(dir)) || null;
+  return {
+    love: pick(prefer.love),
+    work: pick(prefer.work),
+    money: pick(prefer.money),
+    health: pick(prefer.health),
+  };
 }
 
 /* ---------- 月相(今日の月) ---------- */
