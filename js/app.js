@@ -317,6 +317,12 @@ function orderNav() {
   else nav.appendChild(myBtn);
 }
 
+function streakMilestone(streak) {
+  if (streak >= 30) return "🎖 30日連続達成 — 暦はもう、あなたの生活の一部です。";
+  if (streak >= 7) return "🔥 7日連続達成 — 星があなたの習慣を覚えはじめました。";
+  return "";
+}
+
 function renderHomeDaily() {
   const p = loadProfile();
   orderNav();
@@ -342,12 +348,14 @@ function renderHomeDaily() {
     <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span><br /><span class="nw">今日は<em>「${verdict.word}」</em>。</span></h1>
     <p class="hero-sub">${verdict.advice}</p>
     <div class="hero-score">
-      <span><span class="hs-num">${daily.total.toFixed(1)}</span><span class="hs-denom"> / 5.0</span></span>
+      <span><span class="hs-num">${daily.score100}</span><span class="hs-denom"> /100</span></span>
       ${starsHtml(Math.round(daily.total))}
       <span class="chip">「${daily.dayStar.name}」の日</span>
       <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
-      <span class="chip">連続 <strong>${visits.streak || 1}日目</strong></span>
+      <span class="chip">連続 <strong>${visits.streak || 1}日目</strong>${(visits.streak || 1) >= 7 ? " 🔥" : ""}</span>
     </div>
+    <p class="hero-action">今日の開運アクション — <strong>${daily.action}</strong></p>
+    ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
     <div class="hero-cta">
       <button class="btn btn-primary btn-lg" data-nav="mypage">今日の羅針盤をひらく</button>
       <button class="btn btn-ghost btn-lg" data-nav="tarot">今日の一枚を引く</button>
@@ -478,11 +486,12 @@ function renderMypage() {
       <span class="result-symbol">${flow.myKan}</span>
       <p class="result-eyebrow">MY PAGE — ${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} ${phase.emoji} ${phase.name}</p>
       <h3 class="result-title">おかえりなさい、${who}。</h3>
-      <p class="result-keyword">連続 ${visits.streak || 1} 日目の羅針盤</p>
+      <p class="result-keyword">連続 ${visits.streak || 1} 日目の羅針盤${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>
+      ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
       <div class="chip-row">
         <span class="chip">日主 <strong>${flow.myKan}(${flow.nikkan.symbol})</strong></span>
         <span class="chip">本命星 <strong>${kyusei.name}</strong></span>
-        <span class="chip">今日の総合 <strong>${daily.total.toFixed(1)} / 5.0</strong></span>
+        <span class="chip">今日の運気 <strong>${daily.score100} /100</strong></span>
       </div>
     </div>
 
@@ -492,6 +501,7 @@ function renderMypage() {
         ${cardH4("TODAY'S KI", "今日の気流")}
         ${todayLogicHtml(daily)}
         <div style="margin-top:18px">${metersHtml(daily.scores)}</div>
+        <p style="margin-top:16px"><strong style="color:var(--gold-bright)">今日の開運アクション</strong> — ${daily.action}</p>
       </div>
 
       <div class="result-card span-all">
@@ -529,6 +539,20 @@ function renderMypage() {
           ${themeLine("健康", themes.health, "近所の散歩と早寝がいちばんの薬。")}
         </div>
         ${explainHtml("吉方位はどう決まる?", "九星気学では、9つの星が毎月方位盤の上を巡ります。あなたの本命星(" + kyusei.name + ")と相性の良い星が巡る方角が吉方位。誰にとっても凶となる五黄殺・暗剣殺と、あなた固有の本命殺・本命的殺は除いています。自宅から見た方角で使ってください。")}
+      </div>
+    </div>
+
+      <div class="result-card span-all">
+        ${cardH4("HISTORY", "鑑定の記録")}
+        ${(() => {
+          const hist = loadHistory();
+          if (!hist.length) return '<p class="sub">まだ記録がありません。鑑定を受けると、ここに自動で残っていきます。</p>';
+          return hist.slice(0, 20).map((h) => `
+            <details class="explain history-item">
+              <summary><span class="hi-date">${h.d.slice(5).replace("-", "/")}</span><span class="hi-kind">${h.k}</span><span class="hi-title">${h.t}</span></summary>
+              <p>${h.x}</p>
+            </details>`).join("");
+        })()}
       </div>
     </div>
 
@@ -589,130 +613,139 @@ document.addEventListener("click", async (e) => {
   }
 });
 
-/* ---------- シェア画像生成(Canvas) ---------- */
-let lastIntegrated = null;
+/* ---------- シェア画像(1200x630)とXシェア・鑑定履歴 ---------- */
+const SITE_URL = "https://hidaka86.github.io/fortune/";
+const lastShare = {}; // kind -> {eyebrow,title,sub,keywords,score,scoreLabel,x}
 
-async function makeShareImage(r) {
-  const W = 1080, H = 1080;
+function shareButtonsHtml(kind) {
+  return `<button class="btn btn-ghost" data-share-image="${kind}">シェア画像を保存</button>
+    <button class="btn btn-ghost" data-share-x="${kind}">Xでシェア</button>`;
+}
+
+function shareRowHtml(kind) {
+  return `<div class="result-actions" style="justify-content:center">${shareButtonsHtml(kind)}</div>`;
+}
+
+async function makeShareCard(p) {
+  const W = 1200, H = 630;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-
-  try { await document.fonts.load('700 64px "Zen Old Mincho"'); } catch { /* フォールバックで描画 */ }
+  try { await document.fonts.load('700 60px "Zen Old Mincho"'); } catch { /* fallback */ }
   const serif = '"Zen Old Mincho", "Hiragino Mincho ProN", serif';
 
-  // 背景
-  const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, "#0a0d1d");
-  bg.addColorStop(1, "#151a38");
-  ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, W, H);
+  const bg = ctx.createLinearGradient(0, 0, W, H);
+  bg.addColorStop(0, "#0a0d1d"); bg.addColorStop(1, "#171b3a");
+  ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
 
-  // 星
-  for (let i = 0; i < 140; i++) {
-    const x = Math.random() * W, y = Math.random() * H;
-    const rr = Math.random() * 1.8 + 0.4;
-    ctx.globalAlpha = 0.25 + Math.random() * 0.6;
-    ctx.fillStyle = Math.random() < 0.2 ? "#edd9a3" : "#dce4ff";
-    ctx.beginPath(); ctx.arc(x, y, rr, 0, Math.PI * 2); ctx.fill();
+  for (let i = 0; i < 90; i++) {
+    ctx.globalAlpha = 0.2 + Math.random() * 0.6;
+    ctx.fillStyle = Math.random() < 0.22 ? "#edd9a3" : "#dce4ff";
+    ctx.beginPath();
+    ctx.arc(Math.random() * W, Math.random() * H, Math.random() * 1.8 + 0.4, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  // 飾り枠
-  ctx.strokeStyle = "rgba(217,179,106,.55)";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(48, 48, W - 96, H - 96);
+  ctx.strokeStyle = "rgba(217,179,106,.6)"; ctx.lineWidth = 2;
+  ctx.strokeRect(30, 30, W - 60, H - 60);
   ctx.strokeStyle = "rgba(217,179,106,.25)";
-  ctx.strokeRect(60, 60, W - 120, H - 120);
+  ctx.strokeRect(40, 40, W - 80, H - 80);
 
-  const cx = W / 2;
   ctx.textAlign = "center";
-
-  // ブランド
   ctx.fillStyle = "#d9b36a";
-  ctx.font = `600 30px ${serif}`;
-  ctx.fillText("F O R T U N A", cx, 132);
+  ctx.font = `600 26px ${serif}`;
+  ctx.fillText("F O R T U N A", W / 2, 96);
+  ctx.fillStyle = "#96a0b9";
+  ctx.font = `500 19px ${serif}`;
+  ctx.fillText(p.eyebrow || "", W / 2, 130);
 
-  // 星座記号
-  ctx.fillStyle = "#edd9a3";
-  ctx.font = `500 150px ${serif}`;
-  ctx.fillText(`${r.zodiac.symbol}︎`, cx, 320);
-
-  // タイトル
   ctx.fillStyle = "#f0ede4";
-  ctx.font = `700 52px ${serif}`;
-  const who = r.name ? `${r.name}さんの今日` : "今日のわたし";
-  ctx.fillText(who, cx, 420);
+  ctx.font = `700 56px ${serif}`;
+  ctx.fillText(p.title, W / 2, 218);
 
-  ctx.fillStyle = "#96a0b9";
-  ctx.font = `500 28px ${serif}`;
-  ctx.fillText(`${r.zodiac.name} × ${r.moon.name}の月 × ${r.kyusei.name}`, cx, 472);
+  if (p.keywords?.length) {
+    ctx.fillStyle = "#edd9a3";
+    ctx.font = `600 30px ${serif}`;
+    ctx.fillText(p.keywords.join("  ✦  "), W / 2, 282);
+  }
 
-  // スコア
-  ctx.fillStyle = "#edd9a3";
-  ctx.font = `700 170px ${serif}`;
-  ctx.fillText(r.daily.total.toFixed(1), cx, 660);
-  ctx.fillStyle = "#96a0b9";
-  ctx.font = `500 30px ${serif}`;
-  ctx.fillText("/ 5.0", cx + 170, 655);
-
-  // 4項目
-  const labels = { love: "恋愛", work: "仕事", money: "金運", health: "健康" };
-  const entries = Object.entries(r.daily.scores);
-  const colW = 210;
-  entries.forEach(([k, v], i) => {
-    const x = cx + (i - 1.5) * colW;
+  if (p.score != null) {
     ctx.fillStyle = "#96a0b9";
-    ctx.font = `500 26px ${serif}`;
-    ctx.fillText(labels[k], x, 748);
-    ctx.fillStyle = "#d9b36a";
-    ctx.font = "26px sans-serif";
-    ctx.fillText("★".repeat(v) + "☆".repeat(5 - v), x, 790);
-  });
+    ctx.font = `500 24px ${serif}`;
+    ctx.fillText(p.scoreLabel || "今日の運気", W / 2, 348);
+    ctx.fillStyle = "#edd9a3";
+    ctx.font = `700 120px ${serif}`;
+    ctx.fillText(String(p.score), W / 2, 462);
+    ctx.fillStyle = "#96a0b9";
+    ctx.font = `500 28px ${serif}`;
+    ctx.fillText(p.scoreSuffix || "/100", W / 2 + 130, 456);
+  } else if (p.sub) {
+    ctx.fillStyle = "#c9cfe0";
+    ctx.font = `500 28px ${serif}`;
+    ctx.fillText(p.sub, W / 2, 400);
+  }
 
-  // カードとラッキー
-  ctx.fillStyle = "#f0ede4";
-  ctx.font = `600 32px ${serif}`;
-  ctx.fillText(`導きの一枚 「${r.card.name}」`, cx, 872);
-  ctx.fillStyle = "#96a0b9";
-  ctx.font = `500 26px ${serif}`;
-  ctx.fillText(`ラッキーカラーは ${r.daily.luckyColor}`, cx, 916);
-
-  // 日付・URL
   const d = new Date();
   ctx.fillStyle = "#d9b36a";
-  ctx.font = `500 24px ${serif}`;
-  ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`, cx, 976);
+  ctx.font = `500 22px ${serif}`;
+  ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}  —  hidaka86.github.io/fortune`, W / 2, 556);
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }
 
 document.addEventListener("click", async (e) => {
-  const btn = e.target.closest("[data-share-image]");
-  if (!btn || !lastIntegrated) return;
-  const orig = btn.textContent;
-  btn.textContent = "生成中…";
-  try {
-    const blob = await makeShareImage(lastIntegrated);
-    const file = new File([blob], `fortuna-${todayKey()}.png`, { type: "image/png" });
-    if (navigator.canShare?.({ files: [file] })) {
-      await navigator.share({ files: [file], title: "Fortuna 今日の運勢" });
-    } else {
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = file.name;
-      a.click();
-      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  const imgBtn = e.target.closest("[data-share-image]");
+  if (imgBtn) {
+    const p = lastShare[imgBtn.dataset.shareImage];
+    if (!p) return;
+    const orig = imgBtn.textContent;
+    imgBtn.textContent = "生成中…";
+    try {
+      const blob = await makeShareCard(p);
+      const file = new File([blob], `fortuna-${todayKey()}.png`, { type: "image/png" });
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Fortuna" });
+      } else {
+        const aEl = document.createElement("a");
+        aEl.href = URL.createObjectURL(blob);
+        aEl.download = file.name;
+        aEl.click();
+        setTimeout(() => URL.revokeObjectURL(aEl.href), 4000);
+      }
+      imgBtn.textContent = "保存しました ✓";
+    } catch (err) {
+      imgBtn.textContent = err?.name === "AbortError" ? orig : "生成できませんでした";
     }
-    btn.textContent = "保存しました ✓";
-  } catch (err) {
-    if (err?.name !== "AbortError") btn.textContent = "生成できませんでした";
-    else btn.textContent = orig;
+    setTimeout(() => { imgBtn.textContent = orig; }, 1800);
+    return;
   }
-  setTimeout(() => { btn.textContent = orig; }, 1800);
+  const xBtn = e.target.closest("[data-share-x]");
+  if (xBtn) {
+    const p = lastShare[xBtn.dataset.shareX];
+    if (!p) return;
+    const url = "https://twitter.com/intent/tweet?text=" +
+      encodeURIComponent((p.x || p.title) + "\n") + "&url=" + encodeURIComponent(SITE_URL);
+    window.open(url, "_blank", "noopener");
+  }
 });
 
-/* ---------- 統合鑑定 ---------- */
+/* ---------- 鑑定履歴(localStorage) ---------- */
+const HISTORY_KEY = "fortuna:history";
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; } catch { return []; }
+}
+
+function recordHistory(kind, title, text) {
+  try {
+    const list = loadHistory();
+    list.unshift({ d: todayKey(), k: kind, t: title, x: text });
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, 30)));
+  } catch { /* noop */ }
+}
+
+/* ---------- 統合鑑定 ---------- *//* ---------- 統合鑑定 ---------- */
 document.getElementById("integrated-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -721,7 +754,6 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
     birthdate: fd.get("birthdate"),
     theme: fd.get("theme"),
   });
-  lastIntegrated = r;
 
   saveProfile({ name: r.name, birthdate: fd.get("birthdate"), theme: r.theme });
   renderHomeDaily();
@@ -729,6 +761,15 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   const who = r.name ? `${esc(r.name)}さん` : "あなた";
   const ori = r.card.reversed ? "逆位置" : "正位置";
   const cardMeaning = r.card.reversed ? r.card.rev : r.card.up;
+
+  lastShare.integrated = {
+    eyebrow: "INTEGRATED REPORT",
+    title: `${who}の統合鑑定`,
+    keywords: [`${r.zodiac.name} × ${r.kyusei.name}`, `導きの一枚「${r.card.name}」`],
+    score: r.daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
+    x: `【Fortuna 統合鑑定】今日の運気は ${r.daily.score100}/100。導きの一枚は「${r.card.name}(${ori})」✦`,
+  };
+  recordHistory("統合鑑定", `${who} — 運気${r.daily.score100}/100`, `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`);
 
   showResult(document.getElementById("integrated-result"), `
     <div class="result-hero">
@@ -746,7 +787,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
       <p class="result-lead">${r.elementNote}</p>
       <div class="result-actions">
         <button class="btn btn-ghost" data-copy="${esc(buildShareText(r))}">結果をコピー</button>
-        <button class="btn btn-ghost" data-share-image>画像で保存・シェア</button>
+        ${shareButtonsHtml("integrated")}
       </div>
     </div>
     <div class="result-grid">
@@ -791,6 +832,15 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   const moon = moonSign(y, m, d);
   const daily = dailyFortune(birthdate);
 
+  lastShare.western = {
+    eyebrow: "WESTERN ASTROLOGY",
+    title: `太陽は${z.name}、月は${moon.name}`,
+    keywords: [z.keyword],
+    score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
+    x: `【Fortuna 星占い】太陽星座は${z.name}、月星座は${moon.name}。今日の運気は${daily.score100}/100 ✦`,
+  };
+  recordHistory("星占い", `太陽${z.name} × 月${moon.name}`, `${z.keyword}。今日の運気${daily.score100}/100。`);
+
   showResult(document.getElementById("western-result"), `
     <div class="result-hero">
       <span class="result-symbol">${z.symbol}︎</span>
@@ -802,6 +852,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         <span class="chip">守護星 <strong>${z.planet}</strong></span>
         <span class="chip">月星座 <strong>${moon.name}</strong></span>
       </div>
+      ${shareRowHtml("western")}
     </div>
     <div class="result-grid">
       <div class="result-card">
@@ -838,6 +889,15 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
   const pillars = fourPillars(y, m, d);
   const daily = dailyFortune(birthdate);
 
+  lastShare.eastern = {
+    eyebrow: "FOUR PILLARS & NINE STARS",
+    title: `日主「${pillars.day.kan}」— ${pillars.nikkan.symbol}の人`,
+    keywords: [kyusei.name, `${pillars.year.kan}${pillars.year.shi}年生まれ`],
+    score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
+    x: `【Fortuna 東洋占術】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
+  };
+  recordHistory("東洋占術", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
+
   showResult(document.getElementById("eastern-result"), `
     <div class="result-hero">
       <span class="result-symbol">${pillars.day.kan}</span>
@@ -850,6 +910,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
         <div class="pillar is-day"><span class="p-label">日柱</span><span class="p-kanji">${pillars.day.kan}${pillars.day.shi}</span></div>
       </div>
       <p class="result-lead">※ 四柱推命は日柱の干(日主)があなた自身を表します。節入りは簡易日付で計算しています。</p>
+      ${shareRowHtml("eastern")}
     </div>
     <div class="result-grid">
       <div class="result-card">
@@ -1024,6 +1085,19 @@ function tarotOverallHtml() {
 function showTarotSummary(restored) {
   const conf = currentSpreadConf();
   const themeLabel = TAROT_SPREADS[tarotTheme].label;
+
+  const cardsLabel = tarotCards.map((c) => `${c.name}(${c.reversed ? "逆" : "正"})`);
+  lastShare.tarot = {
+    eyebrow: `TAROT — ${themeLabel}`,
+    title: tarotTheme === "daily" ? "今日のわたしへの一枚" : `「${themeLabel}」の答え`,
+    keywords: cardsLabel,
+    sub: (tarotCards[0].reversed ? tarotCards[0].rev : tarotCards[0].up).split("・")[0],
+    x: `【Fortuna タロット・${themeLabel}】引いたのは ${cardsLabel.join("、")} ✦`,
+  };
+  if (!restored) {
+    recordHistory(`タロット(${themeLabel})`, cardsLabel.join(" / "),
+      tarotCards.map((c, i) => `${conf.ja[i]}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${themeMeaning(c)}`).join(" "));
+  }
   const items = tarotCards.map((c, i) => `
     <div class="result-card">
       ${cardH4(conf.en[i], conf.ja[i])}
@@ -1043,6 +1117,7 @@ function showTarotSummary(restored) {
       <p class="result-eyebrow">TAROT — ${themeLabel}</p>
       <h3 class="result-title">${tarotTheme === "daily" ? "今日のあなたへの一枚" : `「${themeLabel}」の答え`}</h3>
       <p class="result-lead" style="margin-inline:auto">正位置はエネルギーが素直に巡っている状態、逆位置は不安やエゴが混ざっている状態を表します。</p>
+      ${shareRowHtml("tarot")}
     </div>
     <div class="result-grid">${items}${tarotOverallHtml()}${dailyNote}</div>
     ${crossLinksHtml("tarot")}
@@ -1115,12 +1190,22 @@ document.getElementById("palm-form").addEventListener("submit", (e) => {
     </div>
   `).join("");
 
+  lastShare.palm = {
+    eyebrow: "PALMISTRY",
+    title: "手のひらに刻まれた資質",
+    keywords: readings.map(({ q, opt }) => `${q.name}:${opt.label}`).slice(0, 2),
+    sub: readings[0].opt.text.split("。")[0] + "。",
+    x: `【Fortuna 手相】${readings.map(({ q, opt }) => q.name + "は「" + opt.label + "」").join("、")}でした ✦`,
+  };
+  recordHistory("手相", readings.map(({ q, opt }) => `${q.name}:${opt.label}`).join(" / "), readings.map(({ opt }) => opt.text).join(" "));
+
   showResult(document.getElementById("palm-result"), `
     <div class="result-hero">
       <span class="result-symbol">掌</span>
       <p class="result-eyebrow">PALMISTRY REPORT</p>
       <h3 class="result-title">手のひらに刻まれた、あなたの資質。</h3>
       <p class="result-lead">四つの線から読み取れる生まれ持った資質です。手相は生き方とともに変化します——季節がめぐる頃、また確かめてみてください。</p>
+      ${shareRowHtml("palm")}
     </div>
     <div class="result-grid">${cards}</div>
     ${crossLinksHtml("palm")}
@@ -1137,6 +1222,18 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
   );
   const nameA = r.a.name ? esc(r.a.name) : "あなた";
   const nameB = r.b.name ? esc(r.b.name) : "お相手";
+  const keyword = aishoKeyword(r);
+  const fromA = perspectiveCompat(r.a, r.b, nameA, nameB);
+  const fromB = perspectiveCompat(r.b, r.a, nameB, nameA);
+
+  lastShare.aisho = {
+    eyebrow: "COMPATIBILITY",
+    title: `${nameA} × ${nameB}`,
+    keywords: [`「${keyword}」`, r.band],
+    score: r.total, scoreLabel: "相性", scoreSuffix: "/100",
+    x: `【Fortuna 相性診断】${nameA}と${nameB}の相性は ${r.total}/100「${keyword}」でした ✦`,
+  };
+  recordHistory("相性診断", `${nameA} × ${nameB} — ${r.total}/100`, `「${keyword}」(${r.band})。${r.advice}`);
 
   const breakdown = [
     { en: "ZODIAC", ja: "星座エレメント", pair: `${r.a.zodiac.name}(${r.a.zodiac.element}) × ${r.b.zodiac.name}(${r.b.zodiac.element})`, ...r.zodiac },
@@ -1159,9 +1256,32 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <span class="result-symbol">縁</span>
       <p class="result-eyebrow">COMPATIBILITY REPORT</p>
       <h3 class="result-title">${nameA} × ${nameB}</h3>
-      <p class="result-keyword">${r.band}</p>
+      <p class="result-keyword">ふたりの関係を一言でいうと —「${keyword}」</p>
       <div class="total-score" style="margin-top:14px"><span class="num" data-count="${r.total}">0</span><span class="denom"> / 100</span></div>
-      <p class="result-lead" style="margin-inline:auto">${r.advice}</p>
+      <p class="result-lead" style="margin-inline:auto">${r.band}。${r.advice}</p>
+      ${shareRowHtml("aisho")}
+    </div>
+    <div class="result-grid" style="margin-bottom:18px">
+      <div class="result-card">
+        ${cardH4("FOR YOU", `${nameA}から見ると`)}
+        <p><strong style="color:var(--gold-bright)">「${fromA.label}」</strong></p>
+        <div class="meter" style="margin-top:12px">
+          <span class="meter-label">安心度</span>
+          <div class="meter-track"><div class="meter-fill ${fromA.score >= 80 ? "hi" : fromA.score >= 68 ? "mid" : "lo"}" data-w="${fromA.score}"></div></div>
+          <span class="meter-value">${fromA.score}</span>
+        </div>
+        <p class="sub" style="margin-top:12px">${fromA.note}</p>
+      </div>
+      <div class="result-card">
+        ${cardH4("FOR PARTNER", `${nameB}から見ると`)}
+        <p><strong style="color:var(--gold-bright)">「${fromB.label}」</strong></p>
+        <div class="meter" style="margin-top:12px">
+          <span class="meter-label">安心度</span>
+          <div class="meter-track"><div class="meter-fill ${fromB.score >= 80 ? "hi" : fromB.score >= 68 ? "mid" : "lo"}" data-w="${fromB.score}"></div></div>
+          <span class="meter-value">${fromB.score}</span>
+        </div>
+        <p class="sub" style="margin-top:12px">${fromB.note}</p>
+      </div>
     </div>
     <div class="result-card span-all" style="margin-bottom:18px">
       ${cardH4("HOW IT WORKS", "総合スコアの計算式")}

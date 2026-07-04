@@ -106,11 +106,20 @@ function dailyFortune(birthdate) {
     monthStar: flow.month.star,
     dayKanshi: flow.day.pillar.kan + flow.day.pillar.shi,
     reason: `今日は${flow.day.pillar.kan}${flow.day.pillar.shi}の日 — あなたの日主「${flow.myKan}」から見て「${flow.day.star.name}」にあたる日です。${flow.day.star.day}`,
+    score100: Math.max(1, Math.min(100, Math.round(total * 20))),
+    action: pick(LUCKY_ACTIONS),
     luckyColor: pick(LUCKY_COLORS),
     luckyItem: pick(LUCKY_ITEMS),
     luckyPlace: pick(LUCKY_PLACES),
     luckyNumber: 1 + Math.floor(rng() * 9),
   };
+}
+
+/* 日替わりでバリエーションが変わるスコア別コメント */
+function pickScoreComment(theme, level) {
+  const variants = SCORE_COMMENT[theme]?.[Math.min(4, Math.max(0, level - 1))];
+  if (!variants) return "";
+  return variants[hashString(todayKey() + theme) % variants.length];
 }
 
 /* ---------- タロット ---------- */
@@ -463,6 +472,41 @@ function compatibilityReading(p1, p2) {
   return { a, b, zodiac, gogyo, eto, total, band, advice };
 }
 
+/* 相性: あなたから見た相手/相手から見たあなた(五行の向きで読む) */
+function perspectiveCompat(me, other, meName, otherName) {
+  const em = me.kyusei.element, eo = other.kyusei.element;
+  if (GOGYO_RELATION[eo]?.boosts === em) return {
+    score: 90, label: "支えてもらえる相手",
+    note: `${otherName}の「${eo}」の気が、${meName}の「${em}」を自然に育ててくれます。そばにいるだけで充電できる関係です。`,
+  };
+  if (GOGYO_RELATION[em]?.boosts === eo) return {
+    score: 80, label: "つい尽くしたくなる相手",
+    note: `${meName}の気が${otherName}を育てる巡り。与える喜びが大きい関係です。自分の充電も忘れずに。`,
+  };
+  if (em === eo) return {
+    score: 84, label: "以心伝心の同志",
+    note: `同じ「${em}」の気を持つ者同士。言葉にしなくても通じ合える、居心地の良い関係です。`,
+  };
+  if (GOGYO_KOKU[eo] === em) return {
+    score: 62, label: "あなたを鍛えてくれる相手",
+    note: `${otherName}の「${eo}」は${meName}の「${em}」に負荷をかける巡り。ぶつかった分だけ、あなたを強くしてくれる存在です。`,
+  };
+  return {
+    score: 68, label: "あなたがリードする相手",
+    note: `${meName}の「${em}」が主導権を握る巡り。引っ張る場面が多い分、相手の歩幅への気配りが絆を深めます。`,
+  };
+}
+
+/* 二人の関係を一言で */
+function aishoKeyword(r) {
+  if (r.total >= 85) return "運命の共鳴";
+  const em = r.a.kyusei.element, eo = r.b.kyusei.element;
+  const sei = GOGYO_RELATION[em]?.boosts === eo || GOGYO_RELATION[eo]?.boosts === em;
+  if (r.total >= 72) return sei ? "育て合うふたり" : em === eo ? "以心伝心の同志" : "磨き合う原石";
+  if (r.total >= 60) return "伸びしろだらけのふたり";
+  return "正反対という才能";
+}
+
 /* ---------- 統合鑑定 ---------- */
 function integratedReading({ name, birthdate, theme }) {
   const [y, m, d] = birthdate.split("-").map(Number);
@@ -484,9 +528,7 @@ function integratedReading({ name, birthdate, theme }) {
       : `西洋の「${zodiac.element}」と東洋の「${kyusei.element}」、異なる気質を併せ持つバランス型です。`;
 
   const themeScore = theme === "total" ? Math.round(daily.total) : daily.scores[theme];
-  const themeComment = theme === "total"
-    ? SCORE_COMMENT.work[Math.min(4, Math.max(0, Math.round(daily.total) - 1))]
-    : SCORE_COMMENT[theme][themeScore - 1];
+  const themeComment = pickScoreComment(theme, themeScore);
 
   return { name, zodiac, eto, jikkan, kyusei, pillars, moon, daily, card, theme, themeScore, themeComment, elementNote };
 }

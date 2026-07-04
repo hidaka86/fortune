@@ -172,6 +172,16 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   text-decoration: underline; text-underline-offset: 3px; padding: 0;
 }
 
+.hero-action {
+  margin-top: 20px; font-family: var(--serif); font-size: 16px;
+  color: var(--muted); letter-spacing: .05em;
+}
+.hero-action strong { color: var(--gold-bright); font-weight: 700; }
+.milestone {
+  margin-top: 12px; font-size: 15px; color: var(--gold-bright);
+  letter-spacing: .06em; font-weight: 700;
+}
+
 /* ---------- ステータスバー(今日の暦) ---------- */
 .status-bar { font-family: inherit;
   display: flex; align-items: center; justify-content: center; gap: 10px 28px;
@@ -779,6 +789,17 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .legend .dot-good { background: var(--gold-bright); }
 .legend .dot-bad { background: #a25a4d; }
 .legend .dot-flat { background: rgba(240, 237, 228, 0.3); }
+
+/* ---------- 鑑定履歴 ---------- */
+.history-item { margin-top: 10px; }
+.history-item summary { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.history-item summary::before { content: none; }
+.hi-date { font-family: var(--latin); font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hi-kind {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .1em; color: var(--gold);
+  border: 1px solid rgba(217, 179, 106, 0.4); border-radius: 999px; padding: 1px 10px;
+}
+.hi-title { color: var(--ink); font-weight: 500; }
 
 /* ---------- フッター ---------- */
 .footer { border-top: 1px solid var(--hairline); padding: 44px 24px 36px; }
