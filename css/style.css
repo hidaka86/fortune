@@ -763,9 +763,11 @@ body.ritual-open { overflow: hidden; }
 .ritual-screen {
   flex: 1; width: 100%;
   display: grid; place-items: center;
-  padding: 64px 18px 48px;
+  grid-template-columns: 100%; /* トラックを画面幅に固定(コンテンツ幅で広がるのを防ぐ) */
+  padding: 64px 12px 48px;
+  overflow-x: clip;
 }
-.ritual-screen .ritual-step { width: 100%; max-width: 860px; }
+.ritual-screen .ritual-step { width: 100%; max-width: 860px; justify-self: center; min-width: 0; }
 
 /* 夜の間の中では文字は月色に */
 .ritual-overlay .ritual-eyebrow { color: var(--chamber-gold); }
@@ -828,29 +830,32 @@ body.ritual-open { overflow: hidden; }
   font-size: 12.5px; color: var(--chamber-muted); letter-spacing: .1em;
 }
 
-/* ドロー(横スクロールの扇) */
+/* ドロー:カルーセル(この帯だけが横スクロールする) */
 .draw-strip {
-  display: flex; overflow-x: auto; padding: 26px 40px 30px;
-  scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+  display: flex; gap: 12px; overflow-x: auto; padding: 26px 24px 30px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: none; -webkit-overflow-scrolling: touch;
   transition: opacity .7s ease;
-  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 6%, #000 94%, transparent);
+  max-width: 100%;
 }
+.draw-strip::-webkit-scrollbar { display: none; }
 .draw-strip.fan-done { opacity: 0; pointer-events: none; }
 .tback.draw-card {
-  flex: 0 0 72px; width: 72px; height: 118px; margin-right: -26px;
-  transform: rotate(var(--r));
+  flex: 0 0 96px; width: 96px; height: 154px;
+  scroll-snap-align: center;
   transition: transform .22s ease, opacity .4s ease, box-shadow .25s ease;
   animation: fanPulse 2.8s ease-in-out infinite;
-  animation-delay: calc(var(--r) * 2);
+  animation-delay: calc(var(--k, 0) * -0.4s);
   cursor: pointer;
 }
 .tback.draw-card:hover, .tback.draw-card:focus-visible {
-  transform: rotate(var(--r)) translateY(-18px) scale(1.05);
+  transform: translateY(-12px) scale(1.04);
   box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55), 0 0 22px rgba(217, 192, 138, 0.5);
   z-index: 2;
 }
-.tback.draw-card.taken { opacity: .12; pointer-events: none; transform: rotate(var(--r)) translateY(-40px) scale(.6); }
+.tback.draw-card.taken { opacity: .14; pointer-events: none; transform: translateY(-30px) scale(.7); }
 
 /* ドロー進捗(多枚数スプレッドはスロットの代わりに小さなチップで) */
 .draw-progress { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; margin: 0 0 4px; }
@@ -1082,12 +1087,6 @@ body.ritual-open { overflow: hidden; }
   .ritual-step .tface .no { font-size: 9px; letter-spacing: .15em; }
   .ritual-step .tface .ori { font-size: 8.5px; padding: 1px 7px; margin-top: 2px; }
   .ritual-step .tarot-slots { gap: 14px; }
-  .tback.draw-card {
-    flex: 0 0 96px; width: 96px; height: 154px; margin-right: -30px;
-  }
-  .tback.draw-card:hover, .tback.draw-card:focus-visible {
-    transform: rotate(var(--r)) translateY(-14px) scale(1.04);
-  }
 }
 @media (max-width: 520px) {
   .spread-picker { grid-template-columns: 1fr; }
@@ -1377,6 +1376,55 @@ body.ritual-open { overflow: hidden; }
   max-width: 1120px; margin: 32px auto 0;
   font-size: 12px; color: rgba(93, 98, 112, 0.85); letter-spacing: .05em;
 }
+
+/* ---------- 観測中オーバーレイ(結果までの溜め) ---------- */
+.obs-overlay {
+  position: fixed; inset: 0; z-index: 110;
+  display: grid; place-items: center;
+  background: rgba(243, 238, 229, 0.93);
+  backdrop-filter: blur(10px);
+  animation: chamberIn .35s ease;
+  transition: opacity .45s ease;
+}
+.obs-overlay.obs-done { opacity: 0; pointer-events: none; }
+.obs-core { text-align: center; padding: 24px; }
+.obs-rings {
+  position: relative; width: 150px; height: 150px; margin: 0 auto 30px;
+}
+.obs-rings i {
+  position: absolute; border-radius: 50%; border: 1px solid transparent;
+}
+.obs-rings i:nth-child(1) {
+  inset: 0;
+  border-color: rgba(168, 132, 78, 0.55) transparent transparent transparent;
+  animation: obsSpin 2.6s linear infinite;
+}
+.obs-rings i:nth-child(2) {
+  inset: 20px;
+  border-color: transparent transparent rgba(28, 35, 51, 0.4) transparent;
+  animation: obsSpin 3.8s linear infinite reverse;
+}
+.obs-rings i:nth-child(3) {
+  inset: 40px;
+  border-color: rgba(168, 132, 78, 0.35) transparent transparent transparent;
+  animation: obsSpin 1.9s linear infinite;
+}
+.obs-dot {
+  position: absolute; left: 50%; top: 50%; width: 8px; height: 8px;
+  margin: -4px 0 0 -4px; border-radius: 50%;
+  background: var(--gold);
+  animation: obsPulse 1.6s ease-in-out infinite;
+}
+@keyframes obsSpin { to { transform: rotate(360deg); } }
+@keyframes obsPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(168, 132, 78, 0.4); }
+  50% { transform: scale(1.25); box-shadow: 0 0 0 14px rgba(168, 132, 78, 0); }
+}
+.obs-text {
+  font-family: var(--serif); font-size: clamp(15.5px, 3.6vw, 18px);
+  color: var(--indigo); letter-spacing: .14em; min-height: 1.8em;
+}
+.obs-text.obs-in { animation: textEmerge .7s cubic-bezier(.2, .7, .3, 1) backwards; }
 
 /* ---------- フォーカス ---------- */
 :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }

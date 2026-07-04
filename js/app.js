@@ -170,6 +170,43 @@ function todayLogicHtml(daily) {
     ${explainHtml(`「${daily.dayStar.name}」って何?通変星のしくみ`, EXPLAIN_TSUHENSEI)}`;
 }
 
+/* 観測中オーバーレイ:占う人のドキドキを引き出す、結果までの溜め */
+const OBS_STEPS = {
+  integrated: ["生年月日から暦を立てています……", "十干と九星を照合しています……", "運命の称号を探しています……"],
+  western: ["10天体の位置を計算しています……", "土星と木星の巡りを読んでいます……", "あなたの章をめくっています……"],
+  eastern: ["年柱・月柱・日柱を立てています……", "日主から通変星を読んでいます……"],
+  aisho: ["二人の暦を並べています……", "星・五行・干支を照合しています……", "縁の形を観測しています……"],
+};
+
+function observeThen(kind, reveal, after) {
+  if (REDUCED_MOTION) { reveal(); after?.(); return; }
+  const steps = OBS_STEPS[kind] || ["観測しています……"];
+  const ov = document.createElement("div");
+  ov.className = "obs-overlay";
+  ov.innerHTML = `
+    <div class="obs-core">
+      <div class="obs-rings" aria-hidden="true"><i></i><i></i><i></i><span class="obs-dot"></span></div>
+      <p class="obs-text"></p>
+    </div>`;
+  document.body.appendChild(ov);
+  document.body.classList.add("ritual-open");
+  const textEl = ov.querySelector(".obs-text");
+  steps.forEach((t, i) => setTimeout(() => {
+    textEl.textContent = t;
+    textEl.classList.remove("obs-in");
+    void textEl.offsetWidth; // アニメーション再始動
+    textEl.classList.add("obs-in");
+    vibrate(8);
+  }, i * 900));
+  setTimeout(() => {
+    reveal();
+    after?.();
+    ov.classList.add("obs-done");
+    document.body.classList.remove("ritual-open");
+    setTimeout(() => ov.remove(), 500);
+  }, steps.length * 900 + 500);
+}
+
 /* 回遊導線:結果の下に「次の扉」を提示 */
 const CROSS_SUGGEST = {
   integrated: [["tarot", "3枚スプレッドで深掘りする"], ["aisho", "気になる人との相性をみる"], ["western", "ホロスコープをみる"]],
@@ -1129,7 +1166,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   };
   recordHistory("統合鑑定", `「${shogo.title}」— 運気${r.daily.score100}/100`, `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`);
 
-  showResult(document.getElementById("integrated-result"), `
+  observeThen("integrated", () => showResult(document.getElementById("integrated-result"), `
     <div class="result-hero">
       <span class="result-symbol">${r.zodiac.symbol}︎</span>
       <p class="result-eyebrow">INTEGRATED REPORT</p>
@@ -1176,8 +1213,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
       </div>
     </div>
     ${crossLinksHtml("integrated")}
-  `);
-  renderSharePreview("integrated");
+  `), () => renderSharePreview("integrated"));
 });
 
 /* ---------- ホロスコープ(太陽 × 月 × 10天体) ---------- */
@@ -1262,7 +1298,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   };
   recordHistory("ホロスコープ", `太陽${z.name} × 月${moonName}(${themeLabel})`, `${z.keyword}。${flow.blocks[2].title}へ向かう流れ。10天体のホロスコープ鑑定。`);
 
-  showResult(document.getElementById("western-result"), `
+  observeThen("western", () => showResult(document.getElementById("western-result"), `
     <div class="result-hero">
       <span class="result-symbol">${z.symbol}︎</span>
       <p class="result-eyebrow">WESTERN ASTROLOGY</p>
@@ -1346,8 +1382,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
       </div>` : ""}
     </div>
     ${crossLinksHtml("western")}
-  `);
-  renderSharePreview("western");
+  `), () => renderSharePreview("western"));
 });
 
 /* ---------- 四柱推命(× 九星気学) ---------- */
@@ -1369,7 +1404,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
   };
   recordHistory("四柱推命", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
 
-  showResult(document.getElementById("eastern-result"), `
+  observeThen("eastern", () => showResult(document.getElementById("eastern-result"), `
     <div class="result-hero">
       <span class="result-symbol">${pillars.day.kan}</span>
       <p class="result-eyebrow">FOUR PILLARS & NINE STARS</p>
@@ -1396,8 +1431,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
       </div>
     </div>
     ${crossLinksHtml("eastern")}
-  `);
-  renderSharePreview("eastern");
+  `), () => renderSharePreview("eastern"));
 });
 
 /* ---------- タロット ---------- */
@@ -1660,7 +1694,7 @@ function renderDraw() {
         : slotsHtml(-1)}
       <p class="ritual-inst">横にスクロールして、呼ばれた気がするカードを<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong></p>
       <div class="draw-strip" id="draw-strip">
-        ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--r:${((k % 5) - 2) * 1.8}deg"`)).join("")}
+        ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--k:${k % 7}"`)).join("")}
       </div>
     </div>`);
 
@@ -2078,7 +2112,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <p class="sub" style="margin-top:12px">${x.note}</p>
     </div>`).join("");
 
-  showResult(document.getElementById("aisho-result"), `
+  observeThen("aisho", () => showResult(document.getElementById("aisho-result"), `
     <div class="result-hero" style="text-align:center">
       <span class="result-symbol">縁</span>
       <p class="result-eyebrow">COMPATIBILITY REPORT</p>
@@ -2125,8 +2159,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     </div>
     <div class="result-grid">${breakdown}</div>
     ${crossLinksHtml("aisho")}
-  `);
-  renderSharePreview("aisho");
+  `), () => renderSharePreview("aisho"));
 });
 
 /* ---------- PWA: Service Worker とインストール ---------- */
