@@ -818,7 +818,7 @@ body.ritual-open { overflow: hidden; }
   flex: 1; width: 100%;
   display: grid; place-items: center;
   grid-template-columns: 100%; /* トラックを画面幅に固定(コンテンツ幅で広がるのを防ぐ) */
-  padding: 64px 12px 48px;
+  padding: 46px 12px 14px;
   overflow-x: clip;
 }
 .ritual-screen .ritual-step { width: 100%; max-width: 860px; justify-self: center; min-width: 0; }
@@ -935,9 +935,9 @@ body.ritual-open { overflow: hidden; }
 
 /* ---- リビール:一枚ずつ全画面でカードと向き合う ---- */
 .rv-stage {
-  min-height: 100%;
+  min-height: calc(100dvh - 60px);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 18px; text-align: center; width: 100%;
+  gap: 10px; text-align: center; width: 100%;
   cursor: pointer; user-select: none; -webkit-user-select: none;
 }
 .rv-count {
@@ -952,19 +952,22 @@ body.ritual-open { overflow: hidden; }
 .rv-label-ja { font-family: var(--serif); font-size: 15px; color: var(--chamber-muted); letter-spacing: .18em; margin-top: -10px; }
 .rv-card {
   position: relative;
-  width: min(62vw, 270px); aspect-ratio: 152 / 244;
-  margin: 10px 0 4px;
+  /* 高さから逆算して、ラベル+言葉ごと1画面に必ず収める */
+  height: min(42dvh, 380px);
+  max-width: 76vw;
+  aspect-ratio: 152 / 244;
+  margin: 8px 0 2px;
 }
 .rv-card .tback.slot-back,
 .rv-card .tarot-reveal { width: 100%; height: 100%; }
 .rv-card .tarot-reveal { box-shadow: 0 0 60px rgba(217, 192, 138, 0.3), 0 26px 60px rgba(0, 0, 0, 0.6); }
 .rv-card .tface { display: none; } /* まずカードだけを見せる。言葉は後から浮かぶ */
 .rv-card .tarot-reveal.no-art .tface { display: flex; } /* 画像なしの時だけ文字面 */
-.rv-text { min-height: 118px; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.rv-text { min-height: 112px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
 .rv-no { font-family: var(--latin); font-size: 14px; letter-spacing: .5em; color: var(--chamber-gold); padding-left: .5em; }
 .rv-name {
-  font-family: var(--serif); font-size: clamp(26px, 5.5vw, 36px); font-weight: 700;
-  letter-spacing: .14em; color: var(--chamber-ink);
+  font-family: var(--serif); font-size: clamp(22px, 5vw, 32px); font-weight: 700;
+  letter-spacing: .1em; color: var(--chamber-ink); line-height: 1.5;
 }
 .rv-en { font-family: var(--latin); font-size: 13px; letter-spacing: .34em; color: var(--chamber-muted); text-transform: uppercase; }
 .rv-ori {
@@ -977,6 +980,15 @@ body.ritual-open { overflow: hidden; }
   font-size: 13px; color: var(--chamber-muted); letter-spacing: .2em;
   animation: hintPulse 2.2s ease-in-out infinite;
 }
+.rv-skip {
+  margin-top: 2px;
+  border: none; background: none;
+  font-size: 12.5px; color: var(--chamber-muted); letter-spacing: .12em;
+  text-decoration: underline; text-underline-offset: 4px;
+  padding: 8px 12px;
+  transition: color .25s ease;
+}
+.rv-skip:hover { color: var(--chamber-gold-bright); }
 /* フリップの瞬間:広がる光の環+舞う火花+間全体が一瞬明るむ */
 .rv-fx { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
 .rv-ring {

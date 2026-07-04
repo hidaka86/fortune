@@ -1713,39 +1713,59 @@ function renderReveal() {
       <div class="rv-stage" id="rv-stage">
         <p class="rv-count emerge">${i + 1} / ${conf.count}</p>
         <p class="rv-label emerge" style="--ed:.15s">${pos.en}</p>
-        <p class="rv-label-ja emerge" style="--ed:.35s">${pos.ja}</p>
+        <p class="rv-label-ja emerge" style="--ed:.3s">${pos.ja}</p>
         <div class="rv-card" id="rv-card">${tbackHtml("slot-back")}</div>
         <div class="rv-text" id="rv-text"></div>
+        ${conf.count > 1 ? `<button class="rv-skip" id="rv-skip">すべて開いて、結果へ →</button>` : ""}
       </div>`);
     const rvCard = document.getElementById("rv-card");
     const rvText = document.getElementById("rv-text");
-    let ready = false;
 
-    const chargeAt = i === 0 ? 900 : 450; // 2枚目以降はテンポよく
-    const flipAt = chargeAt + 800;
-    setTimeout(() => rvCard.querySelector(".tback")?.classList.add("charging"), chargeAt); // 溜め
-    setTimeout(() => {
-      rvCard.innerHTML = revealedCardHtml(card) + revealFxHtml(); // フリップ:まずカードだけ
-      ritualOverlay.classList.add("flash"); // 間全体が一瞬明るむ
-      setTimeout(() => ritualOverlay.classList.remove("flash"), 800);
+    /* 段階: 0=溜め 1=フリップ済み 2=言葉まで出た(次へ進める)
+       タップするたびに次の段階へ先送りできる。連打でサクサク、待てばフル演出 */
+    let phase = 0;
+    const timers = [];
+    const later = (fn, ms) => timers.push(setTimeout(fn, ms));
+    const clearTimers = () => { timers.forEach(clearTimeout); timers.length = 0; };
+
+    const doFlip = () => {
+      if (phase >= 1) return;
+      phase = 1;
+      rvCard.innerHTML = revealedCardHtml(card) + revealFxHtml(); // まずカードだけ
+      ritualOverlay.classList.add("flash");
+      later(() => ritualOverlay.classList.remove("flash"), 800);
       vibrate([15, 60, 30]);
-    }, flipAt);
-    setTimeout(() => { // 言葉が浮かび上がる
+      later(doText, 900); // 待つ人には、言葉がゆっくり浮かぶ
+    };
+    const doText = () => {
+      if (phase >= 2) return;
+      phase = 2;
       rvText.innerHTML = `
         <span class="rv-no emerge">${cardNo(card)}</span>
-        <span class="rv-name emerge" style="--ed:.25s">${card.name}</span>
-        <span class="rv-en emerge" style="--ed:.5s">${card.en}</span>
-        <span class="rv-ori ${card.reversed ? "rev" : "up"} emerge" style="--ed:.8s">${card.reversed ? "逆位置" : "正位置"}</span>
-        <span class="rv-hint emerge" style="--ed:1.4s">${i + 1 < conf.count ? "─ タップして、つぎの一枚へ ─" : "─ タップして、読み解きへ ─"}</span>`;
-      ready = true;
-    }, flipAt + 900);
+        <span class="rv-name emerge" style="--ed:.2s">${card.name}</span>
+        <span class="rv-en emerge" style="--ed:.4s">${card.en}</span>
+        <span class="rv-ori ${card.reversed ? "rev" : "up"} emerge" style="--ed:.65s">${card.reversed ? "逆位置" : "正位置"}</span>
+        <span class="rv-hint emerge" style="--ed:1.2s">${i + 1 < conf.count ? "─ タップして、つぎの一枚へ ─" : "─ タップして、読み解きへ ─"}</span>`;
+    };
 
-    document.getElementById("rv-stage").addEventListener("click", () => {
-      if (!ready) return;
+    const chargeAt = i === 0 ? 800 : 400; // 2枚目以降はテンポよく
+    later(() => rvCard.querySelector(".tback")?.classList.add("charging"), chargeAt);
+    later(doFlip, chargeAt + 800);
+
+    document.getElementById("rv-stage").addEventListener("click", (e) => {
+      if (e.target.closest("#rv-skip")) return;
       vibrate(10);
+      if (phase === 0) { clearTimers(); doFlip(); return; } // 溜めをスキップして即オープン
+      if (phase === 1) { clearTimers(); doText(); return; } // 言葉も即表示
+      clearTimers();
       i += 1;
       if (i < conf.count) showCard();
       else finish();
+    });
+    document.getElementById("rv-skip")?.addEventListener("click", () => {
+      clearTimers();
+      vibrate(10);
+      finish(); // 結果だけ見たい人はここから一気に
     });
   }
 
