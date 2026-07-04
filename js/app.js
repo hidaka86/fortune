@@ -330,6 +330,7 @@ function renderHomeDaily() {
   }
 
   const daily = dailyFortune(p.birthdate);
+  const verdict = dailyVerdict(p.birthdate);
   const visits = updateStreak() || {};
   const phase = moonPhaseToday();
   const d = new Date();
@@ -338,17 +339,40 @@ function renderHomeDaily() {
   heroEl.classList.add("hero-member");
   heroContentEl.innerHTML = `
     <p class="hero-eyebrow">Today's Compass — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
-    <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span><br /><span class="nw">今日は<em>「${daily.dayStar.name}」</em>の日。</span></h1>
-    <p class="hero-sub">${daily.dayStar.day}</p>
+    <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span><br /><span class="nw">今日は<em>「${verdict.word}」</em>。</span></h1>
+    <p class="hero-sub">${verdict.advice}</p>
     <div class="hero-score">
       <span><span class="hs-num">${daily.total.toFixed(1)}</span><span class="hs-denom"> / 5.0</span></span>
       ${starsHtml(Math.round(daily.total))}
+      <span class="chip">「${daily.dayStar.name}」の日</span>
       <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
       <span class="chip">連続 <strong>${visits.streak || 1}日目</strong></span>
     </div>
     <div class="hero-cta">
       <button class="btn btn-primary btn-lg" data-nav="mypage">今日の羅針盤をひらく</button>
       <button class="btn btn-ghost btn-lg" data-nav="tarot">今日の一枚を引く</button>
+    </div>`;
+}
+
+/* ---------- 今日の結論(総合判定) ---------- */
+function verdictHtml(v) {
+  const rows = v.factors.map((f) => `
+    <div class="vf-row">
+      <span class="vf-vote ${f.score > 0 ? "up" : f.score < 0 ? "down" : "flat"}">${f.score > 0 ? "▲" : f.score < 0 ? "▼" : "―"}</span>
+      <span class="vf-body"><span class="vf-method">${f.method}</span><strong>${f.label}</strong> — ${f.note}</span>
+    </div>`).join("");
+  return `
+    <div class="result-card span-all verdict-card">
+      ${cardH4("VERDICT", "今日の結論")}
+      <div class="verdict-main">
+        <span class="verdict-rank">${v.rank}</span>
+        <div class="verdict-text">
+          <p class="verdict-word">今日は「${v.word}」</p>
+          <p class="verdict-advice">${v.advice}</p>
+        </div>
+      </div>
+      <div class="vf-list">${rows}</div>
+      ${explainHtml("この結論はどう出している?", "四柱推命の日運・月運、干支の巡り(三合・支合・冲)、月の満ち欠け——それぞれ独立した暦の手法が今日をどう見ているかを「票」として集計し、総合の結論を出しています。すべてが同じ方向を向く日は、それだけ強い日です。")}
     </div>`;
 }
 
@@ -429,6 +453,7 @@ function renderMypage() {
   const themes = themeDirections(kichi);
   const phase = moonPhaseToday();
 
+  const verdict = dailyVerdict(p.birthdate);
   const best = [...week].sort((a, b) => b.power - a.power)[0];
   const weekHtml = week.map((w) => `
     <div class="week-day ${w.today ? "is-today" : ""} ${w === best ? "is-best" : ""}">
@@ -462,6 +487,7 @@ function renderMypage() {
     </div>
 
     <div class="result-grid">
+      ${verdictHtml(verdict)}
       <div class="result-card span-all">
         ${cardH4("TODAY'S KI", "今日の気流")}
         ${todayLogicHtml(daily)}

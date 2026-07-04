@@ -322,6 +322,66 @@ function themeDirections(kichi) {
   };
 }
 
+/* ---------- 総合判定「今日の結論」 ----------
+   複数の手法論の「票」を合算して、今日がどういう日かを一言で結論づける */
+const SANGO_GROUPS = [["申", "子", "辰"], ["巳", "酉", "丑"], ["寅", "午", "戌"], ["亥", "卯", "未"]];
+
+function dailyVerdict(birthdate) {
+  const [by, bm, bd] = birthdate.split("-").map(Number);
+  const flow = kiFlow(birthdate);
+  const phase = moonPhaseToday();
+  const factors = [];
+  const starPower = (star) => Object.values(star.weights).reduce((a, b) => a + b, 0);
+
+  // 1. 四柱推命・日運
+  const dp = starPower(flow.day.star);
+  const dScore = dp >= 1.2 ? 2 : dp >= 0.5 ? 1 : dp >= 0 ? 0 : -1;
+  factors.push({
+    method: "四柱推命・日運", label: `「${flow.day.star.name}」の日`,
+    score: dScore, note: flow.day.star.day.split("。")[0] + "。",
+  });
+
+  // 2. 四柱推命・月運
+  const mp = starPower(flow.month.star);
+  const mScore = mp >= 1.2 ? 1 : mp >= 0 ? 0 : -1;
+  factors.push({
+    method: "四柱推命・月運", label: `「${flow.month.star.name}」の月`,
+    score: mScore, note: mScore > 0 ? "月の基調も追い風です。" : mScore === 0 ? "月の基調は穏やか。" : "月の基調は充電寄りです。",
+  });
+
+  // 3. 干支の巡り(今日の日支 × 生まれ年支)
+  const myBranch = getEto(by, bm, bd).name;
+  const now = new Date();
+  const todayBranch = dayPillar(now.getFullYear(), now.getMonth() + 1, now.getDate()).shi;
+  const diff = ((JUNISHI.indexOf(todayBranch) - JUNISHI.indexOf(myBranch)) % 12 + 12) % 12;
+  const isSango = SANGO_GROUPS.some((g) => g.includes(myBranch) && g.includes(todayBranch)) && myBranch !== todayBranch;
+  const isShigou = SHIGOU_PAIRS.some(([a, b]) => (a === myBranch && b === todayBranch) || (b === myBranch && a === todayBranch));
+  let eScore = 0, eNote = "穏やかな巡り合わせです。";
+  if (isSango) { eScore = 2; eNote = `${myBranch}と${todayBranch}は「三合」。強力な援軍が巡る吉日です。`; }
+  else if (isShigou) { eScore = 2; eNote = `${myBranch}と${todayBranch}は「支合」。縁がまとまりやすい日です。`; }
+  else if (diff === 6) { eScore = -2; eNote = `${myBranch}と${todayBranch}は正反対の「冲」。予定変更や衝突が起きやすい日です。`; }
+  else if (diff === 0) { eScore = 1; eNote = "生まれ年と同じ気が巡る、自分らしくいられる日。"; }
+  factors.push({ method: "干支の巡り", label: `${todayBranch}の日 × ${myBranch}年生まれ`, score: eScore, note: eNote });
+
+  // 4. 月相
+  const waxing = ["新月", "三日月", "上弦の月", "十三夜の月"].includes(phase.name);
+  const pScore = ["新月", "上弦の月", "満月"].includes(phase.name) ? 1 : waxing ? 0 : -1;
+  factors.push({
+    method: "月相", label: `${phase.emoji} ${phase.name}`,
+    score: pScore, note: waxing || phase.name === "満月" ? "月が満ちていく、始めることに向く時期。" : "月が欠けていく、整理と手放しに向く時期。",
+  });
+
+  const total = factors.reduce((a, f) => a + f.score, 0);
+  const [rank, word, advice] =
+    total >= 4 ? ["大吉", "攻めの日", "複数の暦が同時に追い風を示す、めったにない日。大一番・告白・提案はこの日に。"] :
+    total >= 2 ? ["吉", "前進の日", "流れは味方しています。準備してきたことを一歩、形にしましょう。"] :
+    total >= 0 ? ["平", "平常の日", "特別な追い風も向かい風もない日。ルーティンを丁寧に積むのが最善手です。"] :
+    total >= -2 ? ["静", "整えの日", "攻めるより整える日。振り返り・片付け・仕込みが、明日からの追い風になります。"] :
+    ["休", "充電の日", "複数の暦が休息を勧めています。今日は自分を甘やかしてOK。休むのも戦略です。"];
+
+  return { factors, total, rank, word, advice };
+}
+
 /* ---------- 月相(今日の月) ---------- */
 function moonPhaseToday() {
   const now = new Date();
