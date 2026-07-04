@@ -853,6 +853,22 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   animation: viewIn .6s ease;
 }
 
+/* ---------- 称号図鑑 ---------- */
+.col-count { font-size: 15.5px; color: var(--muted); }
+.col-count strong { font-family: var(--latin); font-size: 24px; color: var(--gold-bright); }
+.col-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.col-item {
+  border: 1px solid rgba(217, 179, 106, 0.35); border-radius: 8px;
+  padding: 12px 14px; background: rgba(217, 179, 106, 0.05);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.col-title { font-family: var(--serif); font-size: 14.5px; font-weight: 700; color: var(--gold-bright); letter-spacing: .02em; }
+.col-meta { font-size: 12px; color: var(--muted); }
+.app-card { border-color: rgba(217, 179, 106, 0.35); }
+
 /* ---------- 鑑定履歴 ---------- */
 .history-item { margin-top: 10px; }
 .history-item summary { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }

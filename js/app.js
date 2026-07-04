@@ -543,6 +543,37 @@ function renderMypage() {
     </div>
 
       <div class="result-card span-all">
+        ${cardH4("COLLECTION", "称号図鑑")}
+        ${(() => {
+          addToCollection(fortuneTitle(p.birthdate).title, p.name || "あなた");
+          const col = loadCollection();
+          const bar = Math.min(100, col.length / 1080 * 100 * 20); // 視覚用に20倍で進捗を見せる
+          return `
+            <p class="col-count"><strong>${col.length}</strong> / 1080 種の称号を発見</p>
+            <div class="meter" style="margin:10px 0 16px">
+              <span class="meter-label">発見率</span>
+              <div class="meter-track"><div class="meter-fill mid" data-w="${bar.toFixed(1)}"></div></div>
+              <span class="meter-value">${(col.length / 1080 * 100).toFixed(1)}%</span>
+            </div>
+            <div class="col-grid">${col.slice(0, 24).map((c) => `
+              <div class="col-item">
+                <span class="col-title">「${esc(c.title)}」</span>
+                <span class="col-meta">${esc(c.owner)} ・ ${c.d.slice(5).replace("-", "/")}</span>
+              </div>`).join("")}</div>
+            <p class="sub" style="margin-top:12px">統合鑑定・相性診断・友達からの招待リンクで、新しい称号が図鑑に加わります。</p>`;
+        })()}
+      </div>
+
+      <div class="result-card span-all app-card">
+        ${cardH4("APP", "ホーム画面に追加")}
+        <p>Fortunaをホーム画面に追加すると、毎朝ワンタップで「今日の羅針盤」が開きます。</p>
+        <div class="result-actions" style="margin-top:14px">
+          <button class="btn btn-primary" id="install-app">アプリとして追加する</button>
+        </div>
+        <p class="sub app-ios-hint" style="margin-top:10px">iPhoneの方: Safariの共有ボタン → 「ホーム画面に追加」でインストールできます。</p>
+      </div>
+
+      <div class="result-card span-all">
         ${cardH4("HISTORY", "鑑定の記録")}
         ${(() => {
           const hist = loadHistory();
@@ -573,6 +604,18 @@ function renderMypage() {
       requestAnimationFrame(() => { m.style.width = `${m.dataset.w}%`; });
     });
   });
+
+  const installBtn = document.getElementById("install-app");
+  if (installBtn) {
+    if (!deferredInstall) installBtn.style.display = "none";
+    installBtn.addEventListener("click", async () => {
+      if (!deferredInstall) return;
+      deferredInstall.prompt();
+      await deferredInstall.userChoice;
+      deferredInstall = null;
+      installBtn.style.display = "none";
+    });
+  }
 
   document.getElementById("logout").addEventListener("click", () => {
     if (!confirm("この端末に保存された登録情報と来訪記録を削除します。よろしいですか?")) return;
@@ -786,6 +829,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   const cardMeaning = r.card.reversed ? r.card.rev : r.card.up;
 
   const shogo = fortuneTitle(fd.get("birthdate"));
+  addToCollection(shogo.title, r.name || "あなた");
   lastShare.integrated = {
     eyebrow: "MY FORTUNE IDENTITY",
     title: `「${shogo.title}」`,
@@ -1265,6 +1309,8 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
   const fromB = perspectiveCompat(r.b, r.a, nameB, nameA);
   const shogoA = fortuneTitle(fd.get("birthdate1"));
   const shogoB = fortuneTitle(fd.get("birthdate2"));
+  addToCollection(shogoA.title, r.a.name || "あなた");
+  addToCollection(shogoB.title, r.b.name || "お相手");
 
   lastShare.aisho = {
     eyebrow: "COMPATIBILITY",
@@ -1343,6 +1389,35 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
   renderSharePreview("aisho");
 });
 
+/* ---------- PWA: Service Worker とインストール ---------- */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => { /* 非対応環境は無視 */ });
+  });
+}
+let deferredInstall = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstall = e;
+});
+
+/* ---------- 称号図鑑(localStorage) ---------- */
+const COLLECTION_KEY = "fortuna:collection";
+
+function loadCollection() {
+  try { return JSON.parse(localStorage.getItem(COLLECTION_KEY)) || []; } catch { return []; }
+}
+
+function addToCollection(title, owner) {
+  if (!title) return;
+  try {
+    const list = loadCollection();
+    if (list.some((c) => c.title === title)) return;
+    list.unshift({ title, owner: owner || "", d: todayKey() });
+    localStorage.setItem(COLLECTION_KEY, JSON.stringify(list.slice(0, 200)));
+  } catch { /* noop */ }
+}
+
 /* ---------- 招待状(シェアURLから来た人へ) ---------- */
 function renderInviteBanner() {
   const el = document.getElementById("invite-banner");
@@ -1351,6 +1426,7 @@ function renderInviteBanner() {
   const title = q.get("it");
   if (!title || title.length > 40) return;
   const inviter = (q.get("in") || "").slice(0, 20);
+  addToCollection(title, inviter || "友人");
   const who = inviter ? `${esc(inviter)}さん` : "友人";
   el.innerHTML = `
     <div class="invite-card">
