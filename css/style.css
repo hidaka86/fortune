@@ -654,6 +654,186 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   .fan-card { animation: none; }
 }
 
+/* ---------- タロット儀式フロー ---------- */
+.ritual-step { text-align: center; animation: viewIn .5s ease; }
+.ritual-eyebrow {
+  font-family: var(--latin); font-size: 13px; font-weight: 600;
+  letter-spacing: .38em; color: var(--gold); text-transform: uppercase; margin-bottom: 10px;
+}
+.ritual-title { font-family: var(--serif); font-size: clamp(19px, 3vw, 24px); font-weight: 700; letter-spacing: .05em; margin-bottom: 22px; }
+.ritual-inst { font-size: 16px; color: var(--muted); letter-spacing: .05em; margin-bottom: 20px; line-height: 2; }
+.ritual-inst strong { color: var(--gold-bright); }
+.ritual-hint { font-size: 13.5px; color: var(--muted); margin-top: 16px; letter-spacing: .06em; }
+
+/* スプレッド選択 */
+.spread-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+.spread-opt {
+  text-align: left; border: 1px solid var(--hairline); border-radius: 10px;
+  background: rgba(0, 0, 0, 0.18); padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 3px;
+  transition: border-color .25s ease, background .25s ease;
+}
+.spread-opt.active { border-color: var(--gold); background: rgba(217, 179, 106, 0.09); }
+.so-label { font-family: var(--serif); font-size: 17px; font-weight: 700; letter-spacing: .06em; }
+.spread-opt.active .so-label { color: var(--gold-bright); }
+.so-desc { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+.genre-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
+.genre-label { font-size: 13px; color: var(--muted); letter-spacing: .08em; }
+.ritual-question {
+  width: 100%; background: rgba(0, 0, 0, 0.3); border: 1px solid var(--hairline);
+  border-radius: 6px; padding: 13px 14px; color: var(--ink); font-size: 16px;
+  font-family: inherit; outline: none; transition: border-color .25s ease;
+}
+.ritual-question:focus { border-color: var(--gold); }
+
+/* カード裏面(紺×金・画像があれば差し替え) */
+.tback {
+  width: 96px; height: 156px; border-radius: 9px;
+  border: 1px solid rgba(217, 179, 106, 0.45);
+  background:
+    radial-gradient(circle at 50% 30%, rgba(237, 217, 163, 0.3) 0 2px, transparent 3px),
+    radial-gradient(circle at 30% 55%, rgba(237, 217, 163, 0.18) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 70% 62%, rgba(237, 217, 163, 0.18) 0 1.5px, transparent 2.5px),
+    conic-gradient(from 45deg at 50% 50%, #1a1d3c 0 25%, #232048 0 50%, #1a1d3c 0 75%, #232048 0 100%);
+  box-shadow: inset 0 0 0 4px rgba(217, 179, 106, 0.1);
+  display: grid; place-items: center;
+  color: rgba(237, 217, 163, 0.7); font-size: 16px;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+}
+.tarot-back-art .tback { background: url("../images/tarot/tarot_back.webp") center/cover no-repeat; }
+.tarot-back-art .tback span { visibility: hidden; }
+
+/* シャッフル */
+.shuffle-stack {
+  position: relative; width: 150px; height: 240px; margin: 26px auto 8px;
+  cursor: pointer; touch-action: none;
+}
+.shuffle-stack .tback.sc {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  animation: shufSlow 2.6s ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.38s);
+}
+.shuffle-stack.fast .tback.sc { animation: shufFast .5s ease-in-out infinite; animation-delay: calc(var(--i) * -0.07s); }
+.shuffle-stack.stopped .tback.sc { animation: none; transform: translate(calc(var(--i) * 0.6px), calc(var(--i) * -0.8px)); transition: transform .3s ease; }
+@keyframes shufSlow {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  25% { transform: translate(-30px, -6px) rotate(-5deg); }
+  50% { transform: translate(4px, 4px) rotate(2deg); }
+  75% { transform: translate(30px, -5px) rotate(5deg); }
+}
+@keyframes shufFast {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-54px, -12px) rotate(-10deg); }
+  45% { transform: translate(10px, 8px) rotate(4deg); }
+  70% { transform: translate(52px, -10px) rotate(9deg); }
+}
+
+/* カット(3つの山) */
+.cut-piles { display: flex; gap: 26px; justify-content: center; margin: 26px 0 10px; flex-wrap: wrap; }
+.cut-pile {
+  position: relative; width: 110px; height: 190px;
+  border: none; background: none; padding: 0;
+  transition: transform .25s ease, opacity .35s ease;
+}
+.cut-pile .tback.cp { position: absolute; left: 0; top: 0; width: 96px; height: 156px; }
+.cut-pile .cp1 { transform: translate(0, 12px) rotate(-3deg); }
+.cut-pile .cp2 { transform: translate(5px, 6px) rotate(1deg); }
+.cut-pile .cp3 { transform: translate(10px, 0) rotate(4deg); }
+.cut-pile:hover { transform: translateY(-8px); }
+.cut-pile.chosen { transform: translateY(-14px) scale(1.06); }
+.cut-pile.chosen .tback { box-shadow: 0 0 26px rgba(237, 217, 163, 0.55), inset 0 0 0 4px rgba(217, 179, 106, 0.25); }
+.cut-pile.faded { opacity: .25; }
+.cut-label {
+  position: absolute; left: 0; right: 0; bottom: -4px;
+  font-size: 12.5px; color: var(--muted); letter-spacing: .1em;
+}
+
+/* ドロー(横スクロールの扇) */
+.draw-strip {
+  display: flex; overflow-x: auto; padding: 22px 32px 26px;
+  scrollbar-width: thin; -webkit-overflow-scrolling: touch;
+  transition: opacity .7s ease;
+}
+.draw-strip.fan-done { opacity: 0; pointer-events: none; }
+.tback.draw-card {
+  flex: 0 0 72px; width: 72px; height: 118px; margin-right: -26px;
+  transform: rotate(var(--r));
+  transition: transform .22s ease, opacity .4s ease, box-shadow .25s ease;
+  animation: fanPulse 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--r) * 2);
+  cursor: pointer;
+}
+.tback.draw-card:hover, .tback.draw-card:focus-visible {
+  transform: rotate(var(--r)) translateY(-18px) scale(1.05);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.55), 0 0 22px rgba(237, 217, 163, 0.5);
+  z-index: 2;
+}
+.tback.draw-card.taken { opacity: .12; pointer-events: none; transform: rotate(var(--r)) translateY(-40px) scale(.6); }
+
+/* スロット上の裏向きカード+溜め */
+.tback.slot-back { width: 152px; height: 244px; border-radius: 10px; margin: 0 auto; }
+.tback.charging { animation: charge .8s ease-in-out forwards; }
+@keyframes charge {
+  0% { box-shadow: inset 0 0 0 4px rgba(217, 179, 106, 0.1); transform: scale(1); }
+  60% { box-shadow: 0 0 34px rgba(237, 217, 163, 0.65), inset 0 0 0 5px rgba(217, 179, 106, 0.4); transform: scale(1.04); }
+  100% { box-shadow: 0 0 46px rgba(237, 217, 163, 0.9); transform: scale(1.02); }
+}
+
+/* カード表面(画像があれば絵札、なければ文字デザイン) */
+.tarot-art {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; border-radius: 9px;
+}
+.tarot-reveal.is-rev .tarot-art { transform: rotate(180deg); }
+.tarot-reveal.no-art .tarot-art { display: none; }
+.tface {
+  position: absolute; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  padding: 44px 8px 12px;
+  background: linear-gradient(transparent, rgba(10, 13, 29, 0.95) 58%);
+  border-radius: 0 0 9px 9px;
+}
+.tarot-reveal.no-art .tface {
+  position: static; background: none; padding: 16px 10px; gap: 3px;
+  justify-content: center; height: 100%;
+}
+.tface .no { font-family: var(--latin); font-size: 13px; letter-spacing: .3em; color: var(--gold); }
+.tface .sym { display: none; font-size: 44px; margin: 8px 0 4px; }
+.tarot-reveal.no-art .sym { display: block; }
+.tface .nm { font-family: var(--serif); font-size: 17px; font-weight: 700; letter-spacing: .1em; }
+.tface .en { font-size: 10.5px; letter-spacing: .18em; color: var(--muted); text-transform: uppercase; }
+.tface .ori { margin-top: 8px; font-size: 11px; font-weight: 700; padding: 2px 12px; border-radius: 99px; letter-spacing: .1em; }
+.tface .ori.up { border: 1px solid rgba(94, 234, 212, 0.4); color: var(--teal); background: rgba(10,13,29,.5); }
+.tface .ori.rev { border: 1px solid rgba(232, 121, 166, 0.4); color: var(--rose); background: rgba(10,13,29,.5); }
+
+/* 結果 */
+.tarot-q {
+  font-family: var(--serif); font-size: 16.5px; color: var(--gold-bright);
+  letter-spacing: .05em; margin-bottom: 10px;
+}
+.yn-card { text-align: center; border-color: rgba(217, 179, 106, 0.45); }
+.yn-answer {
+  font-family: var(--latin); font-size: 74px; font-weight: 700; line-height: 1.1;
+  letter-spacing: .12em;
+}
+.yn-answer.yes { color: var(--teal); text-shadow: 0 0 34px rgba(94, 234, 212, 0.45); }
+.yn-answer.no { color: var(--rose); text-shadow: 0 0 34px rgba(232, 121, 166, 0.45); }
+
+/* 儀式中(ドロー時)はスロットをコンパクトに保ち、扇を画面内に収める */
+@media (max-width: 720px) {
+  .ritual-step .tarot-slots { gap: 12px; margin-bottom: 14px; }
+  .ritual-step .tarot-slot-empty,
+  .ritual-step .tback.slot-back { width: 88px; height: 142px; }
+  .ritual-step .tarot-slot-label { font-size: 11px; }
+  .ritual-step .tarot-slot-label small { font-size: 11px; }
+}
+
+@media (max-width: 520px) {
+  .spread-picker { grid-template-columns: 1fr; }
+  .cut-piles { gap: 12px; }
+  .cut-pile { width: 96px; }
+}
+
 /* ---------- 手相 ---------- */
 .palm-layout {
   display: grid; grid-template-columns: 340px 1fr; gap: 20px;

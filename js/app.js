@@ -1044,27 +1044,27 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
 });
 
 /* ---------- タロット ---------- */
-const tarotBoard = document.getElementById("tarot-board");
+/* 儀式フロー: 問いかけ -> シャッフル(長押し) -> カット(3山) -> ドロー(扇) -> リビール
+   シード = 指を離した時刻 + カット選択 + 引いた位置。ユーザーの手が結果を決める。 */
+const tarotStage = document.getElementById("tarot-stage");
 const tarotSummary = document.getElementById("tarot-summary");
-const tarotThemeSeg = document.getElementById("tarot-theme-seg");
-const tarotSpreadSeg = document.getElementById("tarot-spread-seg");
-const tarotGuide = document.getElementById("tarot-guide");
-const tarotReset = document.getElementById("tarot-reset");
 
-let tarotTheme = "daily";
-let tarotSpread = 1;
-let tarotCards = [];
-let tarotPicked = 0;
-
-const DAILY_CARD_KEY = "fortuna:dailycard";
 const ROMAN = ["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"];
 const TAROT_ICONS = ["🃏","🎩","📖","👑","🏛","🔑","💞","🏇","🦁","🏮","🎡","⚖️","🙃","🦋","🏺","⛓","🗼","⭐","🌙","☀️","🎺","🌍"];
+const TAROT_BACK_IMG = "images/tarot/tarot_back.webp";
+const tarotImg = (n) => `images/tarot/tarot_${String(n).padStart(2, "0")}_${TAROT_SLUGS[n]}.webp`;
 
-function themeMeaning(card) {
-  const t = TAROT_THEMES[card.n]?.[tarotTheme];
-  if (tarotTheme === "daily" || !t) return card.reversed ? card.rev : card.up;
-  return card.reversed ? t.rev : t.up;
-}
+// 裏面画像があればCSSデザインから差し替え(後日画像を置くだけで切り替わる)
+(() => {
+  const im = new Image();
+  im.onload = () => document.documentElement.classList.add("tarot-back-art");
+  im.src = TAROT_BACK_IMG;
+})();
+
+const vibrate = (ms) => { try { navigator.vibrate?.(ms); } catch { /* 非対応 */ } };
+
+const DAILY_CARD_KEY = "fortuna:dailycard";
+const QUESTION_KEY = "fortuna:question";
 
 function loadDailyCard() {
   try {
@@ -1072,150 +1072,312 @@ function loadDailyCard() {
     return v?.date === todayKey() ? v : null;
   } catch { return null; }
 }
-
 function saveDailyCard(c) {
   try { localStorage.setItem(DAILY_CARD_KEY, JSON.stringify({ date: todayKey(), n: c.n, reversed: c.reversed })); } catch { /* noop */ }
+}
+
+const TAROT_GENRES = [["total", "総合"], ["love", "恋愛"], ["work", "仕事"], ["money", "金運"]];
+
+const ritual = { spread: "daily", genre: "total", question: "", releaseT: 0, cutIdx: 0, positions: [], cards: [] };
+
+function genreMeaning(card) {
+  const t = TAROT_THEMES[card.n]?.[ritual.genre];
+  if (ritual.genre === "total" || !t) return card.reversed ? card.rev : card.up;
+  return card.reversed ? t.rev : t.up;
+}
+
+function tbackHtml(cls = "", attrs = "") {
+  return `<div class="tback ${cls}" ${attrs}><span>✦</span></div>`;
+}
+
+function slotsHtml(revealUpTo = -1) {
+  const conf = RITUAL_SPREADS[ritual.spread];
+  return `<div class="tarot-slots">${conf.positions.map((p, i) => `
+    <div class="tarot-slot">
+      <div class="tarot-slot-label">${p.en}<small>${p.ja}</small></div>
+      <div class="tarot-slot-body" data-slot="${i}">
+        ${i <= revealUpTo ? revealedCardHtml(ritual.cards[i])
+          : i < ritual.cards.length ? tbackHtml("slot-back")
+          : '<div class="tarot-slot-empty">✦</div>'}
+      </div>
+    </div>`).join("")}</div>`;
 }
 
 function revealedCardHtml(c) {
   return `
     <div class="tarot-reveal ${c.reversed ? "is-rev" : ""}">
-      <span class="no">${ROMAN[c.n]}</span>
-      <span class="sym">${TAROT_ICONS[c.n]}</span>
-      <span class="nm">${c.name}</span>
-      <span class="en">${c.en}</span>
-      <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span>
+      <img class="tarot-art" src="${tarotImg(c.n)}" alt="${c.name}" loading="lazy"
+        onerror="this.parentElement.classList.add('no-art')" />
+      <div class="tface">
+        <span class="no">${ROMAN[c.n]}</span>
+        <span class="sym">${TAROT_ICONS[c.n]}</span>
+        <span class="nm">${c.name}</span>
+        <span class="en">${c.en}</span>
+        <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span>
+      </div>
     </div>`;
 }
 
-function currentSpreadConf() {
-  return TAROT_SPREADS[tarotTheme].spreads[tarotSpread];
-}
-
-function renderTarotBoard(allRevealed) {
-  const conf = currentSpreadConf();
-  const slots = tarotCards.map((c, i) => `
-    <div class="tarot-slot">
-      <div class="tarot-slot-label">${conf.en[i]}<small>${conf.ja[i]}</small></div>
-      <div class="tarot-slot-body" data-slot="${i}">
-        ${(allRevealed || i < tarotPicked) ? revealedCardHtml(c) : '<div class="tarot-slot-empty">✦</div>'}
-      </div>
-    </div>`).join("");
-
-  const remaining = tarotCards.length - tarotPicked;
-  const fan = (!allRevealed && remaining > 0) ? `
-    <p class="fan-instruction">カードが呼んでいます — 直感で <strong>${remaining}</strong> 枚選んでください</p>
-    <div class="deck-fan">${Array.from({ length: 16 }, (_, k) => {
-      const r = (k - 7.5) * 3.2;
-      const y = Math.abs(k - 7.5) * 5;
-      return `<button class="fan-card" data-k="${k}" style="--r:${r}deg;--y:${y}px;--d:${(k * 0.19).toFixed(2)}s" aria-label="カードを選ぶ">✦</button>`;
-    }).join("")}</div>` : "";
-
-  tarotBoard.innerHTML = `<div class="tarot-slots">${slots}</div>${fan}`;
-}
-
-function dealTarot() {
-  const theme = TAROT_SPREADS[tarotTheme];
-  const spreads = Object.keys(theme.spreads).map(Number);
-  if (!spreads.includes(tarotSpread)) tarotSpread = spreads[0];
-
-  tarotSpreadSeg.style.visibility = spreads.length > 1 ? "visible" : "hidden";
-  tarotSpreadSeg.querySelectorAll(".seg-btn").forEach((b) => {
-    b.classList.toggle("active", Number(b.dataset.spread) === tarotSpread);
-  });
-  tarotGuide.textContent = theme.guide;
+/* --- 1. 問いかけ画面 --- */
+function renderAsk() {
   tarotSummary.hidden = true;
+  const dailyDone = !!loadDailyCard();
+  tarotStage.innerHTML = `
+    <div class="ritual-step panel" style="max-width:760px">
+      <p class="ritual-eyebrow">STEP 1 — QUESTION</p>
+      <h3 class="ritual-title">占いたいことを、心に思い浮かべてください</h3>
+      <div class="spread-picker">
+        ${Object.entries(RITUAL_SPREADS).map(([key, s]) => `
+          <button class="spread-opt ${key === ritual.spread ? "active" : ""}" data-spread="${key}" ${key === "daily" && dailyDone ? 'data-done="1"' : ""}>
+            <span class="so-label">${s.label}</span>
+            <span class="so-desc">${key === "daily" && dailyDone ? "本日分は引きました — 結果を見る" : s.desc}</span>
+          </button>`).join("")}
+      </div>
+      <div class="genre-row">
+        <span class="genre-label">問いのジャンル</span>
+        <div class="seg">${TAROT_GENRES.map(([k, l]) => `<button class="seg-btn ${k === ritual.genre ? "active" : ""}" data-genre="${k}">${l}</button>`).join("")}</div>
+      </div>
+      <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
+        placeholder="問いを言葉にする(入力しなくてもOK)" value="" />
+      <p class="form-note">問いはこの端末のブラウザにのみ保存され、外部には一切送信されません。</p>
+      <button class="btn btn-primary btn-lg btn-block" id="ritual-start" style="margin-top:14px">儀式をはじめる</button>
+    </div>`;
 
-  if (theme.once) {
-    const saved = loadDailyCard();
-    if (saved) {
-      const base = TAROT.find((t) => t.n === saved.n);
-      tarotCards = [{ ...base, reversed: saved.reversed }];
-      tarotPicked = 1;
-      renderTarotBoard(true);
-      showTarotSummary(true);
-      tarotReset.disabled = true;
-      tarotReset.textContent = "また明日、新しい一枚を";
-      return;
-    }
-    tarotReset.disabled = true;
-    tarotReset.textContent = "今日の一枚は1日1回";
-  } else {
-    tarotReset.disabled = false;
-    tarotReset.textContent = "カードを引き直す";
-  }
-
-  tarotCards = drawTarot(tarotSpread);
-  tarotPicked = 0;
-  renderTarotBoard(false);
+  tarotStage.querySelectorAll(".spread-opt").forEach((b) => {
+    b.addEventListener("click", () => {
+      ritual.spread = b.dataset.spread;
+      tarotStage.querySelectorAll(".spread-opt").forEach((x) => x.classList.toggle("active", x === b));
+    });
+  });
+  tarotStage.querySelectorAll("[data-genre]").forEach((b) => {
+    b.addEventListener("click", () => {
+      ritual.genre = b.dataset.genre;
+      tarotStage.querySelectorAll("[data-genre]").forEach((x) => x.classList.toggle("active", x === b));
+    });
+  });
+  document.getElementById("ritual-start").addEventListener("click", () => {
+    ritual.question = document.getElementById("tarot-question").value.trim();
+    try { localStorage.setItem(QUESTION_KEY, ritual.question); } catch { /* noop */ }
+    ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
+    if (ritual.spread === "daily" && loadDailyCard()) { restoreDaily(); return; }
+    renderShuffle();
+  });
 }
 
-tarotBoard.addEventListener("click", (e) => {
-  const fanCard = e.target.closest(".fan-card");
-  if (!fanCard || fanCard.classList.contains("fan-taken")) return;
-  fanCard.classList.add("fan-taken");
+/* --- 2. シャッフル画面(長押し) --- */
+function renderShuffle() {
+  const short = RITUAL_SPREADS[ritual.spread].short;
+  tarotStage.innerHTML = `
+    <div class="ritual-step">
+      <p class="ritual-eyebrow">STEP 2 — SHUFFLE</p>
+      <p class="ritual-inst">カードを<strong>長押し</strong>して、止めたいところで指を離してください</p>
+      <div class="shuffle-stack" id="shuffle-stack">
+        ${Array.from({ length: 7 }, (_, i) => tbackHtml("sc", `style="--i:${i}"`)).join("")}
+      </div>
+      <p class="ritual-hint" id="shuffle-hint">束に触れると、速く混ざります</p>
+    </div>`;
 
-  const card = tarotCards[tarotPicked];
-  const slotBody = tarotBoard.querySelector(`[data-slot="${tarotPicked}"]`);
-  tarotPicked++;
+  const stack = document.getElementById("shuffle-stack");
+  const hint = document.getElementById("shuffle-hint");
+  let pressed = false, done = false;
 
-  setTimeout(() => {
-    if (slotBody) slotBody.innerHTML = revealedCardHtml(card);
-    const inst = tarotBoard.querySelector(".fan-instruction strong");
-    if (inst) inst.textContent = tarotCards.length - tarotPicked;
+  const down = (e) => {
+    e.preventDefault();
+    pressed = true;
+    stack.classList.add("fast");
+    hint.textContent = "……いいところで、指を離して";
+  };
+  const up = () => {
+    if (!pressed || done) return;
+    done = true;
+    ritual.releaseT = performance.now(); // シード成分1: 指を離した時刻
+    vibrate(20);
+    stack.classList.remove("fast");
+    stack.classList.add("stopped");
+    hint.textContent = "止まりました";
+    setTimeout(() => (short ? renderDraw() : renderCut()), 420);
+  };
+  stack.addEventListener("pointerdown", down);
+  stack.addEventListener("pointerup", up);
+  stack.addEventListener("pointercancel", up);
+}
 
-    if (tarotPicked === tarotCards.length) {
-      if (TAROT_SPREADS[tarotTheme].once) saveDailyCard(card);
-      const fanEl = tarotBoard.querySelector(".deck-fan");
-      const instEl = tarotBoard.querySelector(".fan-instruction");
-      fanEl?.classList.add("fan-done");
-      if (instEl) instEl.textContent = "カードが出そろいました…";
-      setTimeout(() => showTarotSummary(false), 1100);
+/* --- 3. カット画面(3つの山) --- */
+function renderCut() {
+  tarotStage.innerHTML = `
+    <div class="ritual-step">
+      <p class="ritual-eyebrow">STEP 3 — CUT</p>
+      <p class="ritual-inst">山がみっつ。<strong>直感で</strong>ひとつ選んでください</p>
+      <div class="cut-piles">
+        ${[0, 1, 2].map((k) => `
+          <button class="cut-pile" data-k="${k}">
+            ${tbackHtml("cp cp1")}${tbackHtml("cp cp2")}${tbackHtml("cp cp3")}
+            <span class="cut-label">${["ひとつ目", "ふたつ目", "みっつ目"][k]}</span>
+          </button>`).join("")}
+      </div>
+    </div>`;
+  tarotStage.querySelectorAll(".cut-pile").forEach((b) => {
+    b.addEventListener("click", () => {
+      ritual.cutIdx = Number(b.dataset.k); // シード成分2: カット選択
+      vibrate(15);
+      b.classList.add("chosen");
+      tarotStage.querySelectorAll(".cut-pile").forEach((x) => { if (x !== b) x.classList.add("faded"); });
+      setTimeout(renderDraw, 450);
+    });
+  });
+}
+
+/* --- 4. ドロー画面(扇から引く) --- */
+function renderDraw() {
+  const conf = RITUAL_SPREADS[ritual.spread];
+  tarotStage.innerHTML = `
+    <div class="ritual-step">
+      <p class="ritual-eyebrow">STEP ${conf.short ? "3" : "4"} — DRAW</p>
+      ${slotsHtml(-1)}
+      <p class="ritual-inst">横にスクロールして、呼ばれた気がするカードを<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong></p>
+      <div class="draw-strip" id="draw-strip">
+        ${Array.from({ length: 22 }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--r:${((k % 5) - 2) * 1.8}deg"`)).join("")}
+      </div>
+    </div>`;
+
+  const strip = document.getElementById("draw-strip");
+  strip.addEventListener("click", (e) => {
+    const el = e.target.closest(".draw-card");
+    if (!el || el.classList.contains("taken")) return;
+    el.classList.add("taken");
+    const k = Number(el.dataset.k);
+    ritual.positions.push(k); // シード成分3: 引いた位置
+
+    // ユーザー操作の合成シードからカードを決定(Math.random非使用)
+    const seedStr = `${ritual.releaseT.toFixed(3)}|${ritual.cutIdx}|${ritual.positions.join("-")}`;
+    const rng = seededRng(seedStr);
+    const remaining = TAROT.filter((t) => !ritual.cards.some((c) => c.n === t.n));
+    const base = remaining[Math.floor(rng() * remaining.length)];
+    const card = { ...base, reversed: rng() < 0.5 }; // 逆位置は50%
+    ritual.cards.push(card);
+    new Image().src = tarotImg(card.n); // リビール直前の先読み
+    vibrate(25);
+
+    const slotBody = tarotStage.querySelector(`[data-slot="${ritual.cards.length - 1}"]`);
+    if (slotBody) slotBody.innerHTML = tbackHtml("slot-back");
+    const left = document.getElementById("draw-left");
+    if (left) left.textContent = conf.count - ritual.cards.length;
+
+    if (ritual.cards.length === conf.count) {
+      if (RITUAL_SPREADS[ritual.spread].once) saveDailyCard(card);
+      strip.classList.add("fan-done");
+      setTimeout(renderReveal, 600);
     }
-  }, 240);
-});
+  });
+}
+
+/* --- 5. リビール画面(溜め0.8秒 -> フリップ) --- */
+function renderReveal() {
+  const conf = RITUAL_SPREADS[ritual.spread];
+  tarotStage.innerHTML = `
+    <div class="ritual-step">
+      <p class="ritual-eyebrow">REVEAL</p>
+      <p class="ritual-inst" id="reveal-inst">カードが、答えを準備しています……</p>
+      ${slotsHtml(-1)}
+    </div>`;
+  // 全スロットを裏向きで表示
+  tarotStage.querySelectorAll(".tarot-slot-body").forEach((b) => { b.innerHTML = tbackHtml("slot-back"); });
+
+  ritual.cards.forEach((card, i) => {
+    const body = tarotStage.querySelector(`[data-slot="${i}"]`);
+    setTimeout(() => body?.querySelector(".tback")?.classList.add("charging"), i * 1700); // 溜め
+    setTimeout(() => {
+      if (body) body.innerHTML = revealedCardHtml(card);
+      vibrate(12);
+    }, i * 1700 + 800); // 0.8秒の溜めの後にフリップ
+  });
+  setTimeout(() => {
+    const inst = document.getElementById("reveal-inst");
+    if (inst) inst.textContent = "カードが出そろいました";
+    showTarotSummary(false);
+  }, (ritual.cards.length - 1) * 1700 + 2100);
+}
+
+/* 今日の一枚: 引き直し不可、当日分を復元 */
+function restoreDaily() {
+  const saved = loadDailyCard();
+  const base = TAROT.find((t) => t.n === saved.n);
+  ritual.cards = [{ ...base, reversed: saved.reversed }];
+  ritual.question = (() => { try { return localStorage.getItem(QUESTION_KEY) || ""; } catch { return ""; } })();
+  tarotStage.innerHTML = `
+    <div class="ritual-step">
+      <p class="ritual-eyebrow">TODAY'S CARD</p>
+      ${slotsHtml(0)}
+    </div>`;
+  showTarotSummary(true);
+}
+
+/* --- 結果 --- */
+function yesNoVerdictHtml(card) {
+  const yes = !card.reversed;
+  return `
+    <div class="result-card span-all yn-card">
+      ${cardH4("VERDICT", "カードの答え")}
+      <p class="yn-answer ${yes ? "yes" : "no"}">${yes ? "YES" : "NO"}</p>
+      <p>${yes
+        ? "カードは正位置 — 追い風のサインです。進めて大丈夫。ただし答えを確かなものにする鍵は、カードの言葉の中にあります。"
+        : "カードは逆位置 — いまは見送りのサイン。ただし「永遠のNO」ではありません。カードが示す課題を整えれば、答えは変わります。"}</p>
+    </div>`;
+}
+
+function choiceVerdictHtml() {
+  const [a, b] = ritual.cards;
+  const scoreA = a.reversed ? 0 : 1, scoreB = b.reversed ? 0 : 1;
+  const msg = scoreA > scoreB
+    ? "カードは<strong>選択肢A</strong>に追い風を見ています。Bを選ぶ場合は、逆位置が示す課題を先に片付けて。"
+    : scoreB > scoreA
+      ? "カードは<strong>選択肢B</strong>に追い風を見ています。Aを選ぶ場合は、逆位置が示す課題を先に片付けて。"
+      : "AとBは互角。決め手は3枚目の「助言」のカードです。あなたの直感が最初に引いた方にも、心の答えが出ています。";
+  return `
+    <div class="result-card span-all">
+      ${cardH4("VERDICT", "どちらを選ぶ?")}
+      <p>${msg}</p>
+    </div>`;
+}
 
 function tarotOverallHtml() {
-  if (tarotCards.length < 3) return "";
-  const revCount = tarotCards.filter((c) => c.reversed).length;
+  if (ritual.spread !== "three") return "";
+  const revCount = ritual.cards.filter((c) => c.reversed).length;
   const tone = [
     "三枚とも正位置。強い追い風が吹いています。迷いを手放して、そのまま進んで大丈夫。",
     "おおむね順調な流れです。逆位置のカードが示す一点だけ整えれば、道はまっすぐ開けます。",
     "行きつ戻りつの時期。焦って進めるより、逆位置のカードが示す課題から順に片付けるのが近道です。",
     "三枚とも逆位置。いまは動くより整える時。この時期を丁寧に過ごした人から、流れは変わりはじめます。",
   ][revCount];
-  return `
-    <div class="result-card span-all">
-      ${cardH4("OVERALL", "全体の流れ")}
-      <p>${tone}</p>
-    </div>`;
+  return `<div class="result-card span-all">${cardH4("OVERALL", "全体の流れ")}<p>${tone}</p></div>`;
 }
 
 function showTarotSummary(restored) {
-  const conf = currentSpreadConf();
-  const themeLabel = TAROT_SPREADS[tarotTheme].label;
+  const conf = RITUAL_SPREADS[ritual.spread];
+  const genreLabel = Object.fromEntries(TAROT_GENRES)[ritual.genre];
+  const cardsLabel = ritual.cards.map((c) => `${c.name}(${c.reversed ? "逆" : "正"})`);
 
-  const cardsLabel = tarotCards.map((c) => `${c.name}(${c.reversed ? "逆" : "正"})`);
   lastShare.tarot = {
-    eyebrow: `TAROT — ${themeLabel}`,
-    title: tarotTheme === "daily" ? "今日のわたしへの一枚" : `「${themeLabel}」の答え`,
+    eyebrow: `TAROT — ${conf.label}`,
+    title: ritual.cards.length === 1 ? `「${ritual.cards[0].name}」` : `${conf.label}の答え`,
     keywords: cardsLabel,
-    sub: (tarotCards[0].reversed ? tarotCards[0].rev : tarotCards[0].up).split("・")[0],
-    x: `【Fortuna タロット・${themeLabel}】引いたのは ${cardsLabel.join("、")} ✦`,
+    sub: genreMeaning(ritual.cards[0]).split("。")[0] + "。",
+    x: `【Fortuna タロット・${conf.label}】引いたのは ${cardsLabel.join("、")} ✦`,
   };
   if (!restored) {
-    recordHistory(`タロット(${themeLabel})`, cardsLabel.join(" / "),
-      tarotCards.map((c, i) => `${conf.ja[i]}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${themeMeaning(c)}`).join(" "));
+    recordHistory(`タロット(${conf.label})`, cardsLabel.join(" / "),
+      ritual.cards.map((c, i) => `${conf.positions[i].ja}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${genreMeaning(c)}`).join(" "));
   }
-  const items = tarotCards.map((c, i) => `
+
+  const items = ritual.cards.map((c, i) => `
     <div class="result-card">
-      ${cardH4(conf.en[i], conf.ja[i])}
+      ${cardH4(conf.positions[i].en, conf.positions[i].ja)}
       <p><strong style="color:var(--gold-bright)">${c.name}(${c.reversed ? "逆位置" : "正位置"})</strong></p>
-      <p style="margin-top:8px">${themeMeaning(c)}</p>
+      <p style="margin-top:8px">${genreMeaning(c)}</p>
       <p class="sub" style="margin-top:12px">${c.advice}</p>
     </div>`).join("");
 
-  const dailyNote = TAROT_SPREADS[tarotTheme].once ? `
+  const dailyNote = conf.once ? `
     <div class="result-card span-all daily-note">
       <p>${restored ? "今日の一枚は、すでにあなたのそばにあります。" : "これが、今日のあなたの一枚。"}カードの言葉を一日の中で確かめてみてください。引き直しはできません — <strong>また明日、新しい一枚を。</strong></p>
     </div>` : "";
@@ -1223,34 +1385,34 @@ function showTarotSummary(restored) {
   showResult(tarotSummary, `
     <div class="result-hero" style="text-align:center">
       <span class="result-symbol">☾</span>
-      <p class="result-eyebrow">TAROT — ${themeLabel}</p>
-      <h3 class="result-title">${tarotTheme === "daily" ? "今日のあなたへの一枚" : `「${themeLabel}」の答え`}</h3>
+      <p class="result-eyebrow">TAROT — ${conf.label} ・ ${genreLabel}</p>
+      ${ritual.question ? `<p class="tarot-q">あなたの問い:「${esc(ritual.question)}」</p>` : ""}
+      <h3 class="result-title">${ritual.spread === "daily" ? "今日のあなたへの一枚" : "カードの答え"}</h3>
       <p class="result-lead" style="margin-inline:auto">正位置はエネルギーが素直に巡っている状態、逆位置は不安やエゴが混ざっている状態を表します。</p>
       ${shareRowHtml("tarot")}
     </div>
-    <div class="result-grid">${items}${tarotOverallHtml()}${dailyNote}</div>
-    ${crossLinksHtml("tarot")}
+    <div class="result-grid">
+      ${ritual.spread === "yesno" ? yesNoVerdictHtml(ritual.cards[0]) : ""}
+      ${items}
+      ${tarotOverallHtml()}
+      ${ritual.spread === "choice" ? choiceVerdictHtml() : ""}
+      ${dailyNote}
+    </div>
+    <div class="crosslinks">
+      <span class="crosslinks-label">─ 旅はつづく</span>
+      <button id="tarot-again">別のスプレッドで引く</button>
+      <button data-nav="integrated">生年月日から統合鑑定</button>
+      <button data-nav="aisho">気になる人との相性をみる</button>
+    </div>
   `);
   renderSharePreview("tarot");
+  document.getElementById("tarot-again")?.addEventListener("click", () => {
+    renderAsk();
+    tarotStage.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth" });
+  });
 }
 
-tarotThemeSeg.querySelectorAll(".seg-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    tarotThemeSeg.querySelectorAll(".seg-btn").forEach((b) => b.classList.remove("active"));
-    btn.classList.add("active");
-    tarotTheme = btn.dataset.theme;
-    tarotSpread = tarotTheme === "daily" ? 1 : 3;
-    dealTarot();
-  });
-});
-tarotSpreadSeg.querySelectorAll(".seg-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    tarotSpread = Number(btn.dataset.spread);
-    dealTarot();
-  });
-});
-tarotReset.addEventListener("click", dealTarot);
-dealTarot();
+renderAsk();
 
 /* ---------- 手相 ---------- */
 const palmQuestionsEl = document.getElementById("palm-questions");
