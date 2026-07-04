@@ -173,8 +173,8 @@ function todayLogicHtml(daily) {
 /* 回遊導線:結果の下に「次の扉」を提示 */
 const CROSS_SUGGEST = {
   integrated: [["tarot", "3枚スプレッドで深掘りする"], ["aisho", "気になる人との相性をみる"], ["western", "ホロスコープをみる"]],
-  western: [["integrated", "まとめて統合鑑定"], ["eastern", "東洋の暦ではどう出る?"], ["tarot", "今日の一枚を引く"]],
-  eastern: [["western", "月星座で心の素顔をみる"], ["integrated", "統合鑑定で全体をみる"], ["aisho", "大切な人との相性をみる"]],
+  western: [["integrated", "まとめて統合鑑定"], ["eastern", "四柱推命ではどう出る?"], ["tarot", "今日の一枚を引く"]],
+  eastern: [["western", "ホロスコープで流れをみる"], ["integrated", "統合鑑定で全体をみる"], ["aisho", "大切な人との相性をみる"]],
   tarot: [["integrated", "生年月日から統合鑑定"], ["western", "ホロスコープをみる"], ["eastern", "四柱推命で器をみる"]],
   aisho: [["integrated", "自分の統合鑑定をみる"], ["tarot", "二人の今日を一枚で占う"], ["western", "月星座の相性も気になる?"]],
 };
@@ -1180,8 +1180,8 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   renderSharePreview("integrated");
 });
 
-/* ---------- 星占い(太陽 × 月) ---------- */
-/* 星占いのテーマ(人生/仕事/恋愛) */
+/* ---------- ホロスコープ(太陽 × 月 × 10天体) ---------- */
+/* テーマ(人生/仕事/恋愛) */
 let westernTheme = "life";
 const WESTERN_THEMES = [["life", "人生"], ["work", "仕事"], ["love", "恋愛"]];
 const WESTERN_THEME_LABEL = { life: "人生", work: "仕事", love: "恋愛" };
@@ -1258,9 +1258,9 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
     title: `太陽は${z.name}、月は${moonName}`,
     keywords: [z.keyword],
     score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `【MYOURISCOPE 星占い】太陽星座は${z.name}、月星座は${moonName}。今日の運気は${daily.score100}/100 ✦`,
+    x: `【MYOURISCOPE ホロスコープ】太陽星座は${z.name}、月星座は${moonName}。 ✦`,
   };
-  recordHistory("星占い", `太陽${z.name} × 月${moonName}(${themeLabel})`, `${z.keyword}。${flow.blocks[2].title}へ向かう流れ。10天体のホロスコープ鑑定。`);
+  recordHistory("ホロスコープ", `太陽${z.name} × 月${moonName}(${themeLabel})`, `${z.keyword}。${flow.blocks[2].title}へ向かう流れ。10天体のホロスコープ鑑定。`);
 
   showResult(document.getElementById("western-result"), `
     <div class="result-hero">
@@ -1350,7 +1350,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   renderSharePreview("western");
 });
 
-/* ---------- 東洋占術(四柱推命 × 九星気学) ---------- */
+/* ---------- 四柱推命(× 九星気学) ---------- */
 document.getElementById("eastern-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const birthdate = new FormData(e.target).get("birthdate");
@@ -1365,9 +1365,9 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
     title: `日主「${pillars.day.kan}」— ${pillars.nikkan.symbol}の人`,
     keywords: [kyusei.name, `${pillars.year.kan}${pillars.year.shi}年生まれ`],
     score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `【MYOURISCOPE 東洋占術】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
+    x: `【MYOURISCOPE 四柱推命】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
   };
-  recordHistory("東洋占術", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
+  recordHistory("四柱推命", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
 
   showResult(document.getElementById("eastern-result"), `
     <div class="result-hero">
