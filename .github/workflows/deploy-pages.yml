@@ -42,3 +42,14 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+        continue-on-error: true
+
+      # Pages側の一時エラー("Deployment failed, try again later")対策のリトライ
+      - name: Wait before retry
+        if: steps.deployment.outcome == 'failure'
+        run: sleep 70
+
+      - name: Deploy (retry)
+        id: deployment_retry
+        if: steps.deployment.outcome == 'failure'
+        uses: actions/deploy-pages@v4
