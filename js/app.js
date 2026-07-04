@@ -251,14 +251,15 @@ function setupBirthdateSelects() {
 }
 
 function setBirthdateSelect(name, value) {
-  const box = document.querySelector(`.bd-select[data-bd="${name}"]`);
-  if (!box || !value) return;
-  const [y, m, d] = value.split("-").map(Number);
-  const [ySel, mSel, dSel] = box.querySelectorAll("select");
-  ySel.value = y; mSel.value = m;
-  box.dispatchEvent(new Event("change")); // 日の選択肢を作る
-  dSel.value = d;
-  box.dispatchEvent(new Event("change"));
+  if (!value) return;
+  document.querySelectorAll(`.bd-select[data-bd="${name}"]`).forEach((box) => {
+    const [y, m, d] = value.split("-").map(Number);
+    const [ySel, mSel, dSel] = box.querySelectorAll("select");
+    ySel.value = y; mSel.value = m;
+    box.dispatchEvent(new Event("change")); // 日の選択肢を作る
+    dSel.value = d;
+    box.dispatchEvent(new Event("change"));
+  });
 }
 
 setupBirthdateSelects();
@@ -822,6 +823,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   });
 
   saveProfile({ name: r.name, birthdate: fd.get("birthdate"), theme: r.theme });
+  prefillForms(loadProfile());
   renderHomeDaily();
 
   const who = r.name ? `${esc(r.name)}さん` : "あなた";
