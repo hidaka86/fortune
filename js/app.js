@@ -597,7 +597,7 @@ function buildShareText(r) {
     `今日の運気: ${r.daily.total.toFixed(1)} / 5.0`,
     `導きの一枚: ${r.card.name}(${ori}) — ${r.card.advice}`,
     `ラッキーカラー: ${r.daily.luckyColor} / ラッキーアイテム: ${r.daily.luckyItem}`,
-    `https://hidaka86.github.io/fortune/`,
+    `あなたの称号は? → ${buildInviteUrl(r.name, fortuneTitle(r.birthdateStr).title)}`,
   ].join("\n");
 }
 
@@ -617,6 +617,13 @@ document.addEventListener("click", async (e) => {
 /* ---------- シェア画像(1200x630)とXシェア・鑑定履歴 ---------- */
 const SITE_URL = "https://hidaka86.github.io/fortune/";
 const lastShare = {}; // kind -> {eyebrow,title,sub,keywords,score,scoreLabel,x}
+
+function buildInviteUrl(name, title) {
+  const q = new URLSearchParams();
+  if (name) q.set("in", name);
+  q.set("it", title);
+  return `${SITE_URL}?${q.toString()}`;
+}
 
 function shareButtonsHtml(kind) {
   return `<button class="btn btn-ghost" data-share-image="${kind}">シェア画像を保存</button>
@@ -741,7 +748,7 @@ document.addEventListener("click", async (e) => {
     const p = lastShare[xBtn.dataset.shareX];
     if (!p) return;
     const url = "https://twitter.com/intent/tweet?text=" +
-      encodeURIComponent((p.x || p.title) + "\n") + "&url=" + encodeURIComponent(SITE_URL);
+      encodeURIComponent((p.x || p.title) + "\n") + "&url=" + encodeURIComponent(p.url || SITE_URL);
     window.open(url, "_blank", "noopener");
   }
 });
@@ -785,6 +792,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
     keywords: [`${r.zodiac.name} × 日主${r.pillars.day.kan} × ${r.kyusei.name}`, "1080タイプにひとつの称号"],
     score: r.daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
     x: `私の運命の称号は「${shogo.title}」— 1080タイプにひとつ。今日の運気は${r.daily.score100}/100 ✦ あなたの称号は?`,
+    url: buildInviteUrl(r.name, shogo.title),
   };
   recordHistory("統合鑑定", `「${shogo.title}」— 運気${r.daily.score100}/100`, `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`);
 
@@ -1255,13 +1263,16 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
   const keyword = aishoKeyword(r);
   const fromA = perspectiveCompat(r.a, r.b, nameA, nameB);
   const fromB = perspectiveCompat(r.b, r.a, nameB, nameA);
+  const shogoA = fortuneTitle(fd.get("birthdate1"));
+  const shogoB = fortuneTitle(fd.get("birthdate2"));
 
   lastShare.aisho = {
     eyebrow: "COMPATIBILITY",
-    title: `${nameA} × ${nameB}`,
-    keywords: [`「${keyword}」`, r.band],
-    score: r.total, scoreLabel: "相性", scoreSuffix: "/100",
-    x: `【Fortuna 相性診断】${nameA}と${nameB}の相性は ${r.total}/100「${keyword}」でした ✦`,
+    title: `「${keyword}」`,
+    keywords: [`${shogoA.title} × ${shogoB.title}`],
+    score: r.total, scoreLabel: "ふたりの相性", scoreSuffix: "/100",
+    x: `「${shogoA.title}」と「${shogoB.title}」の相性は ${r.total}/100 —「${keyword}」でした ✦ あなたたちは?`,
+    url: buildInviteUrl(r.a.name, shogoA.title),
   };
   recordHistory("相性診断", `${nameA} × ${nameB} — ${r.total}/100`, `「${keyword}」(${r.band})。${r.advice}`);
 
@@ -1287,6 +1298,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <p class="result-eyebrow">COMPATIBILITY REPORT</p>
       <h3 class="result-title">${nameA} × ${nameB}</h3>
       <p class="result-keyword">ふたりの関係を一言でいうと —「${keyword}」</p>
+      <p class="shogo-vs">「${shogoA.title}」<span>×</span>「${shogoB.title}」</p>
       <div class="total-score" style="margin-top:14px"><span class="num" data-count="${r.total}">0</span><span class="denom"> / 100</span></div>
       <p class="result-lead" style="margin-inline:auto">${r.band}。${r.advice}</p>
       ${shareRowHtml("aisho")}
@@ -1331,7 +1343,27 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
   renderSharePreview("aisho");
 });
 
+/* ---------- 招待状(シェアURLから来た人へ) ---------- */
+function renderInviteBanner() {
+  const el = document.getElementById("invite-banner");
+  if (!el) return;
+  const q = new URLSearchParams(location.search);
+  const title = q.get("it");
+  if (!title || title.length > 40) return;
+  const inviter = (q.get("in") || "").slice(0, 20);
+  const who = inviter ? `${esc(inviter)}さん` : "友人";
+  el.innerHTML = `
+    <div class="invite-card">
+      <p class="invite-seal">✦ 招待状 ✦</p>
+      <p class="invite-line">${who}の運命の称号は</p>
+      <p class="invite-title">「${esc(title)}」</p>
+      <p class="invite-line">でした。1080タイプにひとつ — <strong>あなたの称号は?</strong></p>
+      <button class="btn btn-primary" data-nav="integrated">30秒で自分の称号を知る</button>
+    </div>`;
+}
+
 /* ---------- 初期化 ---------- */
 prefillForms(loadProfile());
 renderHomeDaily();
+renderInviteBanner();
 updateStreak();

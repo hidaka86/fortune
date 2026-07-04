@@ -117,6 +117,34 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   margin: 18px auto 0;
 }
 
+/* ---------- 招待状 ---------- */
+.invite-card {
+  margin: 20px auto 4px; max-width: 620px; text-align: center;
+  border: 1px solid rgba(217, 179, 106, 0.55); border-radius: 12px;
+  padding: 26px 24px;
+  background: linear-gradient(155deg, rgba(217, 179, 106, 0.1), rgba(255, 255, 255, 0.015));
+  box-shadow: 0 0 40px rgba(217, 179, 106, 0.15);
+  animation: viewIn .7s ease;
+}
+.invite-seal {
+  font-family: var(--serif); font-size: 13px; letter-spacing: .34em;
+  color: var(--gold); margin-bottom: 10px;
+}
+.invite-line { font-size: 15px; color: var(--muted); }
+.invite-line strong { color: var(--gold-bright); }
+.invite-title {
+  font-family: var(--serif); font-size: clamp(21px, 4vw, 28px); font-weight: 700;
+  color: var(--gold-bright); letter-spacing: .06em; margin: 6px 0;
+  text-shadow: 0 0 22px rgba(217, 179, 106, 0.4);
+}
+.invite-card .btn { margin-top: 16px; }
+
+.shogo-vs {
+  font-family: var(--serif); font-size: 15.5px; color: var(--muted);
+  margin-top: 10px; letter-spacing: .04em;
+}
+.shogo-vs span { color: var(--gold); margin: 0 6px; }
+
 /* ---------- ヒーロー ---------- */
 .hero {
   position: relative; overflow: hidden;
