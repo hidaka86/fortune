@@ -176,6 +176,23 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 }
 .hero-cta { display: flex; gap: 14px; justify-content: center; margin-top: 36px; flex-wrap: wrap; }
 
+/* FVのカード扇 */
+.hero-fan { display: flex; justify-content: center; margin: 30px 0 -6px; }
+.hero-fan img {
+  width: 116px; height: 186px; object-fit: cover; border-radius: 9px;
+  border: 1px solid rgba(217, 179, 106, 0.55);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55), 0 0 26px rgba(217, 179, 106, 0.18);
+  margin: 0 -16px;
+  transform: rotate(var(--r)) translateY(calc(var(--r) * 0.6));
+  animation: fanFloat 5s ease-in-out infinite;
+  animation-delay: var(--d);
+}
+.hero-fan img:nth-child(2) { z-index: 2; }
+@keyframes fanFloat {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -10px; }
+}
+
 /* 会員向けパーソナルFV */
 .hero.hero-member { min-height: min(60vh, 540px); }
 .nw { white-space: nowrap; }
@@ -300,6 +317,21 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 }
 .bento-wide { grid-column: 1 / -1; flex-direction: column; }
 .bento-wide p { max-width: 46ch; }
+
+/* タロット主役カード(実アート背景) */
+.bento-art {
+  min-height: 300px;
+  background:
+    linear-gradient(78deg, rgba(10, 13, 29, 0.95) 30%, rgba(10, 13, 29, 0.55) 62%, rgba(10, 13, 29, 0.12)),
+    url("../images/tarot/tarot_10_wheel_of_fortune.webp") right 24% / cover no-repeat;
+}
+.bento-art:hover {
+  background:
+    linear-gradient(78deg, rgba(10, 13, 29, 0.92) 30%, rgba(10, 13, 29, 0.45) 62%, rgba(10, 13, 29, 0.05)),
+    url("../images/tarot/tarot_10_wheel_of_fortune.webp") right 22% / cover no-repeat;
+}
+.bento-art h3 { font-size: 28px; }
+.bento-art p { max-width: 30ch; font-size: 14.5px; }
 
 /* ---------- フィロソフィー ---------- */
 .philosophy { text-align: center; margin: 96px auto 24px; max-width: 640px; }
@@ -653,6 +685,24 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 @media (prefers-reduced-motion: reduce) {
   .fan-card { animation: none; }
 }
+
+/* 結果カードのサムネイル */
+.tp-body { display: flex; gap: 16px; align-items: flex-start; }
+.tp-thumb {
+  flex: 0 0 78px; width: 78px; height: 126px; object-fit: cover;
+  border-radius: 7px; border: 1px solid rgba(217, 179, 106, 0.5);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+}
+.tp-thumb.is-rev { transform: rotate(180deg); }
+
+/* 会員FVの今日の一枚チップ */
+.chip-card { display: inline-flex; align-items: center; gap: 8px; }
+.chip-card img {
+  width: 24px; height: 38px; object-fit: cover; border-radius: 3px;
+  border: 1px solid rgba(217, 179, 106, 0.5);
+}
+.chip-card img.is-rev { transform: rotate(180deg); }
+.chip-cta { border-color: rgba(217, 179, 106, 0.55); color: var(--gold-bright); cursor: pointer; }
 
 /* ---------- タロット儀式フロー ---------- */
 .ritual-step { text-align: center; animation: viewIn .5s ease; }

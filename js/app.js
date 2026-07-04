@@ -352,6 +352,12 @@ function renderHomeDaily() {
       <span><span class="hs-num">${daily.score100}</span><span class="hs-denom"> /100</span></span>
       ${starsHtml(Math.round(daily.total))}
       <span class="chip">「${daily.dayStar.name}」の日</span>
+      ${(() => {
+        const dc = loadDailyCard();
+        if (!dc) return '<button class="chip chip-cta" data-nav="tarot">今日の一枚 まだ引いていません →</button>';
+        const base = TAROT.find((t) => t.n === dc.n);
+        return `<span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />今日の一枚 <strong>${base.name}</strong></span>`;
+      })()}
       <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
       <span class="chip">連続 <strong>${visits.streak || 1}日目</strong>${(visits.streak || 1) >= 7 ? " 🔥" : ""}</span>
     </div>
@@ -1370,11 +1376,16 @@ function showTarotSummary(restored) {
   }
 
   const items = ritual.cards.map((c, i) => `
-    <div class="result-card">
+    <div class="result-card tarot-pos">
       ${cardH4(conf.positions[i].en, conf.positions[i].ja)}
-      <p><strong style="color:var(--gold-bright)">${c.name}(${c.reversed ? "逆位置" : "正位置"})</strong></p>
-      <p style="margin-top:8px">${genreMeaning(c)}</p>
-      <p class="sub" style="margin-top:12px">${c.advice}</p>
+      <div class="tp-body">
+        <img class="tp-thumb ${c.reversed ? "is-rev" : ""}" src="${tarotImg(c.n)}" alt="${c.name}" loading="lazy" onerror="this.remove()" />
+        <div>
+          <p><strong style="color:var(--gold-bright)">${c.name}(${c.reversed ? "逆位置" : "正位置"})</strong></p>
+          <p style="margin-top:6px">${genreMeaning(c)}</p>
+          <p class="sub" style="margin-top:10px">${c.advice}</p>
+        </div>
+      </div>
     </div>`).join("");
 
   const dailyNote = conf.once ? `
