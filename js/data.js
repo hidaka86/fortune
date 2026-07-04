@@ -165,6 +165,24 @@ const RITUAL_SPREADS = {
     label: "3枚引き", desc: "過去・現在・未来の流れを読む。", count: 3,
     positions: [{ en: "PAST", ja: "過去" }, { en: "PRESENT", ja: "現在" }, { en: "FUTURE", ja: "未来" }],
   },
+  celtic: {
+    label: "ケルト十字",
+    desc: "現状・課題・意識と無意識・過去と未来・周囲・結末——10枚で人生の局面を立体的に読む、いちばん深い本格スプレッド。",
+    count: 10,
+    deep: true,
+    positions: [
+      { en: "PRESENT", ja: "いまのあなた" },
+      { en: "CHALLENGE", ja: "向き合う課題" },
+      { en: "GOAL", ja: "目指すもの" },
+      { en: "ROOT", ja: "心の土台" },
+      { en: "PAST", ja: "過ぎたこと" },
+      { en: "NEAR FUTURE", ja: "近い未来" },
+      { en: "YOURSELF", ja: "あなたの立ち位置" },
+      { en: "AROUND", ja: "周囲の状況" },
+      { en: "HOPES & FEARS", ja: "望みと恐れ" },
+      { en: "OUTCOME", ja: "ゆきつく先" },
+    ],
+  },
   choice: {
     label: "2択スプレッド", desc: "AとB、それぞれの行方と助言。", count: 3,
     positions: [{ en: "CHOICE A", ja: "選択肢A" }, { en: "CHOICE B", ja: "選択肢B" }, { en: "ADVICE", ja: "助言" }],
@@ -208,44 +226,6 @@ const TAROT_SPREADS = {
   },
 };
 
-const PALM_QUESTIONS = [
-  {
-    id: "life", name: "生命線", lineId: "line-life",
-    desc: "親指の付け根を囲むように伸びる線",
-    options: [
-      { value: "long", label: "長くくっきり", text: "生命エネルギーが強く、心身のタフさは折り紙付き。多少の無理が利く体力と回復力があります。" },
-      { value: "short", label: "短め・薄め", text: "省エネ型の体質。体力勝負より効率と工夫で成果を出すタイプで、休息を上手に取れば長く活躍できます。" },
-      { value: "curve", label: "大きくカーブ", text: "行動力とバイタリティに溢れ、アウトドアや現場で力を発揮するエネルギッシュなタイプです。" },
-    ],
-  },
-  {
-    id: "head", name: "頭脳線", lineId: "line-head",
-    desc: "手のひらの中央を横切る線",
-    options: [
-      { value: "straight", label: "まっすぐ長い", text: "論理的思考の持ち主。分析力と現実的な判断力に優れ、ビジネスや理系分野で強みを発揮します。" },
-      { value: "slope", label: "下向きにカーブ", text: "想像力とクリエイティビティが豊か。企画・デザイン・表現の世界で才能が花開くタイプです。" },
-      { value: "double", label: "二重・枝分かれ", text: "多角的な視点を持つマルチタレント。複数の分野を掛け合わせるキャリアで唯一無二の存在に。" },
-    ],
-  },
-  {
-    id: "heart", name: "感情線", lineId: "line-heart",
-    desc: "小指の下から人差し指方向へ伸びる線",
-    options: [
-      { value: "long", label: "人差し指まで長い", text: "愛情深く一途なタイプ。信頼関係をじっくり育て、パートナーや仲間を大切に守ります。" },
-      { value: "short", label: "中指の下あたりまで", text: "感情に振り回されないクールな理性派。恋愛も仕事も、自立した対等な関係を築きます。" },
-      { value: "chain", label: "鎖状・枝分かれ", text: "感受性が豊かで、人の気持ちの機微に敏感。共感力の高さがあなたの人望の源です。" },
-    ],
-  },
-  {
-    id: "fate", name: "運命線", lineId: "line-fate",
-    desc: "手首側から中指に向かって伸びる縦線",
-    options: [
-      { value: "strong", label: "くっきり1本", text: "早くから自分の道を定め、まっすぐ突き進む王道タイプ。キャリアの軸がぶれない強さがあります。" },
-      { value: "faint", label: "薄い・途切れる", text: "環境の変化とともに柔軟に道を変えられる適応型。転機のたびに新しい可能性が開けます。" },
-      { value: "none", label: "ほとんど見えない", text: "運命に縛られない自由人。決められたレールより、自分で道を作ることに喜びを感じるタイプです。" },
-    ],
-  },
-];
 
 const LUCKY_COLORS = ["コーラルピンク", "ラベンダー", "ターコイズ", "サンイエロー", "フォレストグリーン", "ロイヤルブルー", "パールホワイト", "テラコッタ", "ミントグリーン", "ボルドー", "シャンパンゴールド", "スモーキーグレー"];
 const LUCKY_ITEMS = ["ハンカチ", "観葉植物", "腕時計", "ノート", "マグカップ", "イヤホン", "香水", "本", "スニーカー", "キーケース", "ボールペン", "リップクリーム"];
@@ -452,10 +432,10 @@ const LUCKY_ACTIONS = [
 /* ---------- タロット:小アルカナ56枚(フルデッキ対応) ---------- */
 /* n は 22〜77。画像は images/tarot/tarot_{suit}_{rank}.webp */
 const MINOR_SUITS = {
-  wands:     { ja: "ワンド",     en: "Wands",     icon: "🔥", theme: "情熱と行動" },
-  cups:      { ja: "カップ",     en: "Cups",      icon: "🌊", theme: "感情と関係" },
-  swords:    { ja: "ソード",     en: "Swords",    icon: "🌬", theme: "思考と決断" },
-  pentacles: { ja: "ペンタクル", en: "Pentacles", icon: "🪙", theme: "実りと仕事" },
+  wands:     { ja: "ワンド",     en: "Wands",     icon: "🔥", el: "火", theme: "情熱と行動" },
+  cups:      { ja: "カップ",     en: "Cups",      icon: "🌊", el: "水", theme: "感情と関係" },
+  swords:    { ja: "ソード",     en: "Swords",    icon: "🌬", el: "風", theme: "思考と決断" },
+  pentacles: { ja: "ペンタクル", en: "Pentacles", icon: "🪙", el: "地", theme: "実りと仕事" },
 };
 
 const TAROT_MINOR = (() => {

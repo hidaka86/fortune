@@ -179,15 +179,16 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   color: var(--muted); margin-top: 24px;
   font-size: clamp(14.5px, 1.9vw, 16.5px); letter-spacing: .05em; line-height: 2.1;
 }
-.hero-cta { display: flex; gap: 14px; justify-content: center; margin-top: 36px; flex-wrap: wrap; }
+.hero-cta { display: flex; gap: 14px; justify-content: center; margin-top: 44px; flex-wrap: wrap; }
 
-/* FVのカード扇 */
-.hero-fan { display: flex; justify-content: center; margin: 30px 0 -6px; }
+/* FVのカード扇(言葉を削いだぶん、カードが主役) */
+.hero-fan { display: flex; justify-content: center; margin: 40px 0 6px; }
 .hero-fan img {
-  width: 116px; height: 186px; object-fit: cover; border-radius: 9px;
+  width: clamp(120px, 34vw, 168px); height: auto; aspect-ratio: 152 / 244;
+  object-fit: cover; border-radius: 10px;
   border: 1px solid rgba(168, 132, 78, 0.5);
   box-shadow: 0 16px 36px rgba(28, 35, 51, 0.28);
-  margin: 0 -16px;
+  margin: 0 -20px;
   transform: rotate(var(--r)) translateY(calc(var(--r) * 0.6));
   animation: fanFloat 5s ease-in-out infinite;
   animation-delay: var(--d);
@@ -345,7 +346,7 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 /* ---------- フィロソフィー ---------- */
 .philosophy { text-align: center; margin: 96px auto 24px; max-width: 640px; }
 .philosophy-line {
-  font-family: var(--serif); font-size: clamp(19px, 3vw, 26px);
+  font-family: var(--serif); font-size: clamp(16.5px, 4.4vw, 26px);
   letter-spacing: .1em; line-height: 2.1; color: var(--indigo);
 }
 .philosophy-line em { font-style: normal; color: var(--gold-bright); }
@@ -367,7 +368,9 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
   color: var(--gold-bright); border: 1px solid rgba(168, 132, 78, 0.5);
   border-radius: 3px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px;
 }
+.field { min-width: 0; }
 .field input, .field select {
+  width: 100%; min-width: 0;
   background: var(--bg); border: 1px solid var(--hairline);
   border-radius: 6px; padding: 13px 14px; color: var(--ink);
   font-size: 16px; font-family: inherit; outline: none;
@@ -654,6 +657,16 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .so-label { font-family: var(--serif); font-size: 17px; font-weight: 700; letter-spacing: .06em; color: var(--indigo); }
 .spread-opt.active .so-label { color: var(--gold-bright); }
 .so-desc { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+.spread-opt.spread-deep {
+  grid-column: 1 / -1;
+  border-color: rgba(168, 132, 78, 0.5);
+  background: linear-gradient(120deg, rgba(168, 132, 78, 0.10), var(--bg) 70%);
+}
+.so-tag {
+  font-family: var(--latin); font-size: 10px; font-weight: 700; letter-spacing: .24em;
+  color: var(--gold-bright); border: 1px solid rgba(168, 132, 78, 0.5);
+  border-radius: 999px; padding: 1px 9px; margin-left: 10px; vertical-align: 2px;
+}
 .genre-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
 .genre-label { font-size: 13px; color: var(--muted); letter-spacing: .08em; }
 .ritual-question {
@@ -758,22 +771,15 @@ body.ritual-open { overflow: hidden; }
 }
 .shuffle-stack .tback.sc {
   position: absolute; inset: 0; width: 100%; height: 100%;
-  animation: shufSlow 2.6s ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.38s);
+  animation: shufSlow var(--shuf-dur, 3.8s) ease-in-out infinite;
+  animation-delay: calc(var(--i) * -0.5s);
 }
-.shuffle-stack.fast .tback.sc { animation: shufFast .5s ease-in-out infinite; animation-delay: calc(var(--i) * -0.07s); }
 .shuffle-stack.stopped .tback.sc { animation: none; transform: translate(calc(var(--i) * 0.6px), calc(var(--i) * -0.8px)); transition: transform .3s ease; }
 @keyframes shufSlow {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
   25% { transform: translate(-30px, -6px) rotate(-5deg); }
   50% { transform: translate(4px, 4px) rotate(2deg); }
   75% { transform: translate(30px, -5px) rotate(5deg); }
-}
-@keyframes shufFast {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  20% { transform: translate(-54px, -12px) rotate(-10deg); }
-  45% { transform: translate(10px, 8px) rotate(4deg); }
-  70% { transform: translate(52px, -10px) rotate(9deg); }
 }
 
 /* カット(3つの山) */
@@ -798,9 +804,11 @@ body.ritual-open { overflow: hidden; }
 
 /* ドロー(横スクロールの扇) */
 .draw-strip {
-  display: flex; overflow-x: auto; padding: 22px 32px 26px;
+  display: flex; overflow-x: auto; padding: 26px 40px 30px;
   scrollbar-width: thin; -webkit-overflow-scrolling: touch;
   transition: opacity .7s ease;
+  mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 7%, #000 93%, transparent);
 }
 .draw-strip.fan-done { opacity: 0; pointer-events: none; }
 .tback.draw-card {
@@ -817,6 +825,19 @@ body.ritual-open { overflow: hidden; }
   z-index: 2;
 }
 .tback.draw-card.taken { opacity: .12; pointer-events: none; transform: rotate(var(--r)) translateY(-40px) scale(.6); }
+
+/* ドロー進捗(多枚数スプレッドはスロットの代わりに小さなチップで) */
+.draw-progress { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; margin: 0 0 4px; }
+.draw-progress .dp {
+  width: 26px; height: 40px; border-radius: 4px;
+  border: 1px dashed rgba(184, 154, 90, 0.45);
+  transition: all .3s ease;
+}
+.draw-progress .dp.done {
+  border: 1px solid rgba(184, 154, 90, 0.7);
+  background: linear-gradient(165deg, #12183a, #1b2148);
+  box-shadow: 0 0 10px rgba(217, 192, 138, 0.4);
+}
 
 /* スロット上の裏向きカード+溜め */
 .tback.slot-back { width: 152px; height: 244px; border-radius: 10px; margin: 0 auto; }
@@ -871,6 +892,42 @@ body.ritual-open { overflow: hidden; }
   font-size: 13px; color: var(--chamber-muted); letter-spacing: .2em;
   animation: hintPulse 2.2s ease-in-out infinite;
 }
+/* フリップの瞬間:広がる光の環+舞う火花+間全体が一瞬明るむ */
+.rv-fx { position: absolute; inset: 0; pointer-events: none; z-index: 2; }
+.rv-ring {
+  position: absolute; left: 50%; top: 50%;
+  width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%;
+  border: 2px solid rgba(217, 192, 138, 0.85);
+  animation: rvRing 1.05s cubic-bezier(.2, .7, .3, 1) forwards;
+}
+@keyframes rvRing {
+  0% { transform: scale(.3); opacity: 0; }
+  18% { opacity: 1; }
+  100% { transform: scale(8); opacity: 0; border-width: 1px; }
+}
+.rv-spark {
+  position: absolute; left: 50%; top: 50%;
+  width: 5px; height: 5px; margin: -2.5px 0 0 -2.5px; border-radius: 50%;
+  background: #D9C08A; opacity: 0;
+  transform: rotate(var(--sa)) translateY(-30px);
+  animation: rvSpark 1.15s cubic-bezier(.15, .6, .4, 1) forwards;
+  animation-delay: var(--sd, 0s);
+}
+@keyframes rvSpark {
+  0% { transform: rotate(var(--sa)) translateY(-30px) scale(1); opacity: 0; }
+  12% { opacity: 1; }
+  100% { transform: rotate(var(--sa)) translateY(calc(-1 * var(--sr))) scale(.15); opacity: 0; }
+}
+.ritual-overlay.flash::after {
+  content: ""; position: fixed; inset: 0; pointer-events: none;
+  background: radial-gradient(circle at 50% 44%, rgba(217, 192, 138, 0.4), rgba(217, 192, 138, 0.08) 45%, transparent 70%);
+  animation: rvFlash .75s ease-out forwards;
+}
+@keyframes rvFlash {
+  0% { opacity: 0; }
+  16% { opacity: 1; }
+  100% { opacity: 0; }
+}
 @keyframes hintPulse {
   0%, 100% { opacity: .45; }
   50% { opacity: 1; }
@@ -903,6 +960,44 @@ body.ritual-open { overflow: hidden; }
 .tface .ori.up { border: 1px solid rgba(94, 234, 212, 0.4); color: #5eead4; background: rgba(10,13,29,.5); }
 .tface .ori.rev { border: 1px solid rgba(232, 121, 166, 0.4); color: #e879a6; background: rgba(10,13,29,.5); }
 
+/* タロット結果カード:正逆両方の意味とメタ情報 */
+.tc-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.tc-chip {
+  font-size: 11.5px; font-weight: 700; letter-spacing: .06em; color: var(--gold-bright);
+  border: 1px solid rgba(168, 132, 78, 0.4); border-radius: 999px; padding: 1px 10px;
+  background: rgba(168, 132, 78, 0.05);
+}
+.tc-meanings { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+.tc-meanings p { font-size: 15px; line-height: 1.85; }
+.tc-meanings .tc-dim { opacity: .5; }
+.tc-ori {
+  display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: .1em;
+  border-radius: 3px; padding: 0 7px; margin-right: 8px; vertical-align: 1px;
+}
+.tc-ori.up { color: var(--teal); border: 1px solid rgba(46, 140, 126, 0.45); }
+.tc-ori.rev { color: var(--rose); border: 1px solid rgba(192, 92, 130, 0.45); }
+.tc-advice { margin-top: 12px; font-size: 14.5px; color: var(--muted); }
+.tc-advice strong { color: var(--gold-bright); }
+.combo-list { margin-top: 12px; border-top: 1px dashed var(--hairline); padding-top: 10px; }
+.combo-list .combo { font-size: 15px; line-height: 1.9; margin-top: 6px; }
+
+/* タロットの結論カード:「つまり、こうです」を言い切る */
+.tarot-verdict {
+  border-color: rgba(168, 132, 78, 0.55);
+  background: linear-gradient(160deg, rgba(168, 132, 78, 0.08), var(--surface) 70%);
+}
+.tv-word {
+  font-family: var(--serif); font-size: clamp(22px, 4.4vw, 30px); font-weight: 700;
+  color: var(--indigo); letter-spacing: .06em; line-height: 1.7; text-wrap: balance;
+}
+.tv-reason { margin-top: 10px; }
+.tv-action {
+  margin-top: 14px; padding: 12px 16px; border-radius: 10px;
+  background: rgba(168, 132, 78, 0.08); border: 1px dashed rgba(168, 132, 78, 0.45);
+  font-size: 15.5px;
+}
+.tv-action strong { color: var(--gold-bright); }
+
 /* 結果 */
 .tarot-q {
   font-family: var(--serif); font-size: 16.5px; color: var(--gold-bright);
@@ -925,48 +1020,24 @@ body.ritual-open { overflow: hidden; }
   .ritual-step .tarot-slot-label small { font-size: 11px; }
 }
 
+@media (max-width: 720px) {
+  .tback.draw-card {
+    flex: 0 0 96px; width: 96px; height: 154px; margin-right: -30px;
+  }
+  .tback.draw-card:hover, .tback.draw-card:focus-visible {
+    transform: rotate(var(--r)) translateY(-14px) scale(1.04);
+  }
+}
 @media (max-width: 520px) {
   .spread-picker { grid-template-columns: 1fr; }
   .cut-piles { gap: 12px; }
   .cut-pile { width: 96px; }
 }
 
-/* ---------- 手相 ---------- */
-.palm-layout {
-  display: grid; grid-template-columns: 340px 1fr; gap: 20px;
-  max-width: 920px; margin: 0 auto; align-items: start;
-}
-.palm-figure-wrap { max-width: none; text-align: center; position: sticky; top: 84px; }
-#palm-svg { width: 100%; max-width: 280px; }
-.palm-line {
-  fill: none; stroke: rgba(28, 35, 51, 0.3); stroke-width: 2.5;
-  stroke-linecap: round; transition: all .3s ease;
-}
-.palm-line.hl {
-  stroke: var(--gold-bright); stroke-width: 4;
-  filter: drop-shadow(0 0 5px rgba(168, 132, 78, 0.7));
-}
-.palm-hint { font-size: 13px; color: var(--muted); margin-top: 10px; letter-spacing: .06em; }
-.palm-form { max-width: none; }
-.palm-q { margin-bottom: 24px; }
-.palm-q-title { font-family: var(--serif); font-size: 16px; font-weight: 700; letter-spacing: .08em; color: var(--indigo); }
-.palm-q-desc { font-size: 12px; color: var(--muted); margin: 2px 0 10px; }
-.palm-opts { display: flex; gap: 8px; flex-wrap: wrap; }
-.palm-opt input { position: absolute; opacity: 0; pointer-events: none; }
-.palm-opt span {
-  display: inline-block; padding: 8px 17px; border-radius: 999px;
-  font-size: 13px; font-weight: 500;
-  border: 1px solid var(--hairline); background: var(--bg);
-  color: var(--muted); transition: all .25s ease; cursor: pointer;
-}
-.palm-opt input:checked + span {
-  border-color: var(--gold); color: var(--gold-bright);
-  background: rgba(168, 132, 78, 0.1);
-}
-.palm-opt input:focus-visible + span { outline: 2px solid var(--gold); outline-offset: 2px; }
-
 /* ---------- 生年月日セレクト ---------- */
 .bd-select { display: flex; gap: 8px; }
+.time-select { display: flex; gap: 8px; }
+.time-select select { flex: 1; min-width: 0; }
 .bd-select select { flex: 1; min-width: 0; }
 .bd-select .bd-y { flex: 1.4; }
 .form-note { font-size: 13.5px; color: var(--muted); margin-top: 14px; letter-spacing: .04em; }
@@ -1156,6 +1227,36 @@ body.ritual-open { overflow: hidden; }
 }
 .hi-title { color: var(--ink); font-weight: 500; }
 
+/* ---------- ホロスコープ(出生図) ---------- */
+.horo-wheel { display: flex; justify-content: center; }
+.horo-svg { width: 100%; max-width: 360px; }
+.planet-list { display: flex; flex-direction: column; }
+.planet-row {
+  display: grid; grid-template-columns: 30px 128px 128px 1fr; gap: 8px; align-items: center;
+  padding: 9px 2px; border-bottom: 1px solid var(--hairline);
+}
+.planet-row:last-child { border-bottom: none; }
+.pr-glyph { font-size: 18px; color: var(--gold-bright); text-align: center; }
+.pr-name { font-weight: 700; font-size: 15px; }
+.pr-name small { display: block; font-weight: 500; font-size: 11px; color: var(--muted); letter-spacing: .02em; }
+.pr-sign { font-family: var(--serif); font-size: 15.5px; font-weight: 600; color: var(--indigo); }
+.pr-sign small { font-family: var(--sans); font-size: 11px; color: var(--muted); margin-left: 4px; font-weight: 500; }
+.pr-note { font-size: 12.5px; color: var(--muted); line-height: 1.6; }
+.aspect-row { padding: 10px 2px; border-bottom: 1px solid var(--hairline); }
+.aspect-row:last-of-type { border-bottom: none; }
+.ar-pair { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 15.5px; }
+.ar-type {
+  font-size: 11px; font-weight: 700; letter-spacing: .08em; border-radius: 999px; padding: 1px 10px;
+}
+.ar-type.soft { color: var(--teal); border: 1px solid rgba(46, 140, 126, 0.45); }
+.ar-type.hard { color: var(--rose); border: 1px solid rgba(192, 92, 130, 0.45); }
+.ar-type.hard0 { color: var(--gold-bright); border: 1px solid rgba(168, 132, 78, 0.5); }
+.ar-note { font-size: 14px; color: var(--muted); margin-top: 4px; line-height: 1.8; }
+@media (max-width: 640px) {
+  .planet-row { grid-template-columns: 26px 1fr 1fr; }
+  .pr-note { grid-column: 2 / -1; }
+}
+
 /* ---------- フッター ---------- */
 .footer { border-top: 1px solid var(--hairline); padding: 44px 24px 36px; background: rgba(255, 255, 255, 0.4); }
 .footer-inner {
@@ -1163,8 +1264,8 @@ body.ritual-open { overflow: hidden; }
   display: flex; justify-content: space-between; align-items: flex-start;
   gap: 24px; flex-wrap: wrap;
 }
-.footer-brand { display: flex; flex-direction: column; gap: 4px; }
-.footer-logo { height: 28px; width: auto; display: block; }
+.footer-brand { display: flex; flex-direction: column; gap: 0; align-items: flex-start; }
+.footer-logo { height: 14px; width: auto; display: block; }
 .footer-tagline {
   font-family: var(--serif);
   font-size: 12.5px; color: var(--muted); font-weight: 400;
@@ -1204,8 +1305,6 @@ body.ritual-open { overflow: hidden; }
 }
 @media (max-width: 720px) {
   .pc-only { display: none; }
-  .palm-layout { grid-template-columns: 1fr; }
-  .palm-figure-wrap { position: static; }
   .brand-logo { height: 28px; }
   .nav {
     width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none;

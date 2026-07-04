@@ -545,3 +545,148 @@ function integratedReading({ name, birthdate, theme }) {
 
   return { name, birthdateStr: birthdate, zodiac, eto, jikkan, kyusei, pillars, moon, daily, card, theme, themeScore, themeComment, elementNote };
 }
+
+/* ---------- ホロスコープ(出生図・10天体の位置) ----------
+   Paul Schlyter の近似法による黄経計算(精度±1度程度、娯楽用途に十分)。
+   出生時刻が不明の場合は正午JSTで計算します。 */
+const PLANET_BODIES = [
+  { key: "sun", ja: "太陽", glyph: "☉", role: "人生の核・生き方" },
+  { key: "moon", ja: "月", glyph: "☽", role: "素の感情・安心のかたち" },
+  { key: "mercury", ja: "水星", glyph: "☿", role: "頭の使い方・言葉" },
+  { key: "venus", ja: "金星", glyph: "♀", role: "愛し方・美意識" },
+  { key: "mars", ja: "火星", glyph: "♂", role: "行動力・情熱の出し方" },
+  { key: "jupiter", ja: "木星", glyph: "♃", role: "幸運の広がり方" },
+  { key: "saturn", ja: "土星", glyph: "♄", role: "課題・鍛えられる場所" },
+  { key: "uranus", ja: "天王星", glyph: "♅", role: "変革の衝動", gen: true },
+  { key: "neptune", ja: "海王星", glyph: "♆", role: "夢と直感", gen: true },
+  { key: "pluto", ja: "冥王星", glyph: "♇", role: "根源的な変容", gen: true },
+];
+
+const ORBITAL_ELEMENTS = {
+  mercury: { N: [48.3313, 3.24587e-5], i: [7.0047, 5.0e-8], w: [29.1241, 1.01444e-5], a: [0.387098, 0], e: [0.205635, 5.59e-10], M: [168.6562, 4.0923344368] },
+  venus: { N: [76.6799, 2.4659e-5], i: [3.3946, 2.75e-8], w: [54.891, 1.38374e-5], a: [0.72333, 0], e: [0.006773, -1.302e-9], M: [48.0052, 1.6021302244] },
+  mars: { N: [49.5574, 2.11081e-5], i: [1.8497, -1.78e-8], w: [286.5016, 2.92961e-5], a: [1.523688, 0], e: [0.093405, 2.516e-9], M: [18.6021, 0.5240207766] },
+  jupiter: { N: [100.4542, 2.76854e-5], i: [1.303, -1.557e-7], w: [273.8777, 1.64505e-5], a: [5.20256, 0], e: [0.048498, 4.469e-9], M: [19.895, 0.0830853001] },
+  saturn: { N: [113.6634, 2.3898e-5], i: [2.4886, -1.081e-7], w: [339.3939, 2.97661e-5], a: [9.55475, 0], e: [0.055546, -9.499e-9], M: [316.967, 0.0334442282] },
+  uranus: { N: [74.0005, 1.3978e-5], i: [0.7733, 1.9e-8], w: [96.6612, 3.0565e-5], a: [19.18171, -1.55e-8], e: [0.047318, 7.45e-9], M: [142.5905, 0.011725806] },
+  neptune: { N: [131.7806, 3.0173e-5], i: [1.77, -2.55e-7], w: [272.8461, -6.027e-6], a: [30.05826, 3.313e-8], e: [0.008606, 2.15e-9], M: [260.2471, 0.005995147] },
+};
+
+function planetLongitudes(y, m, d, hourJST) {
+  const rad = Math.PI / 180;
+  const rev360 = (x) => ((x % 360) + 360) % 360;
+  const sinD = (x) => Math.sin(x * rad), cosD = (x) => Math.cos(x * rad);
+  const ut = hourJST - 9; // JST -> UT
+  const dd = 367 * y - Math.floor((7 * (y + Math.floor((m + 9) / 12))) / 4) + Math.floor((275 * m) / 9) + d - 730530 + ut / 24;
+
+  // 太陽(=地球の位置の裏返し)
+  const ws = 282.9404 + 4.70935e-5 * dd;
+  const es = 0.016709 - 1.151e-9 * dd;
+  const Ms = rev360(356.047 + 0.9856002585 * dd);
+  const Es = Ms + es * (180 / Math.PI) * sinD(Ms) * (1 + es * cosD(Ms));
+  const xv0 = cosD(Es) - es, yv0 = Math.sqrt(1 - es * es) * sinD(Es);
+  const sunLon = rev360(Math.atan2(yv0, xv0) / rad + ws);
+  const rs = Math.sqrt(xv0 * xv0 + yv0 * yv0);
+  const xs = rs * cosD(sunLon), ys = rs * sinD(sunLon);
+
+  // 月(地心黄経・主要摂動6項)
+  const t = dd - 1.5; // moonSign と同じ J2000 基準
+  const Lp = 218.316 + 13.176396 * t;
+  const Mm = 357.529 + 0.98560028 * t;
+  const Mp = 134.963 + 13.064993 * t;
+  const D = 297.85 + 12.190749 * t;
+  const F = 93.272 + 13.22935 * t;
+  const moonLon = rev360(Lp + 6.289 * sinD(Mp) + 1.274 * sinD(2 * D - Mp) + 0.658 * sinD(2 * D)
+    + 0.214 * sinD(2 * Mp) - 0.186 * sinD(Mm) - 0.114 * sinD(2 * F));
+
+  // 惑星(日心 -> 地心)
+  function helio(el) {
+    const N = el.N[0] + el.N[1] * dd, inc = el.i[0] + el.i[1] * dd, w = el.w[0] + el.w[1] * dd;
+    const a = el.a[0] + el.a[1] * dd, e = el.e[0] + el.e[1] * dd, M = rev360(el.M[0] + el.M[1] * dd);
+    let E = M + e * (180 / Math.PI) * sinD(M) * (1 + e * cosD(M));
+    for (let k = 0; k < 6; k++) E = E - (E - e * (180 / Math.PI) * sinD(E) - M) / (1 - e * cosD(E));
+    const xv = a * (cosD(E) - e), yv = a * Math.sqrt(1 - e * e) * sinD(E);
+    const v = Math.atan2(yv, xv) / rad, r = Math.sqrt(xv * xv + yv * yv);
+    const xh = r * (cosD(N) * cosD(v + w) - sinD(N) * sinD(v + w) * cosD(inc));
+    const yh = r * (sinD(N) * cosD(v + w) + cosD(N) * sinD(v + w) * cosD(inc));
+    return { xh, yh, r, M, lonecl: rev360(Math.atan2(yh, xh) / rad) };
+  }
+
+  const H = {};
+  for (const key of Object.keys(ORBITAL_ELEMENTS)) H[key] = helio(ORBITAL_ELEMENTS[key]);
+
+  // 木星・土星・天王星の主要摂動(黄経補正)
+  const Mj = H.jupiter.M, Msa = H.saturn.M, Mu = H.uranus.M;
+  H.jupiter.lonecl += -0.332 * sinD(2 * Mj - 5 * Msa - 67.6) - 0.056 * sinD(2 * Mj - 2 * Msa + 21)
+    + 0.042 * sinD(3 * Mj - 5 * Msa + 21) - 0.036 * sinD(Mj - 2 * Msa) + 0.022 * cosD(Mj - Msa)
+    + 0.023 * sinD(2 * Mj - 3 * Msa + 52) - 0.016 * sinD(Mj - 5 * Msa - 69);
+  H.saturn.lonecl += 0.812 * sinD(2 * Mj - 5 * Msa - 67.6) - 0.229 * cosD(2 * Mj - 4 * Msa - 2)
+    + 0.119 * sinD(Mj - 2 * Msa - 3) + 0.046 * sinD(2 * Mj - 6 * Msa - 69) + 0.014 * sinD(Mj - 3 * Msa + 32);
+  H.uranus.lonecl += 0.04 * sinD(Msa - 2 * Mu + 6) + 0.035 * sinD(Msa - 3 * Mu + 33) - 0.015 * sinD(Mj - Mu + 20);
+
+  const geo = (h) => {
+    const xh = h.r * cosD(h.lonecl), yh = h.r * sinD(h.lonecl);
+    return rev360(Math.atan2(yh + ys, xh + xs) / rad);
+  };
+
+  // 冥王星(Schlyterの近似級数, 1900-2100)
+  const S = 50.03 + 0.033459652 * dd, P = 238.95 + 0.003968789 * dd;
+  const plutoLonecl = 238.9508 + 0.00400703 * dd
+    - 19.799 * sinD(P) + 19.848 * cosD(P) + 0.897 * sinD(2 * P) - 4.956 * cosD(2 * P)
+    + 0.61 * sinD(3 * P) + 1.211 * cosD(3 * P) - 0.341 * sinD(4 * P) - 0.19 * cosD(4 * P)
+    + 0.128 * sinD(5 * P) - 0.034 * cosD(5 * P) - 0.038 * sinD(6 * P) + 0.031 * cosD(6 * P)
+    + 0.02 * sinD(S - P) - 0.01 * cosD(S - P);
+  const plutoR = 40.72 + 6.68 * sinD(P) + 6.9 * cosD(P) - 1.18 * sinD(2 * P) - 0.03 * cosD(2 * P) + 0.15 * sinD(3 * P) - 0.14 * cosD(3 * P);
+  const plutoGeo = rev360(Math.atan2(plutoR * sinD(plutoLonecl) + ys, plutoR * cosD(plutoLonecl) + xs) / rad);
+
+  return {
+    sun: sunLon, moon: moonLon,
+    mercury: geo(H.mercury), venus: geo(H.venus), mars: geo(H.mars),
+    jupiter: geo(H.jupiter), saturn: geo(H.saturn),
+    uranus: geo(H.uranus), neptune: geo(H.neptune), pluto: plutoGeo,
+  };
+}
+
+const SIGN_ORDER = ["牡羊座", "牡牛座", "双子座", "蟹座", "獅子座", "乙女座", "天秤座", "蠍座", "射手座", "山羊座", "水瓶座", "魚座"];
+const ELEMENT_STYLE = {
+  "火": "直感とひらめきで動く",
+  "地": "現実的に、着実に形へ落とす",
+  "風": "言葉と知性でつないでいく",
+  "水": "感情と共感で深く感じ取る",
+};
+const ASPECT_TYPES = [
+  { angle: 0, ja: "コンジャンクション(0°)", tone: "hard0", note: "重なり合って、互いの性質を強め合います。あなたの中で特に濃いテーマ。" },
+  { angle: 60, ja: "セクスタイル(60°)", tone: "soft", note: "軽やかに助け合う心地よい角度。意識して使うほど伸びる才能です。" },
+  { angle: 90, ja: "スクエア(90°)", tone: "hard", note: "摩擦を生む角度。ただし乗り越えるたびに、あなたの強さに変わります。" },
+  { angle: 120, ja: "トライン(120°)", tone: "soft", note: "自然に調和する角度。努力の自覚なしに流れ出る、生まれつきの才能です。" },
+  { angle: 180, ja: "オポジション(180°)", tone: "hard", note: "引っ張り合う角度。両極を行き来しながら、バランスの取り方を学ばせます。" },
+];
+
+function horoscope(y, m, d, hourJST = 12, hasTime = false) {
+  const lons = planetLongitudes(y, m, d, hourJST);
+  const planets = PLANET_BODIES.map((b) => {
+    const lon = lons[b.key];
+    const signName = SIGN_ORDER[Math.floor(lon / 30)];
+    const sign = ZODIAC.find((z) => z.name === signName);
+    return { ...b, lon, sign, deg: Math.floor(lon % 30) };
+  });
+
+  const aspects = [];
+  for (let i = 0; i < planets.length; i++) {
+    for (let j = i + 1; j < planets.length; j++) {
+      const a = planets[i], b = planets[j];
+      if (a.gen && b.gen) continue; // 世代天体同士は個人差が出ないので省く
+      let diff = Math.abs(a.lon - b.lon);
+      if (diff > 180) diff = 360 - diff;
+      for (const t of ASPECT_TYPES) {
+        const orb = Math.abs(diff - t.angle);
+        const maxOrb = (a.key === "sun" || a.key === "moon" || b.key === "sun" || b.key === "moon")
+          ? (t.angle === 60 ? 5 : 8) : (t.angle === 60 ? 4 : 6);
+        if (orb <= maxOrb) aspects.push({ a, b, type: t, orb });
+      }
+    }
+  }
+  aspects.sort((x, y2) => x.orb - y2.orb);
+
+  return { planets, aspects: aspects.slice(0, 7), hasTime };
+}

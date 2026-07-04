@@ -4,16 +4,16 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MYOURISCOPE — この世の理と、あなたの流れを観る。</title>
-  <meta name="description" content="西洋占星術・四柱推命・九星気学・タロット・手相・相性。複数の占術をひとつの流れとして統合し、過去・現在・未来を静かに観測するコンテンプレイティブな占いサービス。" />
+  <meta name="description" content="西洋占星術・四柱推命・九星気学・タロット・相性。複数の占術をひとつの流れとして統合し、過去・現在・未来を静かに観測する占いサービス。" />
   <meta name="theme-color" content="#F3EEE5" />
   <meta property="og:title" content="MYOURISCOPE — この世の理と、あなたの流れを観る。" />
-  <meta property="og:description" content="過去・現在・未来を、ひとつの流れとして読む。六つの占術を統合した、静かな観測のための占い体験。" />
+  <meta property="og:description" content="過去・現在・未来を、ひとつの流れとして読む。複数の占術を統合した、静かな観測のための占い体験。" />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://hidaka86.github.io/fortune/" />
   <meta property="og:image" content="https://hidaka86.github.io/fortune/ogp.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="MYOURISCOPE — あなたの流れを観る" />
-  <meta name="twitter:description" content="六つの占術×1080タイプの称号。過去・現在・未来を、ひとつの流れとして読む。" />
+  <meta name="twitter:description" content="タロット78枚のフルデッキと、1080タイプの称号。過去・現在・未来を、ひとつの流れとして読む。" />
   <meta name="twitter:image" content="https://hidaka86.github.io/fortune/ogp.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="icon" href="favicon.ico" sizes="any" />
@@ -33,7 +33,7 @@
   <header class="header">
     <div class="header-inner">
       <a class="brand" href="#" data-nav="home">
-        <img class="brand-logo" src="assets/brand/logo_horizontal.png" alt="MYOURISCOPE" />
+        <img class="brand-logo" src="assets/brand/logo_header.png" alt="MYOURISCOPE" />
       </a>
       <nav class="nav" id="nav">
         <button class="nav-btn active" data-nav="home">ホーム</button>
@@ -41,7 +41,6 @@
         <button class="nav-btn" data-nav="western">星占い</button>
         <button class="nav-btn" data-nav="eastern">東洋占術</button>
         <button class="nav-btn" data-nav="tarot">タロット</button>
-        <button class="nav-btn" data-nav="palm">手相</button>
         <button class="nav-btn" data-nav="aisho">相性</button>
         <button class="nav-btn nav-btn-my" data-nav="mypage">マイページ</button>
       </nav>
@@ -57,18 +56,15 @@
         <canvas id="sky" aria-hidden="true"></canvas>
         <div class="hero-content">
           <p class="hero-eyebrow">MYOURISCOPE</p>
-          <h1 class="hero-title">この世の理と、<br /><em>あなたの流れ</em>を観る。</h1>
-          <p class="hero-sub">過去・現在・未来を、ひとつの流れとして読む。<br class="pc-only" />西洋占星術・四柱推命・九星気学・タロット・手相・相性——六つの占術による、静かな観測。</p>
           <div class="hero-fan" aria-hidden="true">
             <img src="images/tarot/tarot_18_moon.webp" alt="" loading="lazy" style="--r:-13deg;--d:0s" onerror="this.parentElement.remove()" />
             <img src="images/tarot/tarot_17_star.webp" alt="" loading="lazy" style="--r:0deg;--d:.7s" />
             <img src="images/tarot/tarot_19_sun.webp" alt="" loading="lazy" style="--r:13deg;--d:1.4s" />
           </div>
           <div class="hero-cta">
-            <button class="btn btn-primary btn-lg" data-nav="tarot">今日の一枚を引く(無料)</button>
+            <button class="btn btn-primary btn-lg" data-nav="tarot">今日の一枚を引く</button>
             <button class="btn btn-ghost btn-lg" data-nav="integrated">統合鑑定をはじめる</button>
           </div>
-          <p class="hero-register-hint"><button data-nav="mypage">無料登録(30秒)</button>すると、開くたびに今日のあなたの流れがここに表示されます</p>
         </div>
       </div>
 
@@ -78,20 +74,20 @@
 
       <div class="section-head">
         <p class="section-eyebrow">DIVINATIONS</p>
-        <h2 class="section-title">六つの観測</h2>
+        <h2 class="section-title">五つの観測</h2>
       </div>
 
       <div class="bento">
         <button class="bento-card bento-main bento-art" data-nav="tarot" style="--hue:#A8844E">
           <span class="bento-tag">いちばん人気</span>
           <h3>タロット</h3>
-          <p>シャッフルも、カットも、引くのもあなたの手。本物の手順の儀式フローで、美しい大アルカナ22枚が答えます。</p>
-          <span class="bento-link">今日の一枚を引く(30秒) →</span>
+          <p>シャッフルも、カットも、引くのもあなたの手。本物の手順の儀式フローで、大アルカナ22枚+小アルカナ56枚——78枚のフルデッキが答えます。</p>
+          <span class="bento-link">今日の一枚を引く →</span>
         </button>
         <button class="bento-card" data-nav="integrated" style="--hue:#A8844E">
           <span class="bento-glyph">◉</span>
           <h3>統合鑑定</h3>
-          <p>六つの占術を横断して、運命の称号と今日の答えを。</p>
+          <p>占術を横断して、運命の称号と今日の答えを。</p>
           <span class="bento-link">→</span>
         </button>
         <button class="bento-card" data-nav="western" style="--hue:#6D5FC9">
@@ -106,25 +102,14 @@
           <p>四柱推命と九星気学。生まれ持った器を知る。</p>
           <span class="bento-link">→</span>
         </button>
-        <button class="bento-card" data-nav="palm" style="--hue:#2E8C7E">
-          <span class="bento-glyph">掌</span>
-          <h3>手相</h3>
-          <p>手のひらの四つの線。あなたに刻まれた資質。</p>
-          <span class="bento-link">→</span>
-        </button>
-        <button class="bento-card bento-wide" data-nav="aisho" style="--hue:#C05C82">
+        <button class="bento-card" data-nav="aisho" style="--hue:#C05C82">
           <span class="bento-glyph">縁</span>
           <h3>相性診断</h3>
-          <p>星座 × 五行 × 干支。三つの角度から、二人の縁を読み解きます。気になるあの人と、大切なパートナーと。</p>
-          <span class="bento-link">二人の生年月日で診断 →</span>
+          <p>星座 × 五行 × 干支。三つの角度から二人の縁を。</p>
+          <span class="bento-link">→</span>
         </button>
       </div>
 
-      <div class="philosophy">
-        <p class="philosophy-line">過去は積み重なった律動、現在は選択、</p>
-        <p class="philosophy-line">未来は<em>ほどけていく流れ</em>。三つはひとつです。</p>
-        <p class="philosophy-sub">MYOURISCOPEは、未来を騒がしく言い当てる場所ではなく、人生の理をしずかに観測するための道具でありたい。今日のあなたに、良い言葉が届きますように。</p>
-      </div>
     </section>
 
     <!-- ============ INTEGRATED ============ -->
@@ -132,7 +117,7 @@
       <div class="view-head">
         <p class="view-eyebrow">INTEGRATED READING</p>
         <h2>統合鑑定</h2>
-        <p class="view-sub">生年月日から六つの占術を横断し、いまのあなたに必要な言葉をひとつのレポートにまとめます。</p>
+        <p class="view-sub">生年月日から複数の占術を横断し、いまのあなたに必要な言葉をひとつのレポートにまとめます。</p>
       </div>
 
       <form class="panel form" id="integrated-form">
@@ -167,7 +152,7 @@
       <div class="view-head">
         <p class="view-eyebrow">WESTERN ASTROLOGY</p>
         <h2>星占い</h2>
-        <p class="view-sub">太陽星座は「外に向かうあなた」、月星座は「心の素顔」。二つの星からあなたを読み解きます。</p>
+        <p class="view-sub">太陽と月、そして10天体のホロスコープ(出生図)。生まれた日の星の配置から、あなたを読み解きます。</p>
       </div>
 
       <form class="panel form" id="western-form">
@@ -175,6 +160,13 @@
           <label class="field">
             <span class="field-label">生年月日 <em>必須</em></span>
             <div class="bd-select" data-bd="birthdate"></div>
+          </label>
+          <label class="field">
+            <span class="field-label">出生時刻(任意・月とホロスコープの精度が上がります)</span>
+            <div class="time-select">
+              <select name="bh" aria-label="時"><option value="">不明</option><option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option></select>
+              <select name="bm" aria-label="分"><option value="0">00分</option><option value="10">10分</option><option value="20">20分</option><option value="30">30分</option><option value="40">40分</option><option value="50">50分</option></select>
+            </div>
           </label>
         </div>
         <button class="btn btn-primary btn-lg btn-block" type="submit">星を調べる</button>
@@ -214,50 +206,6 @@
 
       <div id="tarot-stage"></div>
       <div id="tarot-summary" class="result-area" hidden></div>
-    </section>
-
-    <!-- ============ PALM ============ -->
-    <section class="view" id="view-palm">
-      <div class="view-head">
-        <p class="view-eyebrow">PALMISTRY</p>
-        <h2>手相診断</h2>
-        <p class="view-sub">利き手ではない方の手のひらを見ながら、四つの線の特徴を選んでください。</p>
-      </div>
-
-      <div class="palm-layout">
-        <div class="panel palm-figure-wrap">
-          <svg id="palm-svg" viewBox="0 0 300 340" role="img" aria-label="手のひらの図">
-            <defs>
-              <linearGradient id="palmGrad" gradientUnits="userSpaceOnUse" x1="60" y1="40" x2="240" y2="320">
-                <stop offset="0%" stop-color="rgba(168,132,78,.30)" />
-                <stop offset="100%" stop-color="rgba(28,35,51,.14)" />
-              </linearGradient>
-            </defs>
-            <!-- 手のシルエット:塗りつぶし図形の重なりで構成 -->
-            <g fill="url(#palmGrad)">
-              <rect x="95"  y="130" width="118" height="180" rx="42" /><!-- 手のひら -->
-              <rect x="99"  y="62"  width="26"  height="96"  rx="13" /><!-- 人差し指 -->
-              <rect x="130" y="46"  width="26"  height="112" rx="13" /><!-- 中指 -->
-              <rect x="161" y="58"  width="26"  height="100" rx="13" /><!-- 薬指 -->
-              <rect x="191" y="84"  width="23"  height="76"  rx="11.5" /><!-- 小指 -->
-              <rect x="48"  y="168" width="27"  height="92"  rx="13.5" transform="rotate(-38 61 175)" /><!-- 親指 -->
-            </g>
-            <!-- lines -->
-            <path id="line-life" class="palm-line" d="M110 162 C96 200 98 252 124 296" />
-            <path id="line-head" class="palm-line" d="M108 176 C138 190 168 198 198 212" />
-            <path id="line-heart" class="palm-line" d="M202 168 C168 150 136 147 106 155" />
-            <path id="line-fate" class="palm-line" d="M154 296 C152 250 151 200 150 158" />
-          </svg>
-          <p class="palm-hint" id="palm-hint">線を選ぶと図でハイライトされます</p>
-        </div>
-
-        <form class="panel form palm-form" id="palm-form">
-          <div id="palm-questions"></div>
-          <button class="btn btn-primary btn-lg btn-block" type="submit">診断する</button>
-        </form>
-      </div>
-
-      <div id="palm-result" class="result-area" hidden></div>
     </section>
 
     <!-- ============ COMPATIBILITY ============ -->
@@ -305,7 +253,7 @@
   <footer class="footer">
     <div class="footer-inner">
       <div class="footer-brand">
-        <img class="footer-logo" src="assets/brand/logo_horizontal.png" alt="MYOURISCOPE" />
+        <img class="footer-logo" src="assets/brand/wordmark_footer.png" alt="MYOURISCOPE" />
         <p class="footer-tagline">この世の理と、あなたの流れを観る。</p>
       </div>
       <nav class="footer-nav">
@@ -313,7 +261,6 @@
         <button data-nav="western">星占い</button>
         <button data-nav="eastern">東洋占術</button>
         <button data-nav="tarot">タロット</button>
-        <button data-nav="palm">手相</button>
         <button data-nav="aisho">相性診断</button>
         <button data-nav="mypage">マイページ</button>
       </nav>

@@ -156,11 +156,10 @@ function todayLogicHtml(daily) {
 
 /* 回遊導線:結果の下に「次の扉」を提示 */
 const CROSS_SUGGEST = {
-  integrated: [["tarot", "3枚スプレッドで深掘りする"], ["aisho", "気になる人との相性をみる"], ["palm", "手相で資質を確かめる"]],
-  western: [["integrated", "六占術まとめて統合鑑定"], ["eastern", "東洋の暦ではどう出る?"], ["tarot", "今日の一枚を引く"]],
+  integrated: [["tarot", "3枚スプレッドで深掘りする"], ["aisho", "気になる人との相性をみる"], ["western", "ホロスコープをみる"]],
+  western: [["integrated", "まとめて統合鑑定"], ["eastern", "東洋の暦ではどう出る?"], ["tarot", "今日の一枚を引く"]],
   eastern: [["western", "月星座で心の素顔をみる"], ["integrated", "統合鑑定で全体をみる"], ["aisho", "大切な人との相性をみる"]],
-  tarot: [["integrated", "生年月日から統合鑑定"], ["palm", "手相を診断する"], ["western", "星占いをみる"]],
-  palm: [["tarot", "タロットに聞いてみる"], ["integrated", "統合鑑定を受ける"], ["eastern", "四柱推命で器をみる"]],
+  tarot: [["integrated", "生年月日から統合鑑定"], ["western", "ホロスコープをみる"], ["eastern", "四柱推命で器をみる"]],
   aisho: [["integrated", "自分の統合鑑定をみる"], ["tarot", "二人の今日を一枚で占う"], ["western", "月星座の相性も気になる?"]],
 };
 
@@ -429,7 +428,7 @@ function renderMypage() {
             <div class="bd-select" data-bd="birthdate"></div>
           </label>
         </div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">無料で登録する</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">登録する</button>
         <p class="form-note">登録情報はこの端末のブラウザ内(localStorage)にのみ保存され、サーバーには送信されません。</p>
       </form>`;
     setupBirthdateSelects();
@@ -934,33 +933,80 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
 });
 
 /* ---------- 星占い(太陽 × 月) ---------- */
+/* ホロスコープの円環図(出生図ホイール) */
+function horoscopeWheelSvg(h) {
+  const size = 340, cx = 170, cy = 170;
+  const rOuter = 160, rSignIn = 134, rPlanet = 106, rAspect = 84;
+  // 牡羊座0度を左(9時方向)に、反時計回り(占星術の慣習)
+  const pt = (lon, r) => {
+    const a = (180 - lon) * Math.PI / 180;
+    return [cx + r * Math.cos(a), cy - r * Math.sin(a)];
+  };
+  let out = `<circle cx="${cx}" cy="${cy}" r="${rOuter}" fill="#FDFBF6" stroke="rgba(28,35,51,.28)" stroke-width="1.2"/>
+    <circle cx="${cx}" cy="${cy}" r="${rSignIn}" fill="none" stroke="rgba(28,35,51,.2)"/>
+    <circle cx="${cx}" cy="${cy}" r="${rAspect}" fill="none" stroke="rgba(28,35,51,.1)"/>
+    <circle cx="${cx}" cy="${cy}" r="2.5" fill="#A8844E"/>`;
+  // 12サインの仕切りとグリフ
+  const SIGN_GLYPHS = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
+  for (let i = 0; i < 12; i++) {
+    const [x1, y1] = pt(i * 30, rSignIn), [x2, y2] = pt(i * 30, rOuter);
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(28,35,51,.2)"/>`;
+    const [gx, gy] = pt(i * 30 + 15, (rOuter + rSignIn) / 2);
+    out += `<text x="${gx}" y="${gy + 5}" text-anchor="middle" font-size="15" fill="#8F6C38">${SIGN_GLYPHS[i]}\uFE0E</text>`;
+  }
+  // アスペクト線(天体の内側)
+  for (const asp of h.aspects) {
+    const [x1, y1] = pt(asp.a.lon, rAspect), [x2, y2] = pt(asp.b.lon, rAspect);
+    const color = asp.type.tone === "soft" ? "rgba(46,140,126,.55)" : asp.type.tone === "hard" ? "rgba(192,92,130,.5)" : "rgba(168,132,78,.6)";
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1.3"/>`;
+  }
+  // 天体グリフ(近接時は半径を互い違いに)
+  const sorted = [...h.planets].sort((a, b) => a.lon - b.lon);
+  let prevLon = -99, flip = false;
+  for (const pl of sorted) {
+    flip = pl.lon - prevLon < 12 ? !flip : false;
+    prevLon = pl.lon;
+    const [px, py] = pt(pl.lon, rPlanet - (flip ? 22 : 0));
+    const [tx, ty] = pt(pl.lon, rAspect);
+    out += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="rgba(28,35,51,.15)"/>
+      <circle cx="${px}" cy="${py}" r="11" fill="#FDFBF6" stroke="rgba(168,132,78,.5)"/>
+      <text x="${px}" y="${py + 4.5}" text-anchor="middle" font-size="13" fill="#1C2333">${pl.glyph}\uFE0E</text>`;
+  }
+  return `<svg viewBox="0 0 ${size} ${size}" class="horo-svg" role="img" aria-label="出生図">${out}</svg>`;
+}
+
 document.getElementById("western-form").addEventListener("submit", (e) => {
   e.preventDefault();
-  const birthdate = new FormData(e.target).get("birthdate");
+  const fd = new FormData(e.target);
+  const birthdate = fd.get("birthdate");
   const [y, m, d] = birthdate.split("-").map(Number);
   const z = getZodiac(m, d);
   const moon = moonSign(y, m, d);
   const daily = dailyFortune(birthdate);
+  const hasTime = fd.get("bh") !== "" && fd.get("bh") !== null;
+  const horo = horoscope(y, m, d, hasTime ? Number(fd.get("bh")) + Number(fd.get("bm") || 0) / 60 : 12, hasTime);
+  const horoMoonSign = horo.planets.find((p) => p.key === "moon").sign;
 
+  const moonName = hasTime ? horoMoonSign.name : moon.name;
   lastShare.western = {
     eyebrow: "WESTERN ASTROLOGY",
-    title: `太陽は${z.name}、月は${moon.name}`,
+    title: `太陽は${z.name}、月は${moonName}`,
     keywords: [z.keyword],
     score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `【MYOURISCOPE 星占い】太陽星座は${z.name}、月星座は${moon.name}。今日の運気は${daily.score100}/100 ✦`,
+    x: `【MYOURISCOPE 星占い】太陽星座は${z.name}、月星座は${moonName}。今日の運気は${daily.score100}/100 ✦`,
   };
-  recordHistory("星占い", `太陽${z.name} × 月${moon.name}`, `${z.keyword}。今日の運気${daily.score100}/100。`);
+  recordHistory("星占い", `太陽${z.name} × 月${moonName}`, `${z.keyword}。10天体のホロスコープ鑑定。今日の運気${daily.score100}/100。`);
 
   showResult(document.getElementById("western-result"), `
     <div class="result-hero">
       <span class="result-symbol">${z.symbol}︎</span>
       <p class="result-eyebrow">WESTERN ASTROLOGY</p>
-      <h3 class="result-title">太陽は${z.name}、月は${moon.name}。</h3>
+      <h3 class="result-title">太陽は${z.name}、月は${moonName}。</h3>
       <p class="result-keyword">${z.keyword}</p>
       <div class="chip-row">
         <span class="chip">エレメント <strong>${z.element}</strong></span>
         <span class="chip">守護星 <strong>${z.planet}</strong></span>
-        <span class="chip">月星座 <strong>${moon.name}</strong></span>
+        <span class="chip">月星座 <strong>${moonName}</strong></span>
       </div>
       ${shareRowHtml("western")}
     </div>
@@ -971,9 +1017,42 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
       </div>
       <div class="result-card">
         ${cardH4("MOON SIGN", "心の素顔")}
-        <p><strong style="color:var(--gold-bright)">☾︎ ${moon.name}</strong> — ${moon.desc}</p>
-        <p class="sub" style="margin-top:12px">※ 月は約2.5日で星座を移動します。出生時刻によっては前後の星座になる場合があります。</p>
+        <p><strong style="color:var(--gold-bright)">☾︎ ${moonName}</strong> — ${MOONSIGN_DESC[moonName]}</p>
+        <p class="sub" style="margin-top:12px">${hasTime ? "※ 出生時刻をもとに計算しています。" : "※ 月は約2.5日で星座を移動します。出生時刻を入れると精度が上がります。"}</p>
       </div>
+      <div class="result-card span-all">
+        ${cardH4("BIRTH CHART", "ホロスコープ(出生図)")}
+        <div class="horo-wheel">${horoscopeWheelSvg(horo)}</div>
+        <p class="sub" style="text-align:center;margin-top:10px">生まれた日の空で、10天体がどの星座にいたか。${horo.hasTime ? "出生時刻をもとに計算しています。" : "出生時刻が不明のため正午で計算しています(月は前後の星座になる場合があります)。"}</p>
+        <div class="legend" style="margin-top:8px">
+          <span><i style="background:#2E8C7E"></i>調和の角度</span>
+          <span><i style="background:#C05C82"></i>緊張の角度</span>
+          <span><i style="background:#A8844E"></i>重なり</span>
+        </div>
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("PLANETS", "10天体の配置")}
+        <div class="planet-list">
+          ${horo.planets.map((pl) => `
+            <div class="planet-row">
+              <span class="pr-glyph">${pl.glyph}</span>
+              <span class="pr-name">${pl.ja}<small>${pl.role}</small></span>
+              <span class="pr-sign">${pl.sign.symbol}︎ ${pl.sign.name}<small>${pl.deg}°${pl.gen ? " ・世代" : ""}</small></span>
+              <span class="pr-note">${ELEMENT_STYLE[pl.sign.element]}、${pl.sign.element}のサイン</span>
+            </div>`).join("")}
+        </div>
+        ${explainHtml("天体の配置って何?", "西洋占星術では、太陽だけでなく10の天体すべてがあなたの一部を担当すると考えます。太陽=生き方、月=素の感情、水星=言葉、金星=愛し方、火星=行動力……。同じ牡羊座生まれでも、金星や火星の星座が違えば恋愛や仕事のスタイルはまったく変わります。これがホロスコープ(出生図)の読み方です。")}
+      </div>
+      ${horo.aspects.length ? `
+      <div class="result-card span-all">
+        ${cardH4("ASPECTS", "天体同士の会話")}
+        ${horo.aspects.map((x) => `
+          <div class="aspect-row">
+            <p class="ar-pair"><strong>${x.a.glyph}︎ ${x.a.ja} × ${x.b.glyph}︎ ${x.b.ja}</strong><span class="ar-type ${x.type.tone}">${x.type.ja}</span></p>
+            <p class="ar-note">「${x.a.role}」と「${x.b.role}」— ${x.type.note}</p>
+          </div>`).join("")}
+        ${explainHtml("アスペクトって何?", "天体同士がつくる角度のこと。120°(トライン)や60°(セクスタイル)は自然に調和する角度、90°(スクエア)や180°(オポジション)は緊張を生む角度ですが、緊張は成長のエネルギーでもあります。角度の誤差(オーブ)が小さいものほど、あなたへの影響が濃い配置です。")}
+      </div>` : ""}
       <div class="result-card">
         ${cardH4("TODAY", "今日の運気")}
         <div class="total-score"><span class="num" data-count="${daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
@@ -1168,8 +1247,8 @@ function renderAsk() {
       <h3 class="ritual-title">占いたいことを、心に思い浮かべてください</h3>
       <div class="spread-picker">
         ${Object.entries(RITUAL_SPREADS).map(([key, s]) => `
-          <button class="spread-opt ${key === ritual.spread ? "active" : ""}" data-spread="${key}" ${key === "daily" && dailyDone ? 'data-done="1"' : ""}>
-            <span class="so-label">${s.label}</span>
+          <button class="spread-opt ${key === ritual.spread ? "active" : ""} ${s.deep ? "spread-deep" : ""}" data-spread="${key}" ${key === "daily" && dailyDone ? 'data-done="1"' : ""}>
+            <span class="so-label">${s.label}${s.deep ? '<span class="so-tag">DEEP</span>' : ""}</span>
             <span class="so-desc">${key === "daily" && dailyDone ? "本日分は引きました — 結果を見る" : s.desc}</span>
           </button>`).join("")}
       </div>
@@ -1221,24 +1300,50 @@ function renderShuffle() {
   const stack = document.getElementById("shuffle-stack");
   const hint = document.getElementById("shuffle-hint");
   let pressed = false, done = false;
+  let holdT0 = 0, lastMove = null, vel = 0, raf = 0;
+
+  /* 混ざる速さはユーザーの手が決める:
+     長押しの経過でゆっくり加速し、指でこする速さで即座に反応する */
+  const tick = () => {
+    if (!pressed || done) return;
+    const held = (performance.now() - holdT0) / 1000;
+    const ramp = Math.min(1, held / 7);        // 7秒かけてじわじわ加速
+    vel *= 0.93;                                // こすりの勢いは自然減衰
+    const boost = Math.min(1, vel / 0.9);       // 速くこするほど速く混ざる
+    const dur = 3.4 - 2.0 * Math.max(ramp, boost); // 3.4s(静) -> 1.4s(最速)
+    stack.style.setProperty("--shuf-dur", dur.toFixed(2) + "s");
+    raf = requestAnimationFrame(tick);
+  };
 
   const down = (e) => {
     e.preventDefault();
     pressed = true;
-    stack.classList.add("fast");
-    hint.textContent = "……いいところで、指を離して";
+    holdT0 = performance.now();
+    lastMove = null; vel = 0;
+    hint.textContent = "……いいところで、指を離して。こするとよく混ざります";
+    tick();
+  };
+  const move = (e) => {
+    if (!pressed || done) return;
+    const now = performance.now();
+    if (lastMove) {
+      const dt = Math.max(1, now - lastMove.t);
+      vel = Math.min(3, vel + Math.hypot(e.clientX - lastMove.x, e.clientY - lastMove.y) / dt);
+    }
+    lastMove = { x: e.clientX, y: e.clientY, t: now };
   };
   const up = () => {
     if (!pressed || done) return;
     done = true;
+    cancelAnimationFrame(raf);
     ritual.releaseT = performance.now(); // シード成分1: 指を離した時刻
     vibrate(20);
-    stack.classList.remove("fast");
     stack.classList.add("stopped");
     hint.textContent = "止まりました";
     setTimeout(() => (short ? renderDraw() : renderCut()), 420);
   };
   stack.addEventListener("pointerdown", down);
+  stack.addEventListener("pointermove", move);
   stack.addEventListener("pointerup", up);
   stack.addEventListener("pointercancel", up);
 }
@@ -1271,10 +1376,13 @@ function renderCut() {
 /* --- 4. ドロー画面(扇から引く) --- */
 function renderDraw() {
   const conf = RITUAL_SPREADS[ritual.spread];
+  const compact = conf.count > 3; // ケルト十字などはスロットを畳んで扇を主役に
   chamberScreen(`
     <div class="ritual-step">
       <p class="ritual-eyebrow emerge">STEP ${conf.short ? "3" : "4"} — DRAW</p>
-      ${slotsHtml(-1)}
+      ${compact
+        ? `<div class="draw-progress" id="draw-progress">${Array.from({ length: conf.count }, () => '<span class="dp"></span>').join("")}</div>`
+        : slotsHtml(-1)}
       <p class="ritual-inst">横にスクロールして、呼ばれた気がするカードを<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong></p>
       <div class="draw-strip" id="draw-strip">
         ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--r:${((k % 5) - 2) * 1.8}deg"`)).join("")}
@@ -1301,6 +1409,8 @@ function renderDraw() {
 
     const slotBody = ritualOverlay.querySelector(`[data-slot="${ritual.cards.length - 1}"]`);
     if (slotBody) slotBody.innerHTML = tbackHtml("slot-back");
+    const dp = ritualOverlay.querySelectorAll("#draw-progress .dp:not(.done)")[0];
+    if (dp) dp.classList.add("done");
     const left = document.getElementById("draw-left");
     if (left) left.textContent = conf.count - ritual.cards.length;
 
@@ -1310,6 +1420,17 @@ function renderDraw() {
       setTimeout(renderReveal, 600);
     }
   });
+}
+
+/* フリップの瞬間の光:広がる環+舞い散る火花(演出のみなのでMath.randomでよい) */
+function revealFxHtml() {
+  const sparks = Array.from({ length: 16 }, () => {
+    const a = Math.floor(Math.random() * 360);
+    const r = 110 + Math.floor(Math.random() * 130);
+    const d = (Math.random() * 0.28).toFixed(2);
+    return `<span class="rv-spark" style="--sa:${a}deg;--sr:${r}px;--sd:${d}s"></span>`;
+  }).join("");
+  return `<div class="rv-fx"><span class="rv-ring"></span>${sparks}</div>`;
 }
 
 /* --- 5. リビール:一枚ずつ全画面でカードと向き合う ---
@@ -1333,20 +1454,24 @@ function renderReveal() {
     const rvText = document.getElementById("rv-text");
     let ready = false;
 
-    setTimeout(() => rvCard.querySelector(".tback")?.classList.add("charging"), 900); // 溜め
+    const chargeAt = i === 0 ? 900 : 450; // 2枚目以降はテンポよく
+    const flipAt = chargeAt + 800;
+    setTimeout(() => rvCard.querySelector(".tback")?.classList.add("charging"), chargeAt); // 溜め
     setTimeout(() => {
-      rvCard.innerHTML = revealedCardHtml(card); // フリップ:まずカードだけ
-      vibrate(25);
-    }, 1700);
+      rvCard.innerHTML = revealedCardHtml(card) + revealFxHtml(); // フリップ:まずカードだけ
+      ritualOverlay.classList.add("flash"); // 間全体が一瞬明るむ
+      setTimeout(() => ritualOverlay.classList.remove("flash"), 800);
+      vibrate([15, 60, 30]);
+    }, flipAt);
     setTimeout(() => { // 言葉が浮かび上がる
       rvText.innerHTML = `
         <span class="rv-no emerge">${cardNo(card)}</span>
         <span class="rv-name emerge" style="--ed:.25s">${card.name}</span>
         <span class="rv-en emerge" style="--ed:.5s">${card.en}</span>
         <span class="rv-ori ${card.reversed ? "rev" : "up"} emerge" style="--ed:.8s">${card.reversed ? "逆位置" : "正位置"}</span>
-        <span class="rv-hint emerge" style="--ed:1.5s">${i + 1 < conf.count ? "─ タップして、つぎの一枚へ ─" : "─ タップして、読み解きへ ─"}</span>`;
+        <span class="rv-hint emerge" style="--ed:1.4s">${i + 1 < conf.count ? "─ タップして、つぎの一枚へ ─" : "─ タップして、読み解きへ ─"}</span>`;
       ready = true;
-    }, 2650);
+    }, flipAt + 900);
 
     document.getElementById("rv-stage").addEventListener("click", () => {
       if (!ready) return;
@@ -1412,6 +1537,120 @@ function choiceVerdictHtml() {
     </div>`;
 }
 
+/* 結論カード:「タロットの結果がこうだから、こうです」を最初に言い切る */
+function tarotConclusionHtml() {
+  const c = ritual.cards;
+  if (!c.length) return "";
+  const ori = (k) => (k.reversed ? "逆位置" : "正位置");
+  const first = (t) => t.split("。")[0] + "。";
+  let word, reason, action;
+
+  if (ritual.spread === "daily") {
+    const k = c[0];
+    word = k.reversed ? "今日は「攻める」より「整える」日" : "今日は、迷わず進んでいい日";
+    reason = `今日の一枚は「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    action = k.advice;
+  } else if (ritual.spread === "yesno") {
+    const k = c[0];
+    word = k.reversed ? "答えは「いまはまだ」— 条件がひとつ残っています" : "答えは「YES」— 進めて大丈夫";
+    reason = `答えの位置に「${k.name}」が${ori(k)}で出ました。${first(genreMeaning(k))}`;
+    action = k.advice;
+  } else if (ritual.spread === "three") {
+    const [pa, pr, fu] = c;
+    word = fu.reversed ? "焦らず、足元を整えてから進む流れ" : "このまま進めば、流れは開けていく";
+    reason = `過去「${pa.name}」→ 現在「${pr.name}」ときて、未来の位置に「${fu.name}」の${ori(fu)}。${first(genreMeaning(fu))}`;
+    action = fu.advice;
+  } else if (ritual.spread === "choice") {
+    const [a, b, adv] = c;
+    word = !a.reversed && b.reversed ? "カードが推すのは、選択肢A"
+      : a.reversed && !b.reversed ? "カードが推すのは、選択肢B"
+      : "AとBは互角 — 決め手は「助言」の一枚";
+    reason = `A「${a.name}(${ori(a)})」、B「${b.name}(${ori(b)})」。助言の位置には「${adv.name}」。${first(genreMeaning(adv))}`;
+    action = adv.advice;
+  } else if (ritual.spread === "celtic") {
+    const challenge = c[1], outcome = c[9];
+    word = outcome.reversed ? "結末はまだ書き換えられる — 鍵は「課題」の一枚" : "ゆきつく先は、良い流れ";
+    reason = `10枚の結末の位置に「${outcome.name}」の${ori(outcome)}。向き合う課題は「${challenge.name}」が示しています。${first(genreMeaning(outcome))}`;
+    action = outcome.advice;
+  } else {
+    return "";
+  }
+
+  return `
+    <div class="result-card span-all tarot-verdict">
+      ${cardH4("CONCLUSION", "つまり、こういうこと")}
+      <p class="tv-word">「${word}」</p>
+      <p class="tv-reason">${reason}</p>
+      <p class="tv-action">きょうの一手 — <strong>${action}</strong></p>
+    </div>`;
+}
+
+/* 78枚デッキならではの深読み:大アルカナ比・スートの偏り・正逆バランス */
+function deckReadingHtml() {
+  const total = ritual.cards.length;
+  if (total < 3) return "";
+  const majors = ritual.cards.filter((c) => c.n < 22).length;
+  const revs = ritual.cards.filter((c) => c.reversed).length;
+  const suitCount = {};
+  ritual.cards.forEach((c) => { if (c.suit) suitCount[c.suit] = (suitCount[c.suit] || 0) + 1; });
+  const sorted = Object.entries(suitCount).sort((a, b) => b[1] - a[1]);
+  const domTie = sorted.length > 1 && sorted[1][1] === sorted[0][1];
+
+  const majorNote = majors >= Math.ceil(total / 2)
+    ? `大アルカナが${majors}枚 — 運命の歯車が大きく回っている局面です。流れそのものが強く、いまの選択が長く効いていきます。`
+    : majors === 0
+      ? "すべて小アルカナ — 答えは日常の中にあります。大きな運命よりも、毎日の行動と習慣で流れを自由に変えられる時期です。"
+      : `大アルカナ${majors}枚・小アルカナ${total - majors}枚 — 大きな流れと日々の行動、その両方が答えに関わっています。`;
+
+  const SUIT_NOTE = {
+    wands: "ワンド(火)が目立ちます。テーマの中心は情熱と行動。考えるより、まず動くことが答えに近づく鍵です。",
+    cups: "カップ(水)が目立ちます。テーマの中心は感情と関係。気持ちを言葉にして、人とのつながりを丁寧に扱うのが鍵です。",
+    swords: "ソード(風)が目立ちます。テーマの中心は思考と決断。情報を整理して、はっきり決めることが鍵です。",
+    pentacles: "ペンタクル(地)が目立ちます。テーマの中心は実りと現実。焦らず着実に、目に見える形にしていくのが鍵です。",
+  };
+  const suitNote = sorted.length && sorted[0][1] >= 2 && !domTie ? SUIT_NOTE[sorted[0][0]] : "";
+
+  /* 組み合わせの読み:枚数が増えたからこそ見える「札同士の会話」 */
+  const combos = [];
+  const cs = ritual.cards;
+  const courts = cs.filter((x) => ["page", "knight", "queen", "king"].includes(x.rank)).length;
+  if (courts >= 2) combos.push(`人物札(コートカード)が${courts}枚 — 鍵を握るのは「人」。あなたの立ち居振る舞いの変化や、周囲の人物が状況を動かします。`);
+  const aces = cs.filter((x) => x.rank === "ace").length;
+  if (aces >= 2) combos.push(`エースが${aces}枚 — 複数の「はじまり」が同時に訪れています。優先順位だけ決めれば、全部始めてしまって大丈夫。`);
+  const NUM_MEANING = { "02": "選択と均衡", "03": "成長と協調", "04": "安定と土台", "05": "揺らぎと挑戦", "06": "調和とめぐり", "07": "見極めと試行", "08": "力の使いどころ", "09": "成熟の一歩手前", "10": "ひと区切りと次" };
+  const numCount = {};
+  cs.forEach((x) => { if (x.rank && NUM_MEANING[x.rank]) numCount[x.rank] = (numCount[x.rank] || 0) + 1; });
+  for (const [r, n] of Object.entries(numCount)) {
+    if (n >= 2) combos.push(`「${Number(r)}」の札が${n}枚 — 数字の${Number(r)}が示すのは「${NUM_MEANING[r]}」。スートを越えて、このテーマが強調されています。`);
+  }
+  const has = (n) => cs.some((x) => x.n === n);
+  if ((has(13) || has(16)) && (has(17) || has(19))) combos.push("「死神/塔」と「星/太陽」の共演 — 一度手放して、より良く開ける配置。終わりの札は悪い知らせではありません。");
+  if (has(6) && has(15)) combos.push("「恋人」と「悪魔」の共演 — 強い引力の暗示。心地よさと執着の線引きが、今回の隠れたテーマです。");
+  if (has(0) && has(21)) combos.push("「愚者」と「世界」の共演 — ひとつの章の完成と、次の旅の始まりが同時に来ています。");
+  if (has(18) && has(19)) combos.push("「月」と「太陽」の共演 — 不安の霧はやがて晴れる並び。夜の後に朝が約束されています。");
+
+  const revNote = revs === 0
+    ? "すべて正位置 — エネルギーが素直に巡っています。出た答えを、そのまま受け取って大丈夫。"
+    : revs >= Math.ceil(total / 2)
+      ? `逆位置が${revs}枚 — 外の状況より、内側を整えることが先の時期。逆位置は「禁止」ではなく、伸びる前の準備を示すサインです。`
+      : `逆位置は${revs}枚 — おおむね素直な流れの中に、調整ポイントがいくつかあります。`;
+
+  return `
+    <div class="result-card span-all">
+      ${cardH4("DECK READING", "出たカードの構成から")}
+      <div class="chip-row" style="margin-top:0">
+        <span class="chip">大アルカナ <strong>${majors}</strong>/${total}</span>
+        ${sorted.map(([k, v]) => `<span class="chip">${MINOR_SUITS[k].ja} <strong>${v}</strong></span>`).join("")}
+        <span class="chip">逆位置 <strong>${revs}</strong>/${total}</span>
+      </div>
+      <p style="margin-top:14px">${majorNote}</p>
+      ${suitNote ? `<p style="margin-top:8px">${suitNote}</p>` : ""}
+      <p class="sub" style="margin-top:10px">${revNote}</p>
+      ${combos.length ? `<div class="combo-list">${combos.map((x) => `<p class="combo">✦ ${x}</p>`).join("")}</div>` : ""}
+      ${explainHtml("構成読みって何?", "本格的なタロットでは1枚ずつの意味に加えて「出たカード全体の構成」を読みます。大アルカナは人生の大きな流れ、小アルカナは日々の具体的な出来事。スート(ワンド=火・カップ=水・ソード=風・ペンタクル=地)の偏りは、いまのテーマがどの領域にあるかを教えてくれます。78枚のフルデッキだからできる読み方です。")}
+    </div>`;
+}
+
 function tarotOverallHtml() {
   if (ritual.spread !== "three") return "";
   const revCount = ritual.cards.filter((c) => c.reversed).length;
@@ -1429,30 +1668,42 @@ function showTarotSummary(restored) {
   const genreLabel = Object.fromEntries(TAROT_GENRES)[ritual.genre];
   const cardsLabel = ritual.cards.map((c) => `${c.name}(${c.reversed ? "逆" : "正"})`);
 
+  const kwShare = cardsLabel.length <= 3 ? cardsLabel : [...cardsLabel.slice(0, 2), `ほか${cardsLabel.length - 2}枚`];
   lastShare.tarot = {
     eyebrow: `TAROT — ${conf.label}`,
     title: ritual.cards.length === 1 ? `「${ritual.cards[0].name}」` : `${conf.label}の答え`,
-    keywords: cardsLabel,
+    keywords: kwShare,
     sub: genreMeaning(ritual.cards[0]).split("。")[0] + "。",
-    x: `【MYOURISCOPE タロット・${conf.label}】引いたのは ${cardsLabel.join("、")} ✦`,
+    x: `【MYOURISCOPE タロット・${conf.label}】引いたのは ${cardsLabel.slice(0, 3).join("、")}${cardsLabel.length > 3 ? ` ほか${cardsLabel.length - 3}枚` : ""} ✦`,
   };
   if (!restored) {
     recordHistory(`タロット(${conf.label})`, cardsLabel.join(" / "),
       ritual.cards.map((c, i) => `${conf.positions[i].ja}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${genreMeaning(c)}`).join(" "));
   }
 
-  const items = ritual.cards.map((c, i) => `
+  const items = ritual.cards.map((c, i) => {
+    const t = TAROT_THEMES[c.n]?.[ritual.genre];
+    const mean = ritual.genre !== "total" && t ? t : { up: c.up, rev: c.rev };
+    const meta = c.n < 22
+      ? `<span class="tc-chip">大アルカナ ${cardNo(c)}</span>`
+      : `<span class="tc-chip">${MINOR_SUITS[c.suit].ja}の${cardNo(c)}</span><span class="tc-chip">${MINOR_SUITS[c.suit].el}の元素 — ${MINOR_SUITS[c.suit].theme}</span>`;
+    return `
     <div class="result-card tarot-pos">
       ${cardH4(conf.positions[i].en, conf.positions[i].ja)}
       <div class="tp-body">
         <img class="tp-thumb ${c.reversed ? "is-rev" : ""}" src="${tarotImg(c.n)}" alt="${c.name}" loading="lazy" onerror="this.remove()" />
-        <div>
+        <div style="min-width:0">
           <p><strong style="color:var(--gold-bright)">${c.name}(${c.reversed ? "逆位置" : "正位置"})</strong></p>
-          <p style="margin-top:6px">${genreMeaning(c)}</p>
-          <p class="sub" style="margin-top:10px">${c.advice}</p>
+          <div class="tc-meta">${meta}</div>
+          <div class="tc-meanings">
+            <p class="${c.reversed ? "tc-dim" : ""}"><span class="tc-ori up">正位置</span>${mean.up}</p>
+            <p class="${c.reversed ? "" : "tc-dim"}"><span class="tc-ori rev">逆位置</span>${mean.rev}</p>
+          </div>
+          <p class="tc-advice">このカードの助言 — <strong>${c.advice}</strong></p>
         </div>
       </div>
-    </div>`).join("");
+    </div>`;
+  }).join("");
 
   const dailyNote = conf.once ? `
     <div class="result-card span-all daily-note">
@@ -1469,7 +1720,9 @@ function showTarotSummary(restored) {
       ${shareRowHtml("tarot")}
     </div>
     <div class="result-grid">
+      ${tarotConclusionHtml()}
       ${ritual.spread === "yesno" ? yesNoVerdictHtml(ritual.cards[0]) : ""}
+      ${deckReadingHtml()}
       ${items}
       ${tarotOverallHtml()}
       ${ritual.spread === "choice" ? choiceVerdictHtml() : ""}
@@ -1490,77 +1743,6 @@ function showTarotSummary(restored) {
 }
 
 renderAsk();
-
-/* ---------- 手相 ---------- */
-const palmQuestionsEl = document.getElementById("palm-questions");
-
-palmQuestionsEl.innerHTML = PALM_QUESTIONS.map((q) => `
-  <div class="palm-q" data-line="${q.lineId}">
-    <div class="palm-q-title">${q.name}</div>
-    <div class="palm-q-desc">${q.desc}</div>
-    <div class="palm-opts">
-      ${q.options.map((o, i) => `
-        <label class="palm-opt">
-          <input type="radio" name="${q.id}" value="${o.value}" ${i === 0 ? "required" : ""} />
-          <span>${o.label}</span>
-        </label>
-      `).join("")}
-    </div>
-  </div>
-`).join("");
-
-palmQuestionsEl.addEventListener("change", (e) => {
-  const q = e.target.closest(".palm-q");
-  if (!q) return;
-  document.querySelectorAll(".palm-line").forEach((l) => l.classList.remove("hl"));
-  document.getElementById(q.dataset.line)?.classList.add("hl");
-  document.getElementById("palm-hint").textContent =
-    `${PALM_QUESTIONS.find((p) => p.lineId === q.dataset.line)?.name}をハイライト中`;
-});
-
-document.getElementById("palm-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const fd = new FormData(e.target);
-  const readings = PALM_QUESTIONS.map((q) => {
-    const val = fd.get(q.id);
-    const opt = q.options.find((o) => o.value === val);
-    return { q, opt };
-  });
-
-  if (readings.some((r) => !r.opt)) {
-    alert("4つの線すべてについて選択してください。");
-    return;
-  }
-
-  const cards = readings.map(({ q, opt }) => `
-    <div class="result-card">
-      ${cardH4("LINE", `${q.name} — ${opt.label}`)}
-      <p>${opt.text}</p>
-    </div>
-  `).join("");
-
-  lastShare.palm = {
-    eyebrow: "PALMISTRY",
-    title: "手のひらに刻まれた資質",
-    keywords: readings.map(({ q, opt }) => `${q.name}:${opt.label}`).slice(0, 2),
-    sub: readings[0].opt.text.split("。")[0] + "。",
-    x: `【MYOURISCOPE 手相】${readings.map(({ q, opt }) => q.name + "は「" + opt.label + "」").join("、")}でした ✦`,
-  };
-  recordHistory("手相", readings.map(({ q, opt }) => `${q.name}:${opt.label}`).join(" / "), readings.map(({ opt }) => opt.text).join(" "));
-
-  showResult(document.getElementById("palm-result"), `
-    <div class="result-hero">
-      <span class="result-symbol">掌</span>
-      <p class="result-eyebrow">PALMISTRY REPORT</p>
-      <h3 class="result-title">手のひらに刻まれた、あなたの資質。</h3>
-      <p class="result-lead">四つの線から読み取れる生まれ持った資質です。手相は生き方とともに変化します——季節がめぐる頃、また確かめてみてください。</p>
-      ${shareRowHtml("palm")}
-    </div>
-    <div class="result-grid">${cards}</div>
-    ${crossLinksHtml("palm")}
-  `);
-  renderSharePreview("palm");
-});
 
 /* ---------- 相性診断 ---------- */
 document.getElementById("aisho-form").addEventListener("submit", (e) => {

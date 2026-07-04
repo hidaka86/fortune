@@ -1,7 +1,7 @@
 {
   "name": "MYOURISCOPE — この世の理と、あなたの流れを観る",
   "short_name": "MYOURISCOPE",
-  "description": "西洋占星術・四柱推命・九星気学・タロット・手相・相性。過去・現在・未来を、ひとつの流れとして読む。",
+  "description": "西洋占星術・四柱推命・九星気学・タロット・相性。過去・現在・未来を、ひとつの流れとして読む。",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
