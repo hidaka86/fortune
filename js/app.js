@@ -6,12 +6,19 @@ const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").mat
 const views = document.querySelectorAll(".view");
 const navBtns = document.querySelectorAll(".nav-btn");
 
-function navigate(target) {
+function navigate(target, push = true) {
+  if (!document.getElementById(`view-${target}`)) target = "home";
   if (target === "mypage") renderMypage();
+  if (target === "today") renderToday();
   views.forEach((v) => v.classList.toggle("active", v.id === `view-${target}`));
   navBtns.forEach((b) => b.classList.toggle("active", b.dataset.nav === target));
+  if (push) {
+    try { history.pushState(null, "", target === "home" ? location.pathname + location.search : `#${target}`); } catch { /* file://等 */ }
+  }
   window.scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" });
 }
+
+window.addEventListener("popstate", () => navigate(location.hash.slice(1) || "home", false));
 
 document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-nav]");
@@ -20,6 +27,15 @@ document.addEventListener("click", (e) => {
     navigate(el.dataset.nav);
   }
 });
+
+/* ---------- FVの日付 ---------- */
+(function renderHeroDate() {
+  const el = document.getElementById("hero-date");
+  if (!el) return;
+  const d = new Date();
+  const phase = moonPhaseToday();
+  el.textContent = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${["日","月","火","水","木","金","土"][d.getDay()]}曜日 ${phase.emoji}︎ ${phase.name}`;
+})();
 
 /* ---------- ステータスバー(今日の暦) ---------- */
 (function renderStatusBar() {
@@ -343,7 +359,7 @@ function renderHomeDaily() {
       <span class="chip">「${daily.dayStar.name}」の日</span>
       ${(() => {
         const dc = loadDailyCard();
-        if (!dc) return '<button class="chip chip-cta" data-nav="tarot">今日の一枚 まだ引いていません →</button>';
+        if (!dc) return '<button class="chip chip-cta" data-nav="today">今日の一枚 まだ引いていません →</button>';
         const base = cardByN(dc.n);
         return `<span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />今日の一枚 <strong>${base.name}</strong></span>`;
       })()}
@@ -353,9 +369,151 @@ function renderHomeDaily() {
     <p class="hero-action">今日の開運アクション — <strong>${daily.action}</strong></p>
     ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
     <div class="hero-cta">
-      <button class="btn btn-primary btn-lg" data-nav="mypage">今日の羅針盤をひらく</button>
-      <button class="btn btn-ghost btn-lg" data-nav="tarot">今日の一枚を引く</button>
+      <button class="btn btn-primary btn-lg" data-nav="today">今日の占いをひらく</button>
     </div>`;
+}
+
+/* ---------- 今日の占い(朝の羅針盤:結論=マインドは最後に) ---------- */
+function mindForToday(verdict, card, daily) {
+  const rng = seededRng(`${todayKey()}|mind|${loadProfile()?.birthdate || ""}`);
+  const words = MIND_WORDS[verdict.rank] || MIND_WORDS["平"];
+  const word = words[Math.floor(rng() * words.length)];
+  const points = [
+    { k: "暦から", v: daily.dayStar.day.split("。")[0] + "。" },
+    ...(card ? [{ k: "カードから", v: card.advice }] : []),
+    { k: "開運アクション", v: daily.action },
+  ];
+  return { word, points };
+}
+
+function renderToday() {
+  const root = document.getElementById("today-root");
+  const p = loadProfile();
+  const d = new Date();
+  const phase = moonPhaseToday();
+
+  if (!p?.birthdate) {
+    root.innerHTML = `
+      <div class="view-head">
+        <p class="view-eyebrow">TODAY'S OBSERVATION</p>
+        <h2>今日の占い</h2>
+        <p class="view-sub">生年月日だけで、今日のあなたの流れとマインドをお届けします。この端末にのみ保存されます。</p>
+      </div>
+      <form class="panel form" id="today-form">
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">生年月日 <em>必須</em></span>
+            <div class="bd-select" data-bd="birthdate"></div>
+          </label>
+          <label class="field">
+            <span class="field-label">お名前(ニックネーム可・任意)</span>
+            <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">今日の占いをみる</button>
+      </form>`;
+    setupBirthdateSelects();
+    document.getElementById("today-form").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      if (!fd.get("birthdate")) return;
+      saveProfile({ name: fd.get("name")?.trim(), birthdate: fd.get("birthdate"), theme: "total" });
+      prefillForms(loadProfile());
+      renderHomeDaily();
+      renderToday();
+    });
+    return;
+  }
+
+  const daily = dailyFortune(p.birthdate);
+  const verdict = dailyVerdict(p.birthdate);
+  const dc = loadDailyCard();
+  const card = dc ? { ...cardByN(dc.n), reversed: dc.reversed } : null;
+  const mind = mindForToday(verdict, card, daily);
+  const who = p.name ? `${esc(p.name)}さん` : "あなた";
+
+  lastShare.today = {
+    cards: dc ? [{ n: dc.n, reversed: dc.reversed }] : null,
+    eyebrow: `TODAY — ${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`,
+    title: mind.word,
+    keywords: [`「${verdict.word}」`, `「${daily.dayStar.name}」の日`, `ラッキーカラーは${daily.luckyColor}`],
+    score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
+    sub: null,
+    x: `【MYOURISCOPE 今日の占い】「${verdict.word}」— ${mind.word}。今日の運気は${daily.score100}/100 ✦`,
+  };
+
+  const cardBlock = card ? `
+    <div class="result-card span-all">
+      ${cardH4("TODAY'S CARD", "今日の一枚")}
+      <div class="tp-body">
+        <img class="tp-thumb ${card.reversed ? "is-rev" : ""}" src="${tarotImg(card.n)}" alt="${card.name}" loading="lazy" onerror="this.remove()" />
+        <div class="tp-head">
+          <p class="tp-name">${card.name}</p>
+          <p class="tp-ori-line"><span class="tc-ori ${card.reversed ? "rev" : "up"}">${card.reversed ? "逆位置" : "正位置"}</span></p>
+        </div>
+        <div class="tp-detail">
+          <p>${card.reversed ? card.rev : card.up}</p>
+        </div>
+      </div>
+    </div>` : `
+    <div class="result-card span-all draw-cta">
+      ${cardH4("TODAY'S CARD", "今日の一枚")}
+      <p>カードを一枚引くと、今日の占いが完成します。シャッフルもドローも、あなたの手で。</p>
+      <div class="result-actions" style="justify-content:center;margin-top:16px">
+        <button class="btn btn-primary btn-lg" id="today-draw">今日の一枚を引く(30秒)</button>
+      </div>
+    </div>`;
+
+  showResult(root, `
+    <div class="result-hero" style="text-align:center">
+      <p class="result-eyebrow">TODAY'S OBSERVATION — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}︎ ${phase.name}</p>
+      <h3 class="result-title">今日は「${verdict.word}」。</h3>
+      <p class="result-lead" style="margin-inline:auto">${who}の暦とカードから、今日のマインドを観測します。</p>
+      <div class="chip-row" style="justify-content:center">
+        <span class="chip">今日の運気 <strong>${daily.score100}</strong> /100</span>
+        <span class="chip">「${daily.dayStar.name}」の日</span>
+        <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
+      </div>
+    </div>
+    <div class="result-grid">
+      ${cardBlock}
+      ${verdictHtml(verdict)}
+      <div class="result-card span-all">
+        ${cardH4("TODAY'S KI", "今日の気流")}
+        ${todayLogicHtml(daily)}
+        <div style="margin-top:18px">${metersHtml(daily.scores)}</div>
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("LUCKY GUIDE", "今日の開運キー")}
+        ${luckyHtml(daily)}
+      </div>
+      <div class="result-card span-all mind-card">
+        ${cardH4("TODAY'S MIND", "きょうのマインド")}
+        <p class="mind-word">「${mind.word}」</p>
+        ${mind.points.map((pt) => `<p class="mind-point"><span class="mp-k">${pt.k}</span>${pt.v}</p>`).join("")}
+        <p class="mind-sendoff">— いってらっしゃい。良い一日を。</p>
+      </div>
+    </div>
+    <div class="share-block">
+      <p class="share-label">— 今日の一枚札、ストーリーズにどうぞ —</p>
+      <div class="share-preview-slot" data-share-preview="today"></div>
+      <div class="result-actions" style="justify-content:center">${shareButtonsHtml("today")}</div>
+    </div>
+    <div class="crosslinks">
+      <span class="crosslinks-label">─ もっと観測する</span>
+      <button data-nav="tarot">スプレッドで深く占う</button>
+      <button data-nav="western">ホロスコープをみる</button>
+      <button data-nav="mypage">マイページ</button>
+    </div>`);
+
+  document.getElementById("today-draw")?.addEventListener("click", () => {
+    ritual.spread = "daily"; ritual.genre = "total"; ritual.question = "";
+    ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
+    ritual.returnTo = "today";
+    openChamber();
+    renderShuffle();
+  });
+  renderSharePreview("today");
 }
 
 /* ---------- 今日の結論(総合判定) ---------- */
@@ -1011,20 +1169,10 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
         <p class="sub" style="margin-top:12px">${r.kyusei.trait}</p>
       </div>
       <div class="result-card">
-        ${cardH4("TODAY", "今日の運気")}
-        <div class="total-score"><span class="num" data-count="${r.daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
-        ${metersHtml(r.daily.scores)}
-        <div style="margin-top:18px">${todayLogicHtml(r.daily)}</div>
-      </div>
-      <div class="result-card">
         ${cardH4("TAROT", "導きの一枚")}
         <p><strong style="color:var(--gold-bright)">${r.card.name}(${ori})</strong> — ${cardMeaning}</p>
         <p class="sub" style="margin-top:12px">${r.card.advice}</p>
         <p style="margin-top:14px">${THEME_LABEL[r.theme]} ${starsHtml(r.themeScore)}<br /><span class="sub">${r.themeComment}</span></p>
-      </div>
-      <div class="result-card span-all">
-        ${cardH4("LUCKY GUIDE", "今日の開運キー")}
-        ${luckyHtml(r.daily)}
       </div>
     </div>
     ${crossLinksHtml("integrated")}
@@ -1101,6 +1249,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   const flow = horoscopeFlow(y, m, d, westernTheme);
   const themeReading = horoscopeTheme(horo, westernTheme);
   const themeLabel = WESTERN_THEME_LABEL[westernTheme];
+  const yearly = horoscopeYear(y, m, d);
 
   const moonName = hasTime ? horoMoonSign.name : moon.name;
   lastShare.western = {
@@ -1134,21 +1283,28 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
       <div class="result-card">
         ${cardH4("MOON SIGN", "心の素顔")}
         <p><strong style="color:var(--gold-bright)">☾︎ ${moonName}</strong> — ${MOONSIGN_DESC[moonName]}</p>
+        <p style="margin-top:12px">${sunMoonBlend(z, ZODIAC.find((zz) => zz.name === moonName))}</p>
         <p class="sub" style="margin-top:12px">${hasTime ? "※ 出生時刻をもとに計算しています。" : "※ 月は約2.5日で星座を移動します。出生時刻を入れると精度が上がります。"}</p>
       </div>
       <div class="result-card span-all flow-card">
         ${cardH4("YOUR FLOW", `${themeLabel}の流れ — 5年周期で読む`)}
         <div class="flow-line">
-          ${flow.blocks.map((b, i) => `
-            <div class="flow-block ${i === 1 ? "flow-now" : ""}">
-              <span class="fb-era">${b.era}</span>
+          ${flow.blocks.map((b) => `
+            <div class="flow-block ${b.now ? "flow-now" : ""}">
+              <span class="fb-era">${b.label} ・ ${b.era}</span>
               <span class="fb-title">${b.title}</span>
               <p class="fb-text">${b.text}</p>
               <p class="fb-jup">${b.jupText}</p>
             </div>`).join("")}
         </div>
-        ${flow.nextShift ? `<p class="fb-shift">次の大きな節目は <strong>${flow.nextShift}年ごろ</strong>。土星のリズム(約7年ごと)が章の変わり目を示しています。</p>` : ""}
+        ${flow.nextShift ? `<p class="fb-shift">いまの章は <strong>${flow.chapterSpan}年</strong>。次の章替わりは <strong>${flow.nextShift}年ごろ</strong> — 土星のリズム(約7年ごと)が変わり目を示しています。</p>` : ""}
         ${explainHtml("この「流れ」はどう読んでいる?", "約29.5年で空を一周する土星は、生まれた位置から約7年ごとに「種まき→鍛錬→収穫→手放し」の節目を刻みます。約12年で一周する木星は幸運の巡りを示します。あなたの出生図と現在の星の位置(トランジット)の角度から、過去5年・いま・これから5年の章を読んでいます。可能性の読みとして、答え合わせしながら使ってください。")}
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("THIS YEAR", `${yearly.year}年の星模様`)}
+        <p class="theme-point" style="border-top:none;padding-top:0"><strong>♃︎ 幸運の木星は「${yearly.jupiter.theme}」の部屋に</strong>(第${yearly.jupiter.house}ハウス・${yearly.jupiter.sign}) — 今年いちばん膨らみやすい領域です。この方面の誘いには乗るが吉。</p>
+        <p class="theme-point"><strong>♄︎ 成長の土星は「${yearly.saturn.theme}」の部屋に</strong>(第${yearly.saturn.house}ハウス・${yearly.saturn.sign}) — 今年みっちり鍛えられる領域。ここでの粘りは章をまたいで効いてきます。</p>
+        ${explainHtml("「部屋」って何?", "太陽サインを起点に空を12の部屋(ソーラーハウス)に分け、幸運の星・木星と、成長の星・土星がいまどの部屋を通過中かを見る、伝統的な年運の読み方です。木星は約1年で、土星は約2年半で次の部屋へ移ります。")}
       </div>
       <div class="result-card span-all">
         ${cardH4("READING", themeReading.title)}
@@ -1188,16 +1344,6 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
           </div>`).join("")}
         ${explainHtml("アスペクトって何?", "天体同士がつくる角度のこと。120°(トライン)や60°(セクスタイル)は自然に調和する角度、90°(スクエア)や180°(オポジション)は緊張を生む角度ですが、緊張は成長のエネルギーでもあります。角度の誤差(オーブ)が小さいものほど、あなたへの影響が濃い配置です。")}
       </div>` : ""}
-      <div class="result-card">
-        ${cardH4("TODAY", "今日の運気")}
-        <div class="total-score"><span class="num" data-count="${daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
-        ${metersHtml(daily.scores)}
-        <div style="margin-top:18px">${todayLogicHtml(daily)}</div>
-      </div>
-      <div class="result-card">
-        ${cardH4("LUCKY GUIDE", "今日の開運キー")}
-        ${luckyHtml(daily)}
-      </div>
     </div>
     ${crossLinksHtml("western")}
   `);
@@ -1247,12 +1393,6 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
         ${cardH4("NINE STARS", "本命星の気質")}
         <p><strong style="color:var(--gold-bright)">${kyusei.name}(五行は${kyusei.element})</strong></p>
         <p style="margin-top:8px">${kyusei.trait}</p>
-      </div>
-      <div class="result-card span-all">
-        ${cardH4("TODAY", "今日の運気")}
-        <div class="total-score"><span class="num" data-count="${daily.total.toFixed(1)}">0.0</span><span class="denom"> / 5.0</span></div>
-        ${metersHtml(daily.scores)}
-        <div style="margin-top:18px">${todayLogicHtml(daily)}</div>
       </div>
     </div>
     ${crossLinksHtml("eastern")}
@@ -1619,6 +1759,11 @@ function renderReveal() {
 
   function finish() {
     closeChamber();
+    if (ritual.returnTo === "today") {
+      ritual.returnTo = null;
+      navigate("today");
+      return;
+    }
     tarotStage.innerHTML = `
       <div class="ritual-step">
         <p class="ritual-eyebrow">YOUR CARDS</p>
@@ -2061,3 +2206,4 @@ prefillForms(loadProfile());
 renderHomeDaily();
 renderInviteBanner();
 updateStreak();
+if (location.hash.length > 1) navigate(location.hash.slice(1), false);

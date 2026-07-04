@@ -37,6 +37,7 @@
       </a>
       <nav class="nav" id="nav">
         <button class="nav-btn active" data-nav="home">ホーム</button>
+        <button class="nav-btn" data-nav="today">今日の占い</button>
         <button class="nav-btn" data-nav="integrated">統合鑑定</button>
         <button class="nav-btn" data-nav="western">星占い</button>
         <button class="nav-btn" data-nav="eastern">東洋占術</button>
@@ -53,17 +54,11 @@
     <section class="view active" id="view-home">
       <div id="invite-banner"></div>
       <div class="hero">
-        <canvas id="sky" aria-hidden="true"></canvas>
         <div class="hero-content">
           <p class="hero-eyebrow">MYOURISCOPE</p>
-          <div class="hero-fan" aria-hidden="true">
-            <img src="images/tarot/tarot_18_moon.webp" alt="" loading="lazy" style="--r:-13deg;--d:0s" onerror="this.parentElement.remove()" />
-            <img src="images/tarot/tarot_17_star.webp" alt="" loading="lazy" style="--r:0deg;--d:.7s" />
-            <img src="images/tarot/tarot_19_sun.webp" alt="" loading="lazy" style="--r:13deg;--d:1.4s" />
-          </div>
+          <p class="hero-date" id="hero-date"></p>
           <div class="hero-cta">
-            <button class="btn btn-primary btn-lg" data-nav="tarot">今日の一枚を引く</button>
-            <button class="btn btn-ghost btn-lg" data-nav="integrated">統合鑑定をはじめる</button>
+            <button class="btn btn-primary btn-xl" data-nav="today">今日の占いをはじめる</button>
           </div>
         </div>
       </div>
@@ -85,31 +80,36 @@
           <span class="bento-link">今日の一枚を引く →</span>
         </button>
         <button class="bento-card" data-nav="integrated" style="--hue:#A8844E">
-          <span class="bento-glyph">◉</span>
+          <img class="bento-icon" src="assets/site/icon_integrated.webp" alt="" loading="lazy" />
           <h3>統合鑑定</h3>
           <p>占術を横断して、運命の称号と今日の答えを。</p>
           <span class="bento-link">→</span>
         </button>
         <button class="bento-card" data-nav="western" style="--hue:#6D5FC9">
-          <span class="bento-glyph">星</span>
+          <img class="bento-icon" src="assets/site/icon_western.webp" alt="" loading="lazy" />
           <h3>星占い</h3>
           <p>太陽星座と月星座。外向きの顔と、心の素顔。</p>
           <span class="bento-link">→</span>
         </button>
         <button class="bento-card" data-nav="eastern" style="--hue:#A8844E">
-          <span class="bento-glyph">暦</span>
+          <img class="bento-icon" src="assets/site/icon_eastern.webp" alt="" loading="lazy" />
           <h3>東洋占術</h3>
           <p>四柱推命と九星気学。生まれ持った器を知る。</p>
           <span class="bento-link">→</span>
         </button>
         <button class="bento-card" data-nav="aisho" style="--hue:#C05C82">
-          <span class="bento-glyph">縁</span>
+          <img class="bento-icon" src="assets/site/icon_aisho.webp" alt="" loading="lazy" />
           <h3>相性診断</h3>
           <p>星座 × 五行 × 干支。三つの角度から二人の縁を。</p>
           <span class="bento-link">→</span>
         </button>
       </div>
 
+    </section>
+
+    <!-- ============ TODAY ============ -->
+    <section class="view" id="view-today">
+      <div id="today-root"></div>
     </section>
 
     <!-- ============ INTEGRATED ============ -->

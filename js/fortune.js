@@ -730,32 +730,69 @@ const JUPITER_PHASES = [
 function horoscopeFlow(y, m, d, theme) {
   const natal = planetLongitudes(y, m, d, 12);
   const now = new Date();
-  const qOf = (lonT, lonN) => Math.floor(((((lonT - lonN) % 360) + 360) % 360) / 90);
-  const phaseAt = (date) => {
-    const t = planetLongitudes(date.getFullYear(), date.getMonth() + 1, date.getDate(), 12);
-    return { sat: qOf(t.saturn, natal.saturn), jup: qOf(t.jupiter, natal.sun) };
-  };
-  const mid = (offsetY) => new Date(now.getFullYear() + offsetY, now.getMonth(), 15);
-  const past = phaseAt(mid(-3)), cur = phaseAt(mid(0)), fut = phaseAt(mid(3));
-
-  // 次の節目(土星の象限が切り替わる年)
-  let nextShift = null;
-  for (let k = 1; k <= 8; k++) {
-    if (phaseAt(mid(k)).sat !== cur.sat) { nextShift = now.getFullYear() + k; break; }
-  }
-
   const Y = now.getFullYear();
+  const qOf = (lonT, lonN) => Math.floor(((((lonT - lonN) % 360) + 360) % 360) / 90);
+  const satQ = (yr) => qOf(planetLongitudes(yr, now.getMonth() + 1, 15, 12).saturn, natal.saturn);
+  const jupQ = (yr) => qOf(planetLongitudes(yr, now.getMonth() + 1, 15, 12).jupiter, natal.sun);
+
+  // いまの章(土星の象限)の実際の始まり・終わりの年を探す
+  const curQ = satQ(Y);
+  let start = Y;
+  while (start > Y - 9 && satQ(start - 1) === curQ) start--;
+  let end = Y;
+  while (end < Y + 9 && satQ(end + 1) === curQ) end++;
+  const prevQ = (curQ + 3) % 4;
+  const nextQ = (curQ + 1) % 4;
+
   const blocks = [
-    { era: `${Y - 5} 〜 ${Y}`, label: "過去5年", ...past },
-    { era: `${Y} いま`, label: "現在", ...cur },
-    { era: `${Y} 〜 ${Y + 5}`, label: "これから5年", ...fut },
+    { era: `${start - 1}年ごろまで`, label: "前の章", q: prevQ, jq: jupQ(start - 1) },
+    { era: `${start}年 〜 ${end}年(いま)`, label: "いまの章", q: curQ, jq: jupQ(Y), now: true },
+    { era: `${end + 1}年ごろから`, label: "次の章", q: nextQ, jq: jupQ(end + 1) },
   ].map((b) => ({
     ...b,
-    title: SATURN_PHASES[b.sat].title,
-    text: SATURN_PHASES[b.sat][theme],
-    jupText: JUPITER_PHASES[b.jup],
+    title: SATURN_PHASES[b.q].title,
+    text: SATURN_PHASES[b.q][theme],
+    jupText: JUPITER_PHASES[b.jq],
   }));
-  return { blocks, nextShift };
+  return { blocks, nextShift: end + 1, chapterSpan: `${start}〜${end}` };
+}
+
+/* 今年の星模様:トランジット木星・土星が、太陽から見てどの部屋にいるか(ソーラーハウス) */
+const HOUSE_THEMES = [
+  "自分自身と新しいスタート", "お金と才能", "学び・発信・フットワーク", "家と心の土台",
+  "恋愛・遊び・創造", "仕事の習慣と健康", "パートナーシップ", "深い縁と受け継ぐもの",
+  "冒険・旅・専門の学び", "キャリアと到達点", "仲間とコミュニティ", "内面の整理と充電",
+];
+
+function horoscopeYear(y, m, d) {
+  const natal = planetLongitudes(y, m, d, 12);
+  const now = new Date();
+  const t = planetLongitudes(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12);
+  const houseOf = (lon) => ((Math.floor(lon / 30) - Math.floor(natal.sun / 30)) + 12) % 12;
+  const jh = houseOf(t.jupiter), sh = houseOf(t.saturn);
+  return {
+    year: now.getFullYear(),
+    jupiter: { house: jh + 1, theme: HOUSE_THEMES[jh], sign: SIGN_ORDER[Math.floor(t.jupiter / 30)] },
+    saturn: { house: sh + 1, theme: HOUSE_THEMES[sh], sign: SIGN_ORDER[Math.floor(t.saturn / 30)] },
+  };
+}
+
+/* 太陽×月の重ね読み:外向きの顔と素顔の関係 */
+function sunMoonBlend(sunSign, moonSign2) {
+  const pair = (a, b) => (a === b ? "same"
+    : (a === "火" && b === "風") || (a === "風" && b === "火") || (a === "地" && b === "水") || (a === "水" && b === "地") ? "support"
+    : "tension");
+  const rel = pair(sunSign.element, moonSign2.element);
+  if (sunSign.name === moonSign2.name) {
+    return `太陽も月も${sunSign.name}。外の顔と素顔が一致した、裏表のない純度の高いタイプです。「${sunSign.keyword}」の質が、どこにいてもぶれずに出ます。`;
+  }
+  if (rel === "same") {
+    return `太陽と月が同じ「${sunSign.element}」の質。見せている顔と素顔の方向が揃っていて、意志と感情が同じ方向に流れやすい、迷いの少ない配置です。`;
+  }
+  if (rel === "support") {
+    return `太陽(${sunSign.element})と月(${moonSign2.element})は支え合う組み合わせ。外での振る舞いを、内側の感情が自然に後押しします。無理なく人に好かれる配置です。`;
+  }
+  return `太陽(${sunSign.element})と月(${moonSign2.element})は質の違う組み合わせ。外の顔と素顔にギャップがあるぶん、両方を知る人には深い魅力に映ります。ギャップは弱点ではなく振り幅です。`;
 }
 
 /* テーマ別の出生図リーディング(天体×サインの合成) */
