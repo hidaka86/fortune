@@ -716,76 +716,175 @@ async function renderSharePreview(kind) {
 }
 
 async function makeShareCard(p) {
-  const W = 1200, H = 630;
+  /* Instagramストーリーズ最適化(1080x1920・9:16)
+     夜の「儀式の間」の世界観で、カードのアートを主役に */
+  const W = 1080, H = 1920;
   const canvas = document.createElement("canvas");
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
-  try { await document.fonts.load('700 60px "Zen Old Mincho"'); } catch { /* fallback */ }
+  try {
+    await document.fonts.load('700 80px "Zen Old Mincho"');
+    await document.fonts.load('600 40px "Cormorant Garamond"');
+  } catch { /* fallback */ }
   const serif = '"Zen Old Mincho", "Hiragino Mincho ProN", serif';
+  const latin = '"Cormorant Garamond", "Zen Old Mincho", serif';
 
-  // アイボリーの観測所トーン(MYOURISCOPE)
-  const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, "#F5F1E8"); bg.addColorStop(1, "#EDE6D8");
+  // 深い紺の間
+  const bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, "#0A1026"); bg.addColorStop(0.5, "#141B38"); bg.addColorStop(1, "#0A1026");
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
 
-  // 観測盤:同心円と時のアーク
-  const ocx = W / 2, ocy = H / 2;
-  for (let i = 0; i < 5; i++) {
-    ctx.strokeStyle = `rgba(28,35,51,${0.07 - i * 0.011})`;
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.arc(ocx, ocy, 180 + i * 95, 0, Math.PI * 2); ctx.stroke();
-    ctx.strokeStyle = "rgba(168,132,78,.22)";
-    ctx.beginPath(); ctx.arc(ocx, ocy, 180 + i * 95, 1.1 + i * 1.3, 1.95 + i * 1.3); ctx.stroke();
+  // 静かな星粒(シードで固定)
+  const rng = seededRng(p.title || "myouriscope");
+  for (let i = 0; i < 110; i++) {
+    ctx.globalAlpha = 0.15 + rng() * 0.55;
+    ctx.fillStyle = rng() < 0.4 ? "#D9C08A" : "#EFE9DC";
+    ctx.beginPath();
+    ctx.arc(rng() * W, rng() * H, rng() * 2 + 0.6, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.fillStyle = "rgba(168,132,78,.55)";
-  for (let i = 0; i < 5; i++) {
-    const ang = 0.7 + i * 1.35, rr = 180 + i * 95;
-    ctx.beginPath(); ctx.arc(ocx + Math.cos(ang) * rr, ocy + Math.sin(ang) * rr, 3, 0, Math.PI * 2); ctx.fill();
+  ctx.globalAlpha = 1;
+
+  // 軌道のアーク
+  for (let i = 0; i < 4; i++) {
+    ctx.strokeStyle = `rgba(184,154,90,${0.22 - i * 0.04})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.arc(W / 2, H * 0.42, 380 + i * 130, 1.0 + i * 0.9, 2.6 + i * 0.9);
+    ctx.stroke();
   }
 
-  ctx.strokeStyle = "rgba(168,132,78,.65)"; ctx.lineWidth = 2;
-  ctx.strokeRect(30, 30, W - 60, H - 60);
-  ctx.strokeStyle = "rgba(168,132,78,.28)"; ctx.lineWidth = 1;
-  ctx.strokeRect(40, 40, W - 80, H - 80);
+  // 金の枠
+  ctx.strokeStyle = "rgba(184,154,90,.75)"; ctx.lineWidth = 3;
+  ctx.strokeRect(44, 44, W - 88, H - 88);
+  ctx.strokeStyle = "rgba(184,154,90,.3)"; ctx.lineWidth = 1;
+  ctx.strokeRect(58, 58, W - 116, H - 116);
 
+  // ヘッダー
   ctx.textAlign = "center";
-  ctx.fillStyle = "#8F6C38";
-  ctx.font = `600 27px ${serif}`;
-  ctx.fillText("M Y O U R I S C O P E", W / 2, 96);
-  ctx.fillStyle = "#5D6270";
-  ctx.font = `500 19px ${serif}`;
-  ctx.fillText(p.eyebrow || "", W / 2, 130);
+  ctx.fillStyle = "#B89A5A";
+  ctx.font = `600 42px ${latin}`;
+  ctx.fillText("M Y O U R I S C O P E", W / 2, 158);
+  ctx.fillStyle = "#9AA0B8";
+  ctx.font = `500 30px ${latin}`;
+  ctx.fillText(p.eyebrow || "", W / 2, 214);
 
-  ctx.fillStyle = "#1C2333";
-  ctx.font = `700 56px ${serif}`;
-  ctx.fillText(p.title, W / 2, 218);
+  // ビジュアル(タロットは絵札そのもの、西洋はチャート、他は観測盤モチーフ)
+  const loadImg = (src) => new Promise((res) => {
+    const im = new Image();
+    im.onload = () => res(im);
+    im.onerror = () => res(null);
+    im.src = src;
+  });
+  const visTop = 280, visH = 830;
 
+  if (p.cards?.length) {
+    const shown = p.cards.slice(0, 3);
+    const imgs = (await Promise.all(shown.map((c) => loadImg(tarotImg(c.n))))).map((im, i) => ({ im, c: shown[i] }));
+    const ok = imgs.filter((x) => x.im);
+    if (ok.length) {
+      const cw = ok.length === 1 ? 470 : 330;
+      const ch = cw * 244 / 152;
+      const cy = visTop + visH / 2;
+      const fan = ok.length === 1 ? [[0, 0]] : ok.length === 2 ? [[-0.09, 10], [0.09, 10]] : [[-0.14, 34], [0, 0], [0.14, 34]];
+      ok.forEach(({ im, c }, i) => {
+        const [rot, dy] = fan[i];
+        const cx = W / 2 + (i - (ok.length - 1) / 2) * (ok.length === 1 ? 0 : 245);
+        ctx.save();
+        ctx.translate(cx, cy + dy);
+        ctx.rotate(rot + (c.reversed ? Math.PI : 0));
+        ctx.shadowColor = "rgba(0,0,0,.65)"; ctx.shadowBlur = 50; ctx.shadowOffsetY = 18;
+        ctx.drawImage(im, -cw / 2, -ch / 2, cw, ch);
+        ctx.shadowColor = "transparent";
+        ctx.strokeStyle = "rgba(217,192,138,.85)"; ctx.lineWidth = 3;
+        ctx.strokeRect(-cw / 2, -ch / 2, cw, ch);
+        ctx.restore();
+      });
+      if (p.cards.length > 3) {
+        ctx.fillStyle = "#9AA0B8";
+        ctx.font = `500 30px ${serif}`;
+        ctx.fillText(`ほか ${p.cards.length - 3} 枚`, W / 2, visTop + visH + 8);
+      }
+    }
+  } else if (p.svg) {
+    const im = await loadImg("data:image/svg+xml;charset=utf-8," + encodeURIComponent(p.svg));
+    if (im) {
+      const sz = 720;
+      ctx.save();
+      ctx.beginPath(); ctx.arc(W / 2, visTop + visH / 2, sz / 2, 0, Math.PI * 2);
+      ctx.shadowColor = "rgba(217,192,138,.35)"; ctx.shadowBlur = 70;
+      ctx.fillStyle = "#FDFBF6"; ctx.fill();
+      ctx.restore();
+      ctx.drawImage(im, W / 2 - sz / 2, visTop + visH / 2 - sz / 2, sz, sz);
+    }
+  } else {
+    // 観測盤モチーフ
+    const cy = visTop + visH / 2;
+    for (let i = 0; i < 5; i++) {
+      ctx.strokeStyle = `rgba(217,192,138,${0.5 - i * 0.09})`;
+      ctx.lineWidth = i === 0 ? 2 : 1.2;
+      ctx.beginPath(); ctx.arc(W / 2, cy, 90 + i * 78, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillStyle = "rgba(217,192,138,.8)";
+      const ang = 0.8 + i * 1.4;
+      ctx.beginPath(); ctx.arc(W / 2 + Math.cos(ang) * (90 + i * 78), cy + Math.sin(ang) * (90 + i * 78), 5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.fillStyle = "#D9C08A";
+    ctx.beginPath(); ctx.arc(W / 2, cy, 8, 0, Math.PI * 2); ctx.fill();
+    if (p.score != null) {
+      ctx.fillStyle = "#EFE9DC";
+      ctx.font = `700 210px ${latin}`;
+      ctx.fillText(String(p.score), W / 2, cy + 70);
+      ctx.fillStyle = "#9AA0B8";
+      ctx.font = `500 40px ${serif}`;
+      ctx.fillText(p.scoreLabel || "", W / 2, cy + 150);
+    }
+  }
+
+  // 見出し(2行まで自動折返し)
+  const titleY = 1290;
+  ctx.fillStyle = "#EFE9DC";
+  ctx.font = `700 76px ${serif}`;
+  const words = String(p.title || "");
+  if (ctx.measureText(words).width > W - 200) {
+    const half = Math.ceil(words.length / 2);
+    let cut = half;
+    for (const sep of ["、", "。", "は", "の", "と"]) {
+      const idx = words.indexOf(sep, Math.max(2, half - 5));
+      if (idx > 1 && idx < words.length - 2) { cut = idx + 1; break; }
+    }
+    ctx.fillText(words.slice(0, cut), W / 2, titleY);
+    ctx.fillText(words.slice(cut), W / 2, titleY + 104);
+  } else {
+    ctx.fillText(words, W / 2, titleY + 50);
+  }
+
+  // キーワード
   if (p.keywords?.length) {
-    ctx.fillStyle = "#8F6C38";
-    ctx.font = `600 30px ${serif}`;
-    ctx.fillText(p.keywords.join("  ◉  "), W / 2, 282);
+    ctx.fillStyle = "#D9C08A";
+    ctx.font = `600 40px ${serif}`;
+    ctx.fillText(p.keywords.join("  ◉  "), W / 2, 1478);
+  }
+  // ひとこと or スコア
+  if (p.sub) {
+    ctx.fillStyle = "#9AA0B8";
+    ctx.font = `500 36px ${serif}`;
+    ctx.fillText(p.sub, W / 2, 1560);
+  } else if (p.score != null && p.cards?.length) {
+    ctx.fillStyle = "#D9C08A";
+    ctx.font = `700 56px ${latin}`;
+    ctx.fillText(`${p.score}${p.scoreSuffix || "/100"}`, W / 2, 1560);
   }
 
-  if (p.score != null) {
-    ctx.fillStyle = "#5D6270";
-    ctx.font = `500 24px ${serif}`;
-    ctx.fillText(p.scoreLabel || "今日の運気", W / 2, 348);
-    ctx.fillStyle = "#8F6C38";
-    ctx.font = `700 120px ${serif}`;
-    ctx.fillText(String(p.score), W / 2, 462);
-    ctx.fillStyle = "#5D6270";
-    ctx.font = `500 28px ${serif}`;
-    ctx.fillText(p.scoreSuffix || "/100", W / 2 + 130, 456);
-  } else if (p.sub) {
-    ctx.fillStyle = "#3A4152";
-    ctx.font = `500 28px ${serif}`;
-    ctx.fillText(p.sub, W / 2, 400);
-  }
-
+  // 仕切りとフッター
+  ctx.strokeStyle = "rgba(184,154,90,.5)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 130, 1650); ctx.lineTo(W / 2 + 130, 1650); ctx.stroke();
   const d = new Date();
-  ctx.fillStyle = "#A8844E";
-  ctx.font = `500 22px ${serif}`;
-  ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}  —  hidaka86.github.io/fortune`, W / 2, 556);
+  ctx.fillStyle = "#B89A5A";
+  ctx.font = `500 32px ${latin}`;
+  ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`, W / 2, 1716);
+  ctx.fillStyle = "#9AA0B8";
+  ctx.font = `500 28px ${latin}`;
+  ctx.fillText("hidaka86.github.io/fortune", W / 2, 1772);
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }
@@ -862,6 +961,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   const shogo = fortuneTitle(fd.get("birthdate"));
   addToCollection(shogo.title, r.name || "あなた");
   lastShare.integrated = {
+    cards: [{ n: r.card.n, reversed: r.card.reversed }],
     eyebrow: "MY FORTUNE IDENTITY",
     title: `「${shogo.title}」`,
     keywords: [`${r.zodiac.name} × 日主${r.pillars.day.kan} × ${r.kyusei.name}`, "1080タイプにひとつの称号"],
@@ -933,6 +1033,11 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
 });
 
 /* ---------- 星占い(太陽 × 月) ---------- */
+/* 星占いのテーマ(人生/仕事/恋愛) */
+let westernTheme = "life";
+const WESTERN_THEMES = [["life", "人生"], ["work", "仕事"], ["love", "恋愛"]];
+const WESTERN_THEME_LABEL = { life: "人生", work: "仕事", love: "恋愛" };
+
 /* ホロスコープの円環図(出生図ホイール) */
 function horoscopeWheelSvg(h) {
   const size = 340, cx = 170, cy = 170;
@@ -975,6 +1080,13 @@ function horoscopeWheelSvg(h) {
   return `<svg viewBox="0 0 ${size} ${size}" class="horo-svg" role="img" aria-label="出生図">${out}</svg>`;
 }
 
+document.querySelectorAll("#western-theme [data-wtheme]").forEach((b) => {
+  b.addEventListener("click", () => {
+    westernTheme = b.dataset.wtheme;
+    document.querySelectorAll("#western-theme [data-wtheme]").forEach((x) => x.classList.toggle("active", x === b));
+  });
+});
+
 document.getElementById("western-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -986,16 +1098,20 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   const hasTime = fd.get("bh") !== "" && fd.get("bh") !== null;
   const horo = horoscope(y, m, d, hasTime ? Number(fd.get("bh")) + Number(fd.get("bm") || 0) / 60 : 12, hasTime);
   const horoMoonSign = horo.planets.find((p) => p.key === "moon").sign;
+  const flow = horoscopeFlow(y, m, d, westernTheme);
+  const themeReading = horoscopeTheme(horo, westernTheme);
+  const themeLabel = WESTERN_THEME_LABEL[westernTheme];
 
   const moonName = hasTime ? horoMoonSign.name : moon.name;
   lastShare.western = {
+    svg: horoscopeWheelSvg(horo),
     eyebrow: "WESTERN ASTROLOGY",
     title: `太陽は${z.name}、月は${moonName}`,
     keywords: [z.keyword],
     score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
     x: `【MYOURISCOPE 星占い】太陽星座は${z.name}、月星座は${moonName}。今日の運気は${daily.score100}/100 ✦`,
   };
-  recordHistory("星占い", `太陽${z.name} × 月${moonName}`, `${z.keyword}。10天体のホロスコープ鑑定。今日の運気${daily.score100}/100。`);
+  recordHistory("星占い", `太陽${z.name} × 月${moonName}(${themeLabel})`, `${z.keyword}。${flow.blocks[2].title}へ向かう流れ。10天体のホロスコープ鑑定。`);
 
   showResult(document.getElementById("western-result"), `
     <div class="result-hero">
@@ -1019,6 +1135,25 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         ${cardH4("MOON SIGN", "心の素顔")}
         <p><strong style="color:var(--gold-bright)">☾︎ ${moonName}</strong> — ${MOONSIGN_DESC[moonName]}</p>
         <p class="sub" style="margin-top:12px">${hasTime ? "※ 出生時刻をもとに計算しています。" : "※ 月は約2.5日で星座を移動します。出生時刻を入れると精度が上がります。"}</p>
+      </div>
+      <div class="result-card span-all flow-card">
+        ${cardH4("YOUR FLOW", `${themeLabel}の流れ — 5年周期で読む`)}
+        <div class="flow-line">
+          ${flow.blocks.map((b, i) => `
+            <div class="flow-block ${i === 1 ? "flow-now" : ""}">
+              <span class="fb-era">${b.era}</span>
+              <span class="fb-title">${b.title}</span>
+              <p class="fb-text">${b.text}</p>
+              <p class="fb-jup">${b.jupText}</p>
+            </div>`).join("")}
+        </div>
+        ${flow.nextShift ? `<p class="fb-shift">次の大きな節目は <strong>${flow.nextShift}年ごろ</strong>。土星のリズム(約7年ごと)が章の変わり目を示しています。</p>` : ""}
+        ${explainHtml("この「流れ」はどう読んでいる?", "約29.5年で空を一周する土星は、生まれた位置から約7年ごとに「種まき→鍛錬→収穫→手放し」の節目を刻みます。約12年で一周する木星は幸運の巡りを示します。あなたの出生図と現在の星の位置(トランジット)の角度から、過去5年・いま・これから5年の章を読んでいます。可能性の読みとして、答え合わせしながら使ってください。")}
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("READING", themeReading.title)}
+        <p class="theme-lead">${themeReading.lead}</p>
+        ${themeReading.points.map((pt) => `<p class="theme-point">${pt}</p>`).join("")}
       </div>
       <div class="result-card span-all">
         ${cardH4("BIRTH CHART", "ホロスコープ(出生図)")}
@@ -1537,10 +1672,10 @@ function choiceVerdictHtml() {
     </div>`;
 }
 
-/* 結論カード:「タロットの結果がこうだから、こうです」を最初に言い切る */
-function tarotConclusionHtml() {
+/* 結論:「タロットの結果がこうだから、こうです」(カード+シェア画像で共用) */
+function tarotConclusion() {
   const c = ritual.cards;
-  if (!c.length) return "";
+  if (!c.length) return null;
   const ori = (k) => (k.reversed ? "逆位置" : "正位置");
   const first = (t) => t.split("。")[0] + "。";
   let word, reason, action;
@@ -1573,15 +1708,20 @@ function tarotConclusionHtml() {
     reason = `10枚の結末の位置に「${outcome.name}」の${ori(outcome)}。向き合う課題は「${challenge.name}」が示しています。${first(genreMeaning(outcome))}`;
     action = outcome.advice;
   } else {
-    return "";
+    return null;
   }
+  return { word, reason, action };
+}
 
+function tarotConclusionHtml() {
+  const conc = tarotConclusion();
+  if (!conc) return "";
   return `
     <div class="result-card span-all tarot-verdict">
       ${cardH4("CONCLUSION", "つまり、こういうこと")}
-      <p class="tv-word">「${word}」</p>
-      <p class="tv-reason">${reason}</p>
-      <p class="tv-action">きょうの一手 — <strong>${action}</strong></p>
+      <p class="tv-word">「${conc.word}」</p>
+      <p class="tv-reason">${conc.reason}</p>
+      <p class="tv-action">きょうの一手 — <strong>${conc.action}</strong></p>
     </div>`;
 }
 
@@ -1669,12 +1809,14 @@ function showTarotSummary(restored) {
   const cardsLabel = ritual.cards.map((c) => `${c.name}(${c.reversed ? "逆" : "正"})`);
 
   const kwShare = cardsLabel.length <= 3 ? cardsLabel : [...cardsLabel.slice(0, 2), `ほか${cardsLabel.length - 2}枚`];
+  const conc = tarotConclusion();
   lastShare.tarot = {
+    cards: ritual.cards.map((c) => ({ n: c.n, reversed: c.reversed })),
     eyebrow: `TAROT — ${conf.label}`,
-    title: ritual.cards.length === 1 ? `「${ritual.cards[0].name}」` : `${conf.label}の答え`,
+    title: conc ? conc.word : `${conf.label}の答え`,
     keywords: kwShare,
-    sub: genreMeaning(ritual.cards[0]).split("。")[0] + "。",
-    x: `【MYOURISCOPE タロット・${conf.label}】引いたのは ${cardsLabel.slice(0, 3).join("、")}${cardsLabel.length > 3 ? ` ほか${cardsLabel.length - 3}枚` : ""} ✦`,
+    sub: null,
+    x: `【MYOURISCOPE タロット・${conf.label}】${conc ? `「${conc.word}」— ` : ""}${cardsLabel.slice(0, 3).join("、")}${cardsLabel.length > 3 ? ` ほか${cardsLabel.length - 3}枚` : ""} ✦`,
   };
   if (!restored) {
     recordHistory(`タロット(${conf.label})`, cardsLabel.join(" / "),
@@ -1692,9 +1834,12 @@ function showTarotSummary(restored) {
       ${cardH4(conf.positions[i].en, conf.positions[i].ja)}
       <div class="tp-body">
         <img class="tp-thumb ${c.reversed ? "is-rev" : ""}" src="${tarotImg(c.n)}" alt="${c.name}" loading="lazy" onerror="this.remove()" />
-        <div style="min-width:0">
-          <p><strong style="color:var(--gold-bright)">${c.name}(${c.reversed ? "逆位置" : "正位置"})</strong></p>
+        <div class="tp-head">
+          <p class="tp-name">${c.name}</p>
+          <p class="tp-ori-line"><span class="tc-ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span></p>
           <div class="tc-meta">${meta}</div>
+        </div>
+        <div class="tp-detail">
           <div class="tc-meanings">
             <p class="${c.reversed ? "tc-dim" : ""}"><span class="tc-ori up">正位置</span>${mean.up}</p>
             <p class="${c.reversed ? "" : "tc-dim"}"><span class="tc-ori rev">逆位置</span>${mean.rev}</p>

@@ -690,3 +690,124 @@ function horoscope(y, m, d, hourJST = 12, hasTime = false) {
 
   return { planets, aspects: aspects.slice(0, 7), hasTime };
 }
+
+/* ---------- ホロスコープ:テーマ別の「流れ」読み ----------
+   土星(約29.5年で一周 = 約7年ごとの節目)と木星(約12年で一周)の
+   トランジット(現在位置と出生位置の角度)から、5年単位の流れを読む。 */
+const SATURN_PHASES = [
+  {
+    title: "種まきと再出発",
+    work: "キャリアの新しい章が始まる位置。実績のリセットを恐れず、小さくても「自分の名前で始めたこと」が5年後の柱に育つ可能性が高い時期です。",
+    love: "関係が「はじまり」に向かう位置。新しい出会いも、いまの関係の仕切り直しも、ここで蒔いた種がこの先の形になります。焦らず土を耕すつもりで。",
+    life: "人生の新しいサイクルの入り口。過去のやり方を手放して身軽になった人ほど、この時期の選択が次の約7年を方向づけます。",
+  },
+  {
+    title: "成長と鍛錬",
+    work: "力が試される位置。負荷は増えますが、それは「任され始めた」証拠。ここで逃げずに磨いたスキルが、次の収穫期にそのまま報酬に変わる可能性が高い時期です。",
+    love: "関係の本気度が試される位置。すれ違いや現実的な課題が出やすい一方、それを一緒に越えた関係は格段に強くなります。向き合うことから逃げないのが鍵。",
+    life: "土台を固める位置。思うように進まない感覚があるかもしれませんが、それは停滞ではなく筋トレ。この時期の粘りが人生の底力になります。",
+  },
+  {
+    title: "収穫と拡張",
+    work: "積み上げの成果が見えはじめる位置。評価・昇進・独立など、キャリアがいちばん外に開く時期。求められたら遠慮なく引き受けて拡げてください。",
+    love: "関係が実る位置。付き合いが深まる・結婚など、形になりやすい時期です。一人の方も、あなたの魅力がいちばん外に見える時期なので出会いの好機。",
+    life: "見晴らしのいい高台に立つ位置。これまでの選択の答え合わせができる時期です。得たものを味わいつつ、次に何を運ぶかを選び始めるとき。",
+  },
+  {
+    title: "整理と手放し",
+    work: "次のサイクルへ向けた棚卸しの位置。役割の変化や「これはもう卒業かも」という感覚が出やすい時期。手放した分だけ、次の章のスペースが生まれます。",
+    love: "関係の本質だけが残る位置。表面的な付き合いは自然と離れ、本当に大切な縁が浮かび上がります。整理は喪失ではなく、選び直しです。",
+    life: "締めくくりの位置。この約7年でやり切ったことと、次に持ち越さないことを静かに仕分ける時期。空いた手にしか、新しいものは掴めません。",
+  },
+];
+const JUPITER_PHASES = [
+  "木星は追い風の始まりを示しています。新しいチャンスが向こうからやって来やすい配置。",
+  "木星は「育てる」配置。すでに手の中にあるものを大きくすることに幸運が宿ります。",
+  "木星は実りの配置。これまで育ててきたものが、目に見える形で返ってきやすいタイミング。",
+  "木星は仕込みの配置。次の幸運期(木星は約12年で一周します)に向けて、種を選んでおくとき。",
+];
+
+function horoscopeFlow(y, m, d, theme) {
+  const natal = planetLongitudes(y, m, d, 12);
+  const now = new Date();
+  const qOf = (lonT, lonN) => Math.floor(((((lonT - lonN) % 360) + 360) % 360) / 90);
+  const phaseAt = (date) => {
+    const t = planetLongitudes(date.getFullYear(), date.getMonth() + 1, date.getDate(), 12);
+    return { sat: qOf(t.saturn, natal.saturn), jup: qOf(t.jupiter, natal.sun) };
+  };
+  const mid = (offsetY) => new Date(now.getFullYear() + offsetY, now.getMonth(), 15);
+  const past = phaseAt(mid(-3)), cur = phaseAt(mid(0)), fut = phaseAt(mid(3));
+
+  // 次の節目(土星の象限が切り替わる年)
+  let nextShift = null;
+  for (let k = 1; k <= 8; k++) {
+    if (phaseAt(mid(k)).sat !== cur.sat) { nextShift = now.getFullYear() + k; break; }
+  }
+
+  const Y = now.getFullYear();
+  const blocks = [
+    { era: `${Y - 5} 〜 ${Y}`, label: "過去5年", ...past },
+    { era: `${Y} いま`, label: "現在", ...cur },
+    { era: `${Y} 〜 ${Y + 5}`, label: "これから5年", ...fut },
+  ].map((b) => ({
+    ...b,
+    title: SATURN_PHASES[b.sat].title,
+    text: SATURN_PHASES[b.sat][theme],
+    jupText: JUPITER_PHASES[b.jup],
+  }));
+  return { blocks, nextShift };
+}
+
+/* テーマ別の出生図リーディング(天体×サインの合成) */
+const JOB_FIELDS = {
+  "火": "企画・営業・新規事業・エンタメ・スポーツなど、ゼロから火をつける現場",
+  "地": "金融・製造・不動産・食・ものづくりなど、形と価値が残る仕事",
+  "風": "IT・メディア・教育・企画・コンサルなど、情報と言葉を扱う仕事",
+  "水": "医療・ケア・カウンセリング・クリエイティブ・接客など、人の心に触れる仕事",
+};
+
+function horoscopeTheme(horo, theme) {
+  const P = (key) => horo.planets.find((p) => p.key === key);
+  const line = (p, prefix) => `<strong>${p.ja}(${p.role})は${p.sign.name}</strong> — ${p.sign.keyword}。${prefix}${ELEMENT_STYLE[p.sign.element]}スタイルです。`;
+
+  if (theme === "work") {
+    const counts = {};
+    ["sun", "mars", "jupiter", "saturn"].forEach((k) => {
+      const el = P(k).sign.element;
+      counts[el] = (counts[el] || 0) + 1;
+    });
+    const dom = Object.entries(counts).sort((a, b) => b[1] - a[1])[0][0];
+    return {
+      title: "仕事のかたち",
+      lead: `仕事に関わる4天体(太陽・火星・木星・土星)は「${dom}」の質がいちばん濃く出ています。向いているのは——${JOB_FIELDS[dom]}。`,
+      points: [
+        line(P("sun"), "働く姿の核は、"),
+        line(P("mars"), "攻め方・頑張り方は、"),
+        `<strong>木星(伸びる方向)は${P("jupiter").sign.name}</strong> — ${JOB_FIELDS[P("jupiter").sign.element]}に幸運の入口があります。`,
+        `<strong>土星(鍛えられる場所)は${P("saturn").sign.name}</strong> — ここは時間がかかる分、続けた人だけの専門性に変わる領域です。`,
+      ],
+    };
+  }
+  if (theme === "love") {
+    return {
+      title: "愛のかたち",
+      lead: `愛し方は金星、求め方は火星、安心は月。この3つの組み合わせが、あなたの恋愛の設計図です。`,
+      points: [
+        line(P("venus"), "愛し方・ときめき方は、"),
+        line(P("mars"), "距離の詰め方は、"),
+        line(P("moon"), "本当に安心できる関係は、"),
+        `<strong>相性のヒント</strong> — 金星が${P("venus").sign.element}のサインのあなたは、同じ${P("venus").sign.element}や、支え合う元素を持つ人と自然に呼吸が合います。`,
+      ],
+    };
+  }
+  return {
+    title: "人生のかたち",
+    lead: `太陽が進む方向、土星が出す宿題、木星が開く扉。3つを重ねると、あなたの人生の地図になります。`,
+    points: [
+      line(P("sun"), "人生で向かう方角は、"),
+      `<strong>土星(人生の宿題)は${P("saturn").sign.name}</strong> — ${P("saturn").sign.keyword}にまつわるテーマを、時間をかけて自分のものにしていく星回りです。`,
+      `<strong>木星(幸運の扉)は${P("jupiter").sign.name}</strong> — ${JOB_FIELDS[P("jupiter").sign.element]}の方向に、人生が広がる入口があります。`,
+      line(P("moon"), "疲れたときに帰る場所は、"),
+    ],
+  };
+}
