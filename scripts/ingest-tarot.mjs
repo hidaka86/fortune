@@ -38,7 +38,8 @@ const KEYWORDS = {
 };
 
 const src = process.argv[2];
-if (!src) { console.error("usage: node scripts/ingest-tarot.mjs <sourceDir>"); process.exit(1); }
+const skipBack = process.argv.includes("--skip-back"); // 裏面が別送の場合に使用
+if (!src) { console.error("usage: node scripts/ingest-tarot.mjs <sourceDir> [--skip-back]"); process.exit(1); }
 
 const destDir = new URL("../images/tarot/", import.meta.url).pathname;
 const origDir = join(destDir, "original");
@@ -62,7 +63,7 @@ for (const f of files) {
 // ---- レポート ----
 const missing = [];
 for (let i = 0; i <= 21; i++) if (mapping[i] === undefined) missing.push(i);
-if (mapping.back === undefined) missing.push("back");
+if (mapping.back === undefined && !skipBack) missing.push("back");
 
 console.log("=== マッピング結果 ===");
 for (let i = 0; i <= 21; i++) {
@@ -108,8 +109,12 @@ for (let i = 0; i <= 21; i++) {
   const info = await optimize(join(src, mapping[i]), dest);
   console.log(`  ${basename(dest)}  ${info}`);
 }
-const backInfo = await optimize(join(src, mapping.back), join(destDir, "tarot_back.webp"));
-console.log(`  tarot_back.webp  ${backInfo}`);
+if (mapping.back !== undefined) {
+  const backInfo = await optimize(join(src, mapping.back), join(destDir, "tarot_back.webp"));
+  console.log(`  tarot_back.webp  ${backInfo}`);
+} else {
+  console.log("  tarot_back.webp  (スキップ — 裏面は未着。CSSデザインで代替中)");
+}
 
 await browser.close();
 console.log("\n完了: images/tarot/ に23枚、images/tarot/original/ にバックアップを配置しました。");
