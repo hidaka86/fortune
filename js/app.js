@@ -81,8 +81,8 @@ document.addEventListener("click", (e) => {
       ctx.strokeStyle = `rgba(28,35,51,${Math.max(o.alpha, 0.03)})`;
       ctx.beginPath(); ctx.arc(cx, cy, o.r, 0, Math.PI * 2); ctx.stroke();
       const a0 = o.phase + t * 0.00012 * o.speed * 60;
-      ctx.strokeStyle = "rgba(168,132,78,.20)";
-      ctx.beginPath(); ctx.arc(cx, cy, o.r, a0, a0 + 0.85); ctx.stroke();
+      ctx.strokeStyle = "rgba(168,132,78,.14)";
+      ctx.beginPath(); ctx.arc(cx, cy, o.r, a0, a0 + 0.45); ctx.stroke();
       for (let d = 0; d < o.dots; d++) {
         const ang = o.phase + (d / o.dots) * Math.PI * 2 + t * 0.001 * o.speed;
         const x = cx + Math.cos(ang) * o.r;
@@ -677,8 +677,8 @@ function renderMypage() {
   root.innerHTML = `
     <div class="result-hero mypage-hero">
       <span class="result-symbol">${flow.myKan}</span>
-      <p class="result-eyebrow">MY PAGE — ${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} ${phase.emoji} ${phase.name}</p>
-      <h3 class="result-title">おかえりなさい、${who}。</h3>
+      <p class="result-eyebrow">MY PAGE — ${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} <span class="nw">${phase.emoji} ${phase.name}</span></p>
+      <h3 class="result-title"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span></h3>
       <p class="result-keyword">「${fortuneTitle(p.birthdate).title}」— 連続 ${visits.streak || 1} 日目${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>
       ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
       <div class="chip-row">
@@ -1357,7 +1357,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
     eyebrow: "FOUR PILLARS & NINE STARS",
     title: `日主「${pillars.day.kan}」— ${pillars.nikkan.symbol}の人`,
     keywords: [kyusei.name, `${pillars.year.kan}${pillars.year.shi}年生まれ`],
-    score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
+    sub: `${pillars.nikkan.yinyang}の${pillars.nikkan.element}。${kyusei.name}。`,
     x: `【MYOURISCOPE 四柱推命】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
   };
   recordHistory("四柱推命", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
@@ -1987,9 +1987,19 @@ function showTarotSummary(restored) {
     </div>`;
   }).join("");
 
+  const NEW_NOTES = [
+    "これが、今日のあなたの一枚。もう一回引きたい顔をしていますね?でも、こういうのは1日1回にしときましょう。おかわりすると効き目が薄まるので — <strong>また明日、新しい一枚を。</strong>",
+    "本日の一枚、これにて確定です。引き直しボタンは、探してもありません。カードも一発勝負、あなたも一発勝負 — <strong>続きはまた明日。</strong>",
+    "今日の一枚はこれで決まり。おかわりは明日の朝、デッキが混ざり直ってからどうぞ。今日のところは、この札と仲良くやってください — <strong>また明日。</strong>",
+  ];
+  const RESTORED_NOTES = [
+    "今日の一枚は、もう引いてあります。何度ひらいても同じ札が出るのが占いというものです。往生際よくいきましょう — <strong>新しい一枚は、また明日。</strong>",
+    "はい、本日のぶんはこちらでした。2枚目はありません。星も「1日1枚まで」と決めているようです — <strong>続きはまた明日。</strong>",
+  ];
+  const notePool = restored ? RESTORED_NOTES : NEW_NOTES;
   const dailyNote = conf.once ? `
     <div class="result-card span-all daily-note">
-      <p>${restored ? "今日の一枚は、すでにあなたのそばにあります。" : "これが、今日のあなたの一枚。"}カードの言葉を一日の中で確かめてみてください。引き直しはできません — <strong>また明日、新しい一枚を。</strong></p>
+      <p>${notePool[Math.floor(seededRng(todayKey() + "|note")() * notePool.length)]}</p>
     </div>` : "";
 
   showResult(tarotSummary, `
