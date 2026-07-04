@@ -848,3 +848,26 @@ function horoscopeTheme(horo, theme) {
     ],
   };
 }
+
+/* ---------- 四柱推命:これから12ヶ月の気流 ---------- */
+function monthFlow12(birthdate) {
+  const [by, bm, bd] = birthdate.split("-").map(Number);
+  const myKan = dayPillar(by, bm, bd).kan;
+  const now = new Date();
+  const months = [];
+  for (let k = 0; k < 12; k++) {
+    const t = new Date(now.getFullYear(), now.getMonth() + k, 15);
+    const p = monthPillar(t.getFullYear(), t.getMonth() + 1, 15);
+    const star = tsuhensei(myKan, p.kan);
+    const w = star.weights;
+    months.push({
+      y: t.getFullYear(), m: t.getMonth() + 1,
+      kanshi: p.kan + p.shi, star,
+      power: w.love + w.work + w.money + w.health,
+      love: w.love, work: w.work, money: w.money,
+      current: k === 0,
+    });
+  }
+  const best = (key) => months.reduce((a, b) => (b[key] > a[key] ? b : a));
+  return { months, bestWork: best("work"), bestLove: best("love"), bestMoney: best("money"), bestTotal: best("power") };
+}

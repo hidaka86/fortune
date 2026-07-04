@@ -372,35 +372,42 @@ function renderHomeDaily() {
     return;
   }
 
-  const daily = dailyFortune(p.birthdate);
-  const verdict = dailyVerdict(p.birthdate);
   const visits = updateStreak() || {};
   const phase = moonPhaseToday();
   const d = new Date();
   const who = p.name ? `${esc(p.name)}さん` : "あなた";
-
+  const dc = loadDailyCard();
   heroEl.classList.add("hero-member");
+
+  if (!dc) {
+    // まだ今日を観測していない:結果は見せない(ネタバレ禁止)。静かな問いかけだけ
+    heroContentEl.innerHTML = `
+      <p class="hero-eyebrow">Welcome back — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
+      <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span></h1>
+      <p class="hero-sub">今日の流れは、まだ誰も知りません。</p>
+      <div class="hero-cta" style="margin-top:26px">
+        <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の運勢を占う</button>
+      </div>
+      ${(visits.streak || 1) >= 2 ? `<p class="hero-streak">連続 ${visits.streak} 日目の観測${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>` : ""}`;
+    return;
+  }
+
+  // 観測済み:今日の要点をコンパクトに
+  const daily = dailyFortune(p.birthdate);
+  const verdict = dailyVerdict(p.birthdate);
+  const base = cardByN(dc.n);
   heroContentEl.innerHTML = `
     <p class="hero-eyebrow">Today's Compass — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
-    <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span><br /><span class="nw">今日は<em>「${verdict.word}」</em>。</span></h1>
-    <p class="hero-sub">${verdict.advice}</p>
+    <h1 class="hero-title hero-title-member"><span class="nw">今日は<em>「${verdict.word}」</em>。</span></h1>
     <div class="hero-score">
       <span><span class="hs-num">${daily.score100}</span><span class="hs-denom"> /100</span></span>
-      ${starsHtml(Math.round(daily.total))}
-      <span class="chip">「${daily.dayStar.name}」の日</span>
-      ${(() => {
-        const dc = loadDailyCard();
-        if (!dc) return '<button class="chip chip-cta" data-nav="today">今日の一枚 まだ引いていません →</button>';
-        const base = cardByN(dc.n);
-        return `<span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />今日の一枚 <strong>${base.name}</strong></span>`;
-      })()}
-      <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
+      <span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />${base.name}</span>
       <span class="chip">連続 <strong>${visits.streak || 1}日目</strong>${(visits.streak || 1) >= 7 ? " 🔥" : ""}</span>
     </div>
-    <p class="hero-action">今日の開運アクション — <strong>${daily.action}</strong></p>
+    <p class="hero-action">今日の一手 — <strong>${daily.action}</strong></p>
     ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
-    <div class="hero-cta">
-      <button class="btn btn-primary btn-lg" data-nav="today">今日の占いをひらく</button>
+    <div class="hero-cta" style="margin-top:22px">
+      <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の観測をひらく</button>
     </div>`;
 }
 
@@ -1352,6 +1359,31 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
   const kyusei = getKyusei(y, m, d);
   const pillars = fourPillars(y, m, d);
   const daily = dailyFortune(birthdate);
+  const flow = kiFlow(birthdate);
+  const week = weekFlow(birthdate);
+  const mf = monthFlow12(birthdate);
+  const now = new Date();
+  const best = [...week].sort((a, b) => b.power - a.power)[0];
+  const weekHtml = week.map((w) => `
+    <div class="week-day ${w.today ? "is-today" : ""} ${w === best ? "is-best" : ""}">
+      <span class="wd-date">${w.label}<small>(${w.wd})</small></span>
+      <span class="wd-kanshi">${w.kanshi}</span>
+      <span class="wd-star">${w.star.name}</span>
+      ${w === best ? '<span class="wd-badge">◎ 好機</span>' : ""}
+    </div>`).join("");
+  const mfHtml = mf.months.map((mo) => {
+    const pct = Math.round(((mo.power + 2) / 4.2) * 100);
+    const badges = [
+      mo === mf.bestWork ? "仕事◎" : "", mo === mf.bestLove ? "恋愛◎" : "", mo === mf.bestMoney ? "金運◎" : "",
+    ].filter(Boolean);
+    return `
+    <div class="mf-row ${mo.current ? "mf-now" : ""}">
+      <span class="mf-m">${mo.m}<small>月</small></span>
+      <span class="mf-star">${mo.star.name}</span>
+      <span class="mf-track"><i style="width:${Math.max(8, Math.min(100, pct))}%"></i></span>
+      <span class="mf-badges">${badges.map((b) => `<em>${b}</em>`).join("")}${mo.current ? "<em class='mf-cur'>いま</em>" : ""}</span>
+    </div>`;
+  }).join("");
 
   lastShare.eastern = {
     eyebrow: "FOUR PILLARS & NINE STARS",
@@ -1386,6 +1418,33 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
         ${cardH4("NINE STARS", "本命星の気質")}
         <p><strong style="color:var(--gold-bright)">${kyusei.name}(五行は${kyusei.element})</strong></p>
         <p style="margin-top:8px">${kyusei.trait}</p>
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("THIS MONTH", "今月と今年の気流")}
+        ${logicFlowHtml([
+          { tag: "あなたの日主", main: flow.myKan, sub: flow.nikkan.symbol },
+          "×",
+          { tag: "今月の干支", main: flow.month.pillar.kan + flow.month.pillar.shi, sub: `${now.getMonth() + 1}月` },
+          "=",
+          { tag: "今月の気流", main: flow.month.star.name, sub: "", result: true },
+        ])}
+        <p style="margin-top:10px">${flow.month.star.month}</p>
+        <p class="sub" style="margin-top:12px">今年は「${flow.year.star.name}」の年 — ${flow.year.star.month.replace(/^「.+?」の月 — /, "").replace(/月/g, "年")}</p>
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("7 DAYS", "一週間の気流")}
+        <div class="week-strip">${weekHtml}</div>
+        <p class="sub" style="margin-top:12px">◎は今週いちばん追い風の日。大事な予定はこの日に。</p>
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("12 MONTHS", "これから12ヶ月の流れ")}
+        <div class="mf-list">${mfHtml}</div>
+        <div class="mf-summary">
+          <p class="theme-point" style="border-top:none;padding-top:4px"><strong>仕事の勝負月は ${mf.bestWork.m}月</strong> —「${mf.bestWork.star.name}」の気流。攻めの計画はここに。</p>
+          <p class="theme-point"><strong>恋愛の好機は ${mf.bestLove.m}月</strong> —「${mf.bestLove.star.name}」の気流。出会いも告白もこの月が追い風。</p>
+          <p class="theme-point"><strong>金運の山は ${mf.bestMoney.m}月</strong> —「${mf.bestMoney.star.name}」の気流。大きな買い物・投資の判断はここで。</p>
+        </div>
+        ${explainHtml("この流れはどう出している?", "あなたの日主(生まれた日の十干)と、月ごとにめぐる干支の関係を「通変星」で読み、テーマ別の追い風を点数化しています。同じ月でも人によって吹く風が違う——それが四柱推命の月運です。")}
       </div>
     </div>
     ${crossLinksHtml("eastern")}

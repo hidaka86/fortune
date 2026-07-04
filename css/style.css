@@ -31,6 +31,7 @@
   --shadow-soft: 0 12px 32px rgba(28, 35, 51, 0.08);
   --shadow-lift: 0 18px 44px rgba(28, 35, 51, 0.13);
   --serif: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --num: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", -apple-system, sans-serif;
   --latin: "Cormorant Garamond", "Zen Old Mincho", serif;
   --sans: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", -apple-system, sans-serif;
 }
@@ -186,12 +187,17 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 .btn-observe {
   position: relative;
   border: none; border-radius: 999px;
-  background: var(--indigo); color: var(--bg);
+  background:
+    radial-gradient(150% 220% at 15% 120%, rgba(184, 154, 90, 0.5), transparent 55%),
+    radial-gradient(170% 240% at 90% -40%, rgba(109, 95, 201, 0.36), transparent 58%),
+    linear-gradient(140deg, #1B2236, #27314F 55%, #182036);
+  background-size: 220% 220%, 220% 220%, 100% 100%;
+  color: #F6F1E6;
   font-family: var(--serif); font-size: clamp(16px, 4vw, 18px); font-weight: 700;
   letter-spacing: .18em; padding: 19px 46px 19px 42px;
   box-shadow: 0 12px 30px rgba(28, 35, 51, 0.24);
   transition: transform .2s ease, box-shadow .3s ease;
-  animation: observeBreath 3.6s ease-in-out infinite;
+  animation: observeBreath 3.6s ease-in-out infinite, ctaDrift 8s ease-in-out infinite;
 }
 .btn-observe .bo-mark { color: var(--chamber-gold-bright); margin-right: 12px; font-size: 14px; vertical-align: 1px; }
 .btn-observe::before {
@@ -247,18 +253,22 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   50% { translate: 0 -10px; }
 }
 
-/* 会員向けパーソナルFV */
-.hero.hero-member { min-height: min(60vh, 540px); }
+/* 会員向けパーソナルFV(間延びさせない) */
+.hero.hero-member { min-height: min(46vh, 430px); }
+.hero-member .hero-content { padding: 44px 24px; }
+.hero-streak {
+  margin-top: 18px; font-size: 13px; color: var(--muted); letter-spacing: .1em;
+}
 .nw { white-space: nowrap; }
 .hero-title-member {
   font-size: clamp(27px, 4.6vw, 46px); line-height: 1.6; font-weight: 700;
 }
 .hero-score {
   display: flex; align-items: center; justify-content: center;
-  gap: 12px 18px; flex-wrap: wrap; margin-top: 26px;
+  gap: 10px 16px; flex-wrap: wrap; margin-top: 20px;
 }
 .hs-num {
-  font-family: var(--latin); font-size: 58px; font-weight: 700; line-height: 1;
+  font-family: var(--num); font-size: 54px; font-weight: 900; line-height: 1;
   color: var(--gold-bright);
   font-variant-numeric: tabular-nums;
 }
@@ -272,7 +282,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 }
 
 .hero-action {
-  margin-top: 20px; font-family: var(--serif); font-size: 16px;
+  margin-top: 14px; font-family: var(--serif); font-size: 15.5px;
   color: var(--muted); letter-spacing: .05em;
 }
 .hero-action strong { color: var(--gold-bright); font-weight: 700; }
@@ -304,14 +314,51 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 }
 .btn:active { transform: scale(.98); }
 .btn-primary {
-  background: var(--indigo);
-  color: var(--bg);
-  box-shadow: 0 8px 22px rgba(28, 35, 51, 0.22);
+  position: relative; overflow: hidden;
+  border: 1px solid rgba(184, 154, 90, 0.45);
+  border-radius: 999px;
+  color: #F6F1E6;
+  background:
+    radial-gradient(150% 220% at 15% 120%, rgba(184, 154, 90, 0.5), transparent 55%),
+    radial-gradient(170% 240% at 90% -40%, rgba(109, 95, 201, 0.36), transparent 58%),
+    radial-gradient(130% 180% at 60% 130%, rgba(46, 140, 126, 0.2), transparent 60%),
+    linear-gradient(140deg, #1B2236, #27314F 55%, #182036);
+  background-size: 220% 220%, 220% 220%, 220% 220%, 100% 100%;
+  box-shadow: 0 10px 26px rgba(28, 35, 51, 0.28);
+  animation: ctaDrift 8s ease-in-out infinite;
+}
+.btn-primary::before { /* 星屑の瞬き */
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background-image:
+    radial-gradient(circle at 22% 35%, rgba(239, 233, 220, 0.9) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 68% 24%, rgba(217, 192, 138, 0.9) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 84% 64%, rgba(239, 233, 220, 0.7) 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 40% 74%, rgba(217, 192, 138, 0.7) 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 55% 48%, rgba(239, 233, 220, 0.55) 0 0.7px, transparent 1.2px);
+  animation: ctaTwinkle 3.4s ease-in-out infinite;
+}
+.btn-primary::after { /* ときどき、すっと走る光 */
+  content: ""; position: absolute; top: 0; bottom: 0; width: 42%; left: -62%;
+  background: linear-gradient(100deg, transparent, rgba(239, 233, 220, 0.2), transparent);
+  transform: skewX(-18deg);
+  animation: ctaSweep 5.6s ease-in-out infinite;
 }
 .btn-primary:hover {
-  background: #2A3550;
-  box-shadow: 0 12px 30px rgba(28, 35, 51, 0.3);
   transform: translateY(-1px);
+  border-color: rgba(217, 192, 138, 0.85);
+  box-shadow: 0 14px 36px rgba(184, 154, 90, 0.35);
+}
+@keyframes ctaDrift {
+  0%, 100% { background-position: 0% 100%, 100% 0%, 50% 100%, 0 0; }
+  50% { background-position: 70% 30%, 30% 60%, 20% 40%, 0 0; }
+}
+@keyframes ctaTwinkle {
+  0%, 100% { opacity: .45; }
+  50% { opacity: 1; }
+}
+@keyframes ctaSweep {
+  0%, 62% { left: -62%; }
+  88%, 100% { left: 135%; }
 }
 .btn-ghost {
   background: transparent; color: var(--indigo); border-color: rgba(28, 35, 51, 0.35);
@@ -503,26 +550,14 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   gap: 18px;
 }
 .result-card {
-  background: var(--surface);
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.93)),
+    url("../assets/site/card_texture.webp") center / cover;
   border: 1px solid var(--hairline); border-radius: var(--radius);
   padding: 26px 26px 24px;
   box-shadow: var(--shadow-soft);
 }
-.result-card h4 {
-  font-family: var(--latin);
-  font-size: 14px; font-weight: 600; letter-spacing: .28em;
-  color: var(--gold); text-transform: uppercase;
-  padding-bottom: 12px; margin-bottom: 16px;
-  border-bottom: 1px solid var(--hairline);
-  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
-}
-.result-card h4 .h4-ja {
-  font-family: var(--serif); font-size: 17.5px; color: var(--indigo);
-  letter-spacing: .1em; font-weight: 600;
-}
-.result-card p { font-size: 16.5px; line-height: 1.95; }
-.result-card .sub { color: var(--muted); font-size: 15px; line-height: 1.9; }
-.span-all { grid-column: 1 / -1; }
+
 
 /* 四柱の柱表示 */
 .pillars { display: flex; gap: 12px; justify-content: space-around; margin: 6px 0 16px; }
@@ -550,7 +585,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 .meter-fill.mid { background: linear-gradient(90deg, #b09a6e, #c9b489); }
 .meter-fill.hi { box-shadow: 0 0 10px rgba(168, 132, 78, 0.5); }
 .meter-value {
-  font-family: var(--latin); font-size: 18px; font-weight: 700;
+  font-family: var(--num); font-size: 17px; font-weight: 900;
   color: var(--gold-bright); text-align: right;
   font-variant-numeric: tabular-nums;
 }
@@ -559,7 +594,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 
 .total-score { text-align: center; margin-bottom: 14px; }
 .total-score .num {
-  font-family: var(--latin); font-size: 54px; font-weight: 700;
+  font-family: var(--num); font-size: 52px; font-weight: 900;
   color: var(--gold-bright); font-variant-numeric: tabular-nums;
 }
 .total-score .denom { color: var(--muted); font-size: 14px; }
@@ -607,7 +642,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 .home-daily-sub { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
 .home-daily-right { display: flex; align-items: center; gap: 18px; }
 .home-daily-score {
-  font-family: var(--latin); font-size: 30px; font-weight: 700; color: var(--gold-bright);
+  font-family: var(--num); font-size: 28px; font-weight: 900; color: var(--gold-bright);
   font-variant-numeric: tabular-nums;
 }
 .home-daily-score small { font-size: 12px; color: var(--muted); font-weight: 400; }
@@ -1310,7 +1345,7 @@ body.ritual-open { overflow: hidden; }
   text-wrap: balance;
 }
 .shogo-rarity { font-size: 13.5px; color: var(--muted); margin-top: 8px; letter-spacing: .04em; }
-.shogo-rarity strong { color: var(--gold-bright); font-family: var(--latin); font-size: 16px; }
+.shogo-rarity strong { color: var(--gold-bright); font-family: var(--num); font-size: 15px; font-weight: 900; }
 
 /* ---------- シェアプレビュー ---------- */
 .share-block { margin-top: 24px; text-align: center; }
@@ -1329,7 +1364,7 @@ body.ritual-open { overflow: hidden; }
 
 /* ---------- 称号図鑑 ---------- */
 .col-count { font-size: 15.5px; color: var(--muted); }
-.col-count strong { font-family: var(--latin); font-size: 24px; color: var(--gold-bright); }
+.col-count strong { font-family: var(--num); font-size: 22px; font-weight: 900; color: var(--gold-bright); }
 .col-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;
@@ -1347,12 +1382,39 @@ body.ritual-open { overflow: hidden; }
 .history-item { margin-top: 10px; }
 .history-item summary { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
 .history-item summary::before { content: none; }
-.hi-date { font-family: var(--latin); font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hi-date { font-family: var(--num); font-size: 13px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
 .hi-kind {
   font-size: 11.5px; font-weight: 700; letter-spacing: .1em; color: var(--gold);
   border: 1px solid rgba(168, 132, 78, 0.4); border-radius: 999px; padding: 1px 10px;
 }
 .hi-title { color: var(--ink); font-weight: 500; }
+
+/* ---------- 四柱推命:12ヶ月の流れ ---------- */
+.mf-list { display: flex; flex-direction: column; }
+.mf-row {
+  display: grid; grid-template-columns: 44px 64px 1fr auto; gap: 10px; align-items: center;
+  padding: 7px 4px; border-bottom: 1px solid var(--hairline);
+}
+.mf-row:last-child { border-bottom: none; }
+.mf-row.mf-now { background: rgba(168, 132, 78, 0.07); border-radius: 8px; }
+.mf-m { font-family: var(--num); font-size: 17px; font-weight: 900; color: var(--indigo); text-align: right; }
+.mf-m small { font-size: 10px; font-weight: 700; color: var(--muted); margin-left: 1px; }
+.mf-star { font-family: var(--serif); font-size: 14px; font-weight: 700; color: var(--gold-bright); letter-spacing: .04em; }
+.mf-track {
+  height: 8px; border-radius: 99px; background: rgba(28, 35, 51, 0.08); overflow: hidden;
+}
+.mf-track i {
+  display: block; height: 100%; border-radius: 99px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+}
+.mf-badges { display: flex; gap: 4px; min-width: 0; }
+.mf-badges em {
+  font-style: normal; font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  color: var(--gold-bright); border: 1px solid rgba(168, 132, 78, 0.5);
+  border-radius: 999px; padding: 1px 7px; white-space: nowrap;
+}
+.mf-badges em.mf-cur { color: var(--muted); border-color: var(--hairline); }
+.mf-summary { margin-top: 14px; }
 
 /* ---------- ホロスコープ:5年周期の流れ ---------- */
 .flow-card { border-color: rgba(168, 132, 78, 0.5); background: linear-gradient(165deg, rgba(168, 132, 78, 0.07), var(--surface) 60%); }
@@ -1383,7 +1445,7 @@ body.ritual-open { overflow: hidden; }
   background: rgba(168, 132, 78, 0.08); border: 1px dashed rgba(168, 132, 78, 0.45);
   font-size: 15px;
 }
-.fb-shift strong { color: var(--gold-bright); font-family: var(--latin); font-size: 17px; }
+.fb-shift strong { color: var(--gold-bright); font-family: var(--num); font-size: 15.5px; font-weight: 900; }
 .theme-lead { font-size: 16.5px; line-height: 2; }
 .theme-point { font-size: 15.5px; line-height: 1.95; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hairline); }
 .theme-point strong { color: var(--gold-bright); }
@@ -1535,4 +1597,76 @@ body.ritual-open { overflow: hidden; }
 @media (max-width: 520px) {
   .bento { grid-template-columns: 1fr; }
   .bento-main, .bento-wide { grid-column: span 1; }
+}
+
+/* ===== 結論カード=夜(後勝ちで文字色を確実に) ===== */
+/* 結論カード=夜:答えを言い切るカードだけ、儀式の間の色をまとって主役になる */
+.card-night, .tarot-verdict, .mind-card, .verdict-card, .yn-card {
+  background:
+    radial-gradient(140% 160% at 85% -20%, rgba(109, 95, 201, 0.16), transparent 55%),
+    radial-gradient(150% 180% at 10% 120%, rgba(184, 154, 90, 0.18), transparent 55%),
+    linear-gradient(150deg, #161D3A, #0F152F) !important;
+  border-color: rgba(184, 154, 90, 0.55) !important;
+  color: var(--chamber-ink);
+}
+.tarot-verdict h4, .mind-card h4, .verdict-card h4, .yn-card h4 {
+  color: var(--chamber-gold); border-bottom-color: rgba(239, 233, 220, 0.16);
+}
+.tarot-verdict h4 .h4-ja, .mind-card h4 .h4-ja, .verdict-card h4 .h4-ja, .yn-card h4 .h4-ja { color: var(--chamber-ink); }
+.tarot-verdict .sub, .mind-card .sub, .verdict-card .sub, .yn-card .sub,
+.verdict-card .verdict-advice, .mind-card .mind-point, .tarot-verdict .tv-reason { color: var(--chamber-muted); }
+.tv-word, .mind-word { color: var(--chamber-ink); }
+.tv-action, .mind-card .mind-point { border-color: rgba(184, 154, 90, 0.4); }
+.tv-action { background: rgba(184, 154, 90, 0.12); color: var(--chamber-ink); }
+.tv-action strong, .mind-card .mp-k, .mind-sendoff { color: var(--chamber-gold-bright); }
+.mind-card .mp-k { border-color: rgba(184, 154, 90, 0.5); }
+.verdict-card .vf-list, .verdict-card .vf-row { border-color: rgba(239, 233, 220, 0.14); }
+.verdict-card .vf-body { color: var(--chamber-ink); }
+.verdict-card .vf-method { color: var(--chamber-gold); }
+.verdict-card .vf-vote.up { color: var(--chamber-gold-bright); }
+.verdict-card .verdict-word { color: var(--chamber-ink); }
+.verdict-card .verdict-rank {
+  color: var(--chamber-gold-bright); border-color: rgba(184, 154, 90, 0.7);
+  box-shadow: 0 0 26px rgba(184, 154, 90, 0.3), inset 0 0 18px rgba(184, 154, 90, 0.14);
+}
+.yn-card .yn-answer.yes { color: #5eead4; }
+.yn-card .yn-answer.no { color: #e879a6; }
+.yn-card p { color: var(--chamber-ink); }
+.tarot-verdict .explain, .mind-card .explain, .verdict-card .explain {
+  background: rgba(10, 16, 38, 0.4); border-color: rgba(239, 233, 220, 0.16);
+}
+.verdict-card .explain summary { color: var(--chamber-muted); }
+.verdict-card .explain p { color: var(--chamber-muted); }
+.result-card h4 {
+  font-family: var(--latin);
+  font-size: 14px; font-weight: 600; letter-spacing: .28em;
+  color: var(--gold); text-transform: uppercase;
+  padding-bottom: 12px; margin-bottom: 16px;
+  border-bottom: 1px solid var(--hairline);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+}
+.result-card h4 .h4-ja {
+  font-family: var(--serif); font-size: 17.5px; color: var(--indigo);
+  letter-spacing: .1em; font-weight: 600;
+}
+.result-card p { font-size: 16.5px; line-height: 1.95; }
+.result-card .sub { color: var(--muted); font-size: 15px; line-height: 1.9; }
+.span-all { grid-column: 1 / -1; }
+
+.result-card.mind-card .mind-word, .result-card.tarot-verdict .tv-word { color: var(--chamber-ink); }
+.result-card.mind-card .mind-point { color: var(--chamber-muted); border-top-color: rgba(239, 233, 220, 0.14); }
+.result-card.mind-card .mind-point .mp-k { color: var(--chamber-gold-bright); border-color: rgba(184, 154, 90, 0.5); }
+.result-card.tarot-verdict .tv-reason { color: var(--chamber-muted); }
+.result-card.tarot-verdict .tv-action { background: rgba(184, 154, 90, 0.12); border-color: rgba(184, 154, 90, 0.4); color: var(--chamber-ink); }
+.result-card.verdict-card .verdict-word { color: var(--chamber-ink); }
+.result-card.verdict-card .verdict-advice { color: var(--chamber-muted); }
+.result-card.verdict-card .vf-row { border-bottom-color: rgba(239, 233, 220, 0.14); }
+.result-card.verdict-card .vf-list { border-top-color: rgba(239, 233, 220, 0.14); }
+.result-card.verdict-card .vf-body { color: var(--chamber-ink); }
+.result-card.verdict-card .vf-vote.flat { color: var(--chamber-muted); }
+.result-card.mind-card h4 .h4-ja, .result-card.tarot-verdict h4 .h4-ja,
+.result-card.verdict-card h4 .h4-ja, .result-card.yn-card h4 .h4-ja { color: var(--chamber-ink); }
+.result-card.mind-card h4, .result-card.tarot-verdict h4,
+.result-card.verdict-card h4, .result-card.yn-card h4 {
+  color: var(--chamber-gold); border-bottom-color: rgba(239, 233, 220, 0.16);
 }
