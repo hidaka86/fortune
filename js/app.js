@@ -428,7 +428,7 @@ function renderToday() {
       <div class="view-head">
         <p class="view-eyebrow">TODAY'S OBSERVATION</p>
         <h2>今日の占い</h2>
-        <p class="view-sub">生年月日だけで、今日のあなたの流れとマインドをお届けします。この端末にのみ保存されます。</p>
+        <p class="view-sub">生年月日だけで、今日の流れとマインドを。データはこの端末にのみ保存されます。</p>
       </div>
       <form class="panel form" id="today-form">
         <div class="form-row">
@@ -437,7 +437,7 @@ function renderToday() {
             <div class="bd-select" data-bd="birthdate"></div>
           </label>
           <label class="field">
-            <span class="field-label">お名前(ニックネーム可・任意)</span>
+            <span class="field-label">名前(任意)</span>
             <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
           </label>
         </div>
@@ -499,7 +499,7 @@ function renderToday() {
     </div>` : `
     <div class="result-card span-all draw-cta">
       ${cardH4("TODAY'S CARD", "今日の一枚")}
-      <p>カードを一枚引くと、今日の占いが完成します。シャッフルもドローも、あなたの手で。</p>
+      <p>一枚引くと、今日の占いが完成します。</p>
       <div class="result-actions" style="justify-content:center;margin-top:16px">
         <button class="btn btn-primary btn-lg" id="today-draw">今日の一枚を引く</button>
       </div>
@@ -509,7 +509,7 @@ function renderToday() {
     <div class="result-hero" style="text-align:center">
       <p class="result-eyebrow">TODAY'S OBSERVATION — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}︎ ${phase.name}</p>
       <h3 class="result-title">今日は「${verdict.word}」。</h3>
-      <p class="result-lead" style="margin-inline:auto">${who}の暦とカードから、今日のマインドを観測します。</p>
+      <p class="result-lead" style="margin-inline:auto">${who}の暦とカードから、今日を観測。</p>
       <div class="chip-row" style="justify-content:center">
         <span class="chip">今日の運気 <strong>${daily.score100}</strong> /100</span>
         <span class="chip">「${daily.dayStar.name}」の日</span>
@@ -612,12 +612,12 @@ function renderMypage() {
       <div class="view-head">
         <p class="view-eyebrow">MEMBERSHIP</p>
         <h2>マイページ</h2>
-        <p class="view-sub">登録すると、あなた専用の「気の流れ」ダッシュボードが開きます。毎日ひらくたび、今日の指針がここに。</p>
+        <p class="view-sub">登録すると、あなた専用の観測室が開きます。</p>
       </div>
       <form class="panel form" id="register-form">
         <div class="form-row">
           <label class="field">
-            <span class="field-label">お名前(ニックネーム可)</span>
+            <span class="field-label">名前(任意)</span>
             <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
           </label>
           <label class="field">
@@ -626,7 +626,7 @@ function renderMypage() {
           </label>
         </div>
         <button class="btn btn-primary btn-lg btn-block" type="submit">登録する</button>
-        <p class="form-note">登録情報はこの端末のブラウザ内(localStorage)にのみ保存され、サーバーには送信されません。</p>
+        <p class="form-note">データはこの端末にのみ保存されます。</p>
       </form>`;
     setupBirthdateSelects();
     document.getElementById("register-form").addEventListener("submit", (e) => {
@@ -1525,7 +1525,7 @@ function renderAsk() {
       </div>
       <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
         placeholder="問いを言葉にする(入力しなくてもOK)" value="" />
-      <p class="form-note">大アルカナ22枚+小アルカナ56枚、計78枚のフルデッキで占います。問いはこの端末のブラウザにのみ保存され、外部には一切送信されません。</p>
+      <p class="form-note">78枚のフルデッキで占います。問いはこの端末にのみ保存されます。</p>
       <button class="btn btn-primary btn-lg btn-block" id="ritual-start" style="margin-top:14px">儀式をはじめる</button>
     </div>`;
 
@@ -1557,7 +1557,7 @@ function renderShuffle() {
   chamberScreen(`
     <div class="ritual-step">
       <p class="ritual-eyebrow emerge">STEP 2 — SHUFFLE</p>
-      <p class="ritual-inst emerge" style="--ed:.2s">カードを<strong>長押し</strong>して、止めたいところで指を離してください</p>
+      <p class="ritual-inst emerge" style="--ed:.2s"><strong>長押し</strong>でシャッフル。いいところで、指を離して</p>
       <div class="shuffle-stack" id="shuffle-stack">
         ${Array.from({ length: 7 }, (_, i) => tbackHtml("sc", `style="--i:${i}"`)).join("")}
       </div>
@@ -1587,7 +1587,7 @@ function renderShuffle() {
     pressed = true;
     holdT0 = performance.now();
     lastMove = null; vel = 0;
-    hint.textContent = "……いいところで、指を離して。こするとよく混ざります";
+    hint.textContent = "……こするとよく混ざります";
     tick();
   };
   const move = (e) => {
@@ -1620,7 +1620,7 @@ function renderCut() {
   chamberScreen(`
     <div class="ritual-step">
       <p class="ritual-eyebrow emerge">STEP 3 — CUT</p>
-      <p class="ritual-inst emerge" style="--ed:.2s">山がみっつ。<strong>直感で</strong>ひとつ選んでください</p>
+      <p class="ritual-inst emerge" style="--ed:.2s"><strong>直感で</strong>、ひとつ</p>
       <div class="cut-piles">
         ${[0, 1, 2].map((k) => `
           <button class="cut-pile" data-k="${k}">
@@ -1650,7 +1650,7 @@ function renderDraw() {
       ${compact
         ? `<div class="draw-progress" id="draw-progress">${Array.from({ length: conf.count }, () => '<span class="dp"></span>').join("")}</div>`
         : slotsHtml(-1)}
-      <p class="ritual-inst">横にスクロールして、呼ばれた気がするカードを<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong></p>
+      <p class="ritual-inst">呼ばれた気がするカードを、<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong></p>
       <div class="draw-strip" id="draw-strip">
         ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--k:${k % 7}"`)).join("")}
       </div>
@@ -1716,7 +1716,7 @@ function renderReveal() {
         <p class="rv-label-ja emerge" style="--ed:.3s">${pos.ja}</p>
         <div class="rv-card" id="rv-card">${tbackHtml("slot-back")}</div>
         <div class="rv-text" id="rv-text"></div>
-        ${conf.count > 1 ? `<button class="rv-skip" id="rv-skip">すべて開いて、結果へ →</button>` : ""}
+        ${conf.count > 1 ? `<button class="rv-skip" id="rv-skip" aria-label="すべて開いて結果へ">SKIP »</button>` : ""}
       </div>`);
     const rvCard = document.getElementById("rv-card");
     const rvText = document.getElementById("rv-text");
@@ -1745,7 +1745,7 @@ function renderReveal() {
         <span class="rv-name emerge" style="--ed:.2s">${card.name}</span>
         <span class="rv-en emerge" style="--ed:.4s">${card.en}</span>
         <span class="rv-ori ${card.reversed ? "rev" : "up"} emerge" style="--ed:.65s">${card.reversed ? "逆位置" : "正位置"}</span>
-        <span class="rv-hint emerge" style="--ed:1.2s">${i + 1 < conf.count ? "─ タップして、つぎの一枚へ ─" : "─ タップして、読み解きへ ─"}</span>`;
+        <span class="rv-hint emerge" style="--ed:1.2s">${i + 1 < conf.count ? "─ タップでつぎへ ─" : "─ タップで読み解きへ ─"}</span>`;
     };
 
     const chargeAt = i === 0 ? 800 : 400; // 2枚目以降はテンポよく
@@ -2028,7 +2028,7 @@ function showTarotSummary(restored) {
       <p class="result-eyebrow">TAROT — ${conf.label} ・ ${genreLabel}</p>
       ${ritual.question ? `<p class="tarot-q">あなたの問い:「${esc(ritual.question)}」</p>` : ""}
       <h3 class="result-title">${ritual.spread === "daily" ? "今日のあなたへの一枚" : "カードの答え"}</h3>
-      <p class="result-lead" style="margin-inline:auto">正位置はエネルギーが素直に巡っている状態、逆位置は不安やエゴが混ざっている状態を表します。</p>
+      <p class="result-lead" style="margin-inline:auto">正位置は素直に巡る力。逆位置は、内にこもる力。</p>
       ${shareRowHtml("tarot")}
     </div>
     <div class="result-grid">
