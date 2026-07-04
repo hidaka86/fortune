@@ -331,6 +331,19 @@ function themeDirections(kichi) {
   };
 }
 
+/* ---------- 運命の称号 ---------- */
+function fortuneTitle(birthdate) {
+  const [y, m, d] = birthdate.split("-").map(Number);
+  const zodiac = getZodiac(m, d);
+  const kyusei = getKyusei(y, m, d);
+  const nikkan = NIKKAN_DESC[dayPillar(y, m, d).kan];
+  return {
+    title: `${nikkan.symbol}を抱く、${SHOGO_ZODIAC[zodiac.name]}${SHOGO_KYUSEI[kyusei.name]}`,
+    parts: { nikkan: nikkan.symbol, zodiac: zodiac.name, kyusei: kyusei.name },
+    total: 1080,
+  };
+}
+
 /* ---------- 総合判定「今日の結論」 ----------
    複数の手法論の「票」を合算して、今日がどういう日かを一言で結論づける */
 const SANGO_GROUPS = [["申", "子", "辰"], ["巳", "酉", "丑"], ["寅", "午", "戌"], ["亥", "卯", "未"]];
@@ -530,5 +543,5 @@ function integratedReading({ name, birthdate, theme }) {
   const themeScore = theme === "total" ? Math.round(daily.total) : daily.scores[theme];
   const themeComment = pickScoreComment(theme, themeScore);
 
-  return { name, zodiac, eto, jikkan, kyusei, pillars, moon, daily, card, theme, themeScore, themeComment, elementNote };
+  return { name, birthdateStr: birthdate, zodiac, eto, jikkan, kyusei, pillars, moon, daily, card, theme, themeScore, themeComment, elementNote };
 }

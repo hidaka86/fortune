@@ -486,7 +486,7 @@ function renderMypage() {
       <span class="result-symbol">${flow.myKan}</span>
       <p class="result-eyebrow">MY PAGE — ${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} ${phase.emoji} ${phase.name}</p>
       <h3 class="result-title">おかえりなさい、${who}。</h3>
-      <p class="result-keyword">連続 ${visits.streak || 1} 日目の羅針盤${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>
+      <p class="result-keyword">「${fortuneTitle(p.birthdate).title}」— 連続 ${visits.streak || 1} 日目${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>
       ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
       <div class="chip-row">
         <span class="chip">日主 <strong>${flow.myKan}(${flow.nikkan.symbol})</strong></span>
@@ -591,6 +591,7 @@ function buildShareText(r) {
   const ori = r.card.reversed ? "逆位置" : "正位置";
   return [
     `【Fortuna 統合鑑定】${r.name ? r.name + "さん" : ""}`,
+    `運命の称号:「${fortuneTitle(r.birthdateStr).title}」(1080タイプにひとつ)`,
     `太陽 ${r.zodiac.name} × 月 ${r.moon.name} × ${r.kyusei.name}`,
     `日主: ${r.pillars.day.kan}(${r.pillars.nikkan.symbol}) / 干支: ${r.jikkan}${r.eto.name}`,
     `今日の運気: ${r.daily.total.toFixed(1)} / 5.0`,
@@ -623,7 +624,22 @@ function shareButtonsHtml(kind) {
 }
 
 function shareRowHtml(kind) {
-  return `<div class="result-actions" style="justify-content:center">${shareButtonsHtml(kind)}</div>`;
+  return `
+    <div class="share-block">
+      <p class="share-label">— この結果、そのまま渡せます —</p>
+      <div class="share-preview-slot" data-share-preview="${kind}"></div>
+      <div class="result-actions" style="justify-content:center">${shareButtonsHtml(kind)}</div>
+    </div>`;
+}
+
+async function renderSharePreview(kind) {
+  const slot = document.querySelector(`[data-share-preview="${kind}"]`);
+  if (!slot || !lastShare[kind]) return;
+  try {
+    const blob = await makeShareCard(lastShare[kind]);
+    const url = URL.createObjectURL(blob);
+    slot.innerHTML = `<img class="share-preview" src="${url}" alt="シェア画像プレビュー" loading="lazy" />`;
+  } catch { /* プレビュー失敗時はボタンのみ */ }
 }
 
 async function makeShareCard(p) {
@@ -762,21 +778,26 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   const ori = r.card.reversed ? "逆位置" : "正位置";
   const cardMeaning = r.card.reversed ? r.card.rev : r.card.up;
 
+  const shogo = fortuneTitle(fd.get("birthdate"));
   lastShare.integrated = {
-    eyebrow: "INTEGRATED REPORT",
-    title: `${who}の統合鑑定`,
-    keywords: [`${r.zodiac.name} × ${r.kyusei.name}`, `導きの一枚「${r.card.name}」`],
+    eyebrow: "MY FORTUNE IDENTITY",
+    title: `「${shogo.title}」`,
+    keywords: [`${r.zodiac.name} × 日主${r.pillars.day.kan} × ${r.kyusei.name}`, "1080タイプにひとつの称号"],
     score: r.daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `【Fortuna 統合鑑定】今日の運気は ${r.daily.score100}/100。導きの一枚は「${r.card.name}(${ori})」✦`,
+    x: `私の運命の称号は「${shogo.title}」— 1080タイプにひとつ。今日の運気は${r.daily.score100}/100 ✦ あなたの称号は?`,
   };
-  recordHistory("統合鑑定", `${who} — 運気${r.daily.score100}/100`, `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`);
+  recordHistory("統合鑑定", `「${shogo.title}」— 運気${r.daily.score100}/100`, `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`);
 
   showResult(document.getElementById("integrated-result"), `
     <div class="result-hero">
       <span class="result-symbol">${r.zodiac.symbol}︎</span>
       <p class="result-eyebrow">INTEGRATED REPORT</p>
       <h3 class="result-title">${who}の統合鑑定書</h3>
-      <p class="result-keyword">${r.zodiac.keyword} × ${r.kyusei.name}</p>
+      <div class="shogo">
+        <p class="shogo-label">あなたの運命の称号</p>
+        <p class="shogo-title">「${shogo.title}」</p>
+        <p class="shogo-rarity">日主 × 太陽星座 × 本命星が織りなす、<strong>1080タイプ</strong>にひとつのあなた</p>
+      </div>
       <div class="chip-row">
         <span class="chip">太陽 <strong>${r.zodiac.name}</strong></span>
         <span class="chip">月 <strong>${r.moon.name}</strong></span>
@@ -785,9 +806,13 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
         <span class="chip">本命星 <strong>${r.kyusei.name}</strong></span>
       </div>
       <p class="result-lead">${r.elementNote}</p>
-      <div class="result-actions">
-        <button class="btn btn-ghost" data-copy="${esc(buildShareText(r))}">結果をコピー</button>
-        ${shareButtonsHtml("integrated")}
+      <div class="share-block">
+        <p class="share-label">— あなたの称号カード、そのまま渡せます —</p>
+        <div class="share-preview-slot" data-share-preview="integrated"></div>
+        <div class="result-actions">
+          <button class="btn btn-ghost" data-copy="${esc(buildShareText(r))}">結果をコピー</button>
+          ${shareButtonsHtml("integrated")}
+        </div>
       </div>
     </div>
     <div class="result-grid">
@@ -821,6 +846,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
     </div>
     ${crossLinksHtml("integrated")}
   `);
+  renderSharePreview("integrated");
 });
 
 /* ---------- 星占い(太陽 × 月) ---------- */
@@ -877,6 +903,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
     </div>
     ${crossLinksHtml("western")}
   `);
+  renderSharePreview("western");
 });
 
 /* ---------- 東洋占術(四柱推命 × 九星気学) ---------- */
@@ -932,6 +959,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
     </div>
     ${crossLinksHtml("eastern")}
   `);
+  renderSharePreview("eastern");
 });
 
 /* ---------- タロット ---------- */
@@ -1122,6 +1150,7 @@ function showTarotSummary(restored) {
     <div class="result-grid">${items}${tarotOverallHtml()}${dailyNote}</div>
     ${crossLinksHtml("tarot")}
   `);
+  renderSharePreview("tarot");
 }
 
 tarotThemeSeg.querySelectorAll(".seg-btn").forEach((btn) => {
@@ -1210,6 +1239,7 @@ document.getElementById("palm-form").addEventListener("submit", (e) => {
     <div class="result-grid">${cards}</div>
     ${crossLinksHtml("palm")}
   `);
+  renderSharePreview("palm");
 });
 
 /* ---------- 相性診断 ---------- */
@@ -1298,6 +1328,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     <div class="result-grid">${breakdown}</div>
     ${crossLinksHtml("aisho")}
   `);
+  renderSharePreview("aisho");
 });
 
 /* ---------- 初期化 ---------- */

@@ -790,6 +790,41 @@ button { font-family: inherit; cursor: pointer; color: inherit; }
 .legend .dot-bad { background: #a25a4d; }
 .legend .dot-flat { background: rgba(240, 237, 228, 0.3); }
 
+/* ---------- 運命の称号 ---------- */
+.shogo {
+  margin: 18px 0 4px; padding: 20px 22px;
+  border: 1px solid rgba(217, 179, 106, 0.45); border-radius: 10px;
+  background: linear-gradient(150deg, rgba(217, 179, 106, 0.09), transparent 70%);
+  position: relative;
+}
+.shogo::before {
+  content: "✦"; position: absolute; top: -12px; left: 22px;
+  background: var(--bg); padding: 0 8px; color: var(--gold); font-size: 14px;
+}
+.shogo-label { font-size: 12.5px; letter-spacing: .22em; color: var(--gold); font-weight: 700; }
+.shogo-title {
+  font-family: var(--serif); font-size: clamp(22px, 3.6vw, 30px); font-weight: 700;
+  letter-spacing: .06em; color: var(--gold-bright); margin-top: 6px;
+  text-shadow: 0 0 24px rgba(217, 179, 106, 0.35); text-wrap: balance;
+}
+.shogo-rarity { font-size: 13.5px; color: var(--muted); margin-top: 8px; letter-spacing: .04em; }
+.shogo-rarity strong { color: var(--gold-bright); font-family: var(--latin); font-size: 16px; }
+
+/* ---------- シェアプレビュー ---------- */
+.share-block { margin-top: 24px; text-align: center; }
+.share-label {
+  font-family: var(--serif); font-size: 14px; color: var(--muted);
+  letter-spacing: .12em; margin-bottom: 12px;
+}
+.share-preview-slot { min-height: 0; }
+.share-preview {
+  width: 100%; max-width: 460px; border-radius: 10px;
+  border: 1px solid rgba(217, 179, 106, 0.45);
+  box-shadow: 0 14px 44px rgba(0, 0, 0, 0.5), 0 0 30px rgba(217, 179, 106, 0.15);
+  margin-bottom: 14px;
+  animation: viewIn .6s ease;
+}
+
 /* ---------- 鑑定履歴 ---------- */
 .history-item { margin-top: 10px; }
 .history-item summary { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
