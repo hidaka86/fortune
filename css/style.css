@@ -163,10 +163,8 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   display: grid; place-items: center;
   margin: 0 -24px;
   border-bottom: 1px solid var(--hairline);
-  background:
-    linear-gradient(rgba(243, 238, 229, 0.18), rgba(243, 238, 229, 0.08) 55%, var(--bg) 96%),
-    url("../assets/site/hero_bg.webp") center 38% / cover no-repeat;
 }
+#sky { position: absolute; inset: 0; width: 100%; height: 100%; }
 .hero-content { position: relative; text-align: center; padding: 72px 24px; }
 .hero-eyebrow { margin-bottom: 18px; }
 .hero-date {
