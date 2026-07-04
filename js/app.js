@@ -43,9 +43,8 @@ document.addEventListener("click", (e) => {
   const week = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][d.getDay()];
   const phase = moonPhaseToday();
   document.getElementById("status-bar").innerHTML = `
-    <span class="status-item">${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${week}</span>
-    <span class="status-item"><span class="moon">${phase.emoji}</span>${phase.name} — ${phase.note}</span>
-    <span class="status-item status-quote">${dailyQuote()}</span>`;
+    <span class="status-item status-quote">${dailyQuote()}</span>
+    <span class="status-item"><span class="moon">${phase.emoji}</span>${phase.name} — ${phase.note}</span>`;
 })();
 
 /* ---------- ヒーローの観測盤キャンバス(orbital layering / temporal arcs) ---------- */
@@ -172,6 +171,7 @@ function todayLogicHtml(daily) {
 
 /* 観測中オーバーレイ:占う人のドキドキを引き出す、結果までの溜め */
 const OBS_STEPS = {
+  today: ["今日の暦をめくっています……", "あなたの気流を観測しています……", "今日のマインドを言葉にしています……"],
   integrated: ["生年月日から暦を立てています……", "十干と九星を照合しています……", "運命の称号を探しています……"],
   western: ["10天体の位置を計算しています……", "土星と木星の巡りを読んでいます……", "あなたの章をめくっています……"],
   eastern: ["年柱・月柱・日柱を立てています……", "日主から通変星を読んでいます……"],
@@ -352,13 +352,7 @@ const heroEl = document.querySelector("#view-home .hero");
 const heroContentEl = document.querySelector("#view-home .hero-content");
 const HERO_DEFAULT_HTML = heroContentEl ? heroContentEl.innerHTML : "";
 
-function orderNav() {
-  const nav = document.getElementById("nav");
-  const myBtn = nav?.querySelector('[data-nav="mypage"]');
-  if (!myBtn) return;
-  if (loadProfile()?.birthdate) nav.insertBefore(myBtn, nav.children[1]);
-  else nav.appendChild(myBtn);
-}
+function orderNav() { /* マイページはヘッダー右上の固定アイコンになったため並べ替え不要 */ }
 
 function streakMilestone(streak) {
   if (streak >= 30) return "🎖 30日連続達成 — 暦はもう、あなたの生活の一部です。";
@@ -462,6 +456,16 @@ function renderToday() {
     return;
   }
 
+  // その日はじめて開いたときだけ、観測の溜めを演出(ドキドキは一日一回が新鮮)
+  const OBS_TODAY_KEY = "fortuna:obsday";
+  let obsSeen = true;
+  try { obsSeen = localStorage.getItem(OBS_TODAY_KEY) === todayKey(); } catch { /* noop */ }
+  if (!obsSeen) {
+    try { localStorage.setItem(OBS_TODAY_KEY, todayKey()); } catch { /* noop */ }
+    observeThen("today", () => renderToday());
+    return;
+  }
+
   const daily = dailyFortune(p.birthdate);
   const verdict = dailyVerdict(p.birthdate);
   const dc = loadDailyCard();
@@ -497,7 +501,7 @@ function renderToday() {
       ${cardH4("TODAY'S CARD", "今日の一枚")}
       <p>カードを一枚引くと、今日の占いが完成します。シャッフルもドローも、あなたの手で。</p>
       <div class="result-actions" style="justify-content:center;margin-top:16px">
-        <button class="btn btn-primary btn-lg" id="today-draw">今日の一枚を引く(30秒)</button>
+        <button class="btn btn-primary btn-lg" id="today-draw">今日の一枚を引く</button>
       </div>
     </div>`;
 
@@ -532,9 +536,7 @@ function renderToday() {
       </div>
     </div>
     <div class="share-block">
-      <p class="share-label">— 今日の一枚札、ストーリーズにどうぞ —</p>
       <div class="share-preview-slot" data-share-preview="today"></div>
-      <div class="result-actions" style="justify-content:center">${shareButtonsHtml("today")}</div>
     </div>
     <div class="crosslinks">
       <span class="crosslinks-label">─ もっと観測する</span>
@@ -886,17 +888,10 @@ function buildInviteUrl(name, title) {
   return `${SITE_URL}?${q.toString()}`;
 }
 
-function shareButtonsHtml(kind) {
-  return `<button class="btn btn-ghost" data-share-image="${kind}">シェア画像を保存</button>
-    <button class="btn btn-ghost" data-share-x="${kind}">Xでシェア</button>`;
-}
-
 function shareRowHtml(kind) {
   return `
     <div class="share-block">
-      <p class="share-label">— この結果、そのまま渡せます —</p>
       <div class="share-preview-slot" data-share-preview="${kind}"></div>
-      <div class="result-actions" style="justify-content:center">${shareButtonsHtml(kind)}</div>
     </div>`;
 }
 
@@ -1084,41 +1079,6 @@ async function makeShareCard(p) {
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }
 
-document.addEventListener("click", async (e) => {
-  const imgBtn = e.target.closest("[data-share-image]");
-  if (imgBtn) {
-    const p = lastShare[imgBtn.dataset.shareImage];
-    if (!p) return;
-    const orig = imgBtn.textContent;
-    imgBtn.textContent = "生成中…";
-    try {
-      const blob = await makeShareCard(p);
-      const file = new File([blob], `myouriscope-${todayKey()}.png`, { type: "image/png" });
-      if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "MYOURISCOPE" });
-      } else {
-        const aEl = document.createElement("a");
-        aEl.href = URL.createObjectURL(blob);
-        aEl.download = file.name;
-        aEl.click();
-        setTimeout(() => URL.revokeObjectURL(aEl.href), 4000);
-      }
-      imgBtn.textContent = "保存しました ✓";
-    } catch (err) {
-      imgBtn.textContent = err?.name === "AbortError" ? orig : "生成できませんでした";
-    }
-    setTimeout(() => { imgBtn.textContent = orig; }, 1800);
-    return;
-  }
-  const xBtn = e.target.closest("[data-share-x]");
-  if (xBtn) {
-    const p = lastShare[xBtn.dataset.shareX];
-    if (!p) return;
-    const url = "https://twitter.com/intent/tweet?text=" +
-      encodeURIComponent((p.x || p.title) + "\n") + "&url=" + encodeURIComponent(p.url || SITE_URL);
-    window.open(url, "_blank", "noopener");
-  }
-});
 
 /* ---------- 鑑定履歴(localStorage) ---------- */
 const HISTORY_KEY = "fortuna:history";
@@ -1185,11 +1145,9 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
       </div>
       <p class="result-lead">${r.elementNote}</p>
       <div class="share-block">
-        <p class="share-label">— あなたの称号カード、そのまま渡せます —</p>
         <div class="share-preview-slot" data-share-preview="integrated"></div>
-        <div class="result-actions">
+        <div class="result-actions" style="justify-content:center">
           <button class="btn btn-ghost" data-copy="${esc(buildShareText(r))}">結果をコピー</button>
-          ${shareButtonsHtml("integrated")}
         </div>
       </div>
     </div>
@@ -2230,7 +2188,7 @@ function renderInviteBanner() {
       <p class="invite-line">${who}の運命の称号は</p>
       <p class="invite-title">「${esc(title)}」</p>
       <p class="invite-line">でした。1080タイプにひとつ — <strong>あなたの称号は?</strong></p>
-      <button class="btn btn-primary" data-nav="integrated">30秒で自分の称号を知る</button>
+      <button class="btn btn-primary" data-nav="integrated">自分の称号を知る</button>
     </div>`;
 }
 

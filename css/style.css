@@ -74,9 +74,20 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 }
 .header-inner {
   max-width: 1120px; margin: 0 auto; padding: 12px 24px;
-  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  display: flex; align-items: center; gap: 16px;
   flex-wrap: wrap;
 }
+.header-inner .nav { margin-left: auto; }
+.mypage-btn {
+  width: 40px; height: 40px; border-radius: 50%;
+  border: 1px solid var(--hairline); background: var(--surface);
+  display: grid; place-items: center; padding: 0;
+  color: var(--muted); flex: 0 0 40px;
+  transition: color .25s ease, border-color .25s ease;
+}
+.mypage-btn::after { content: none; }
+.mypage-btn:hover { color: var(--indigo); border-color: var(--gold); }
+.mypage-btn.active { color: var(--gold-bright); border-color: var(--gold); }
 .brand { display: flex; align-items: center; text-decoration: none; }
 .brand-logo { height: 34px; width: auto; display: block; }
 .nav { display: flex; gap: 2px; flex-wrap: wrap; }
@@ -172,6 +183,35 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   color: var(--indigo); letter-spacing: .14em; margin-bottom: 8px;
 }
 .btn-xl { padding: 19px 46px; font-size: 17.5px; letter-spacing: .14em; }
+.btn-observe {
+  position: relative;
+  border: none; border-radius: 999px;
+  background: var(--indigo); color: var(--bg);
+  font-family: var(--serif); font-size: clamp(16px, 4vw, 18px); font-weight: 700;
+  letter-spacing: .18em; padding: 19px 46px 19px 42px;
+  box-shadow: 0 12px 30px rgba(28, 35, 51, 0.24);
+  transition: transform .2s ease, box-shadow .3s ease;
+  animation: observeBreath 3.6s ease-in-out infinite;
+}
+.btn-observe .bo-mark { color: var(--chamber-gold-bright); margin-right: 12px; font-size: 14px; vertical-align: 1px; }
+.btn-observe::before {
+  content: ""; position: absolute; inset: -8px; border-radius: 999px;
+  border: 1px solid rgba(168, 132, 78, 0.5);
+  transition: border-color .3s ease, inset .3s ease;
+}
+.btn-observe::after {
+  content: ""; position: absolute; inset: -8px; border-radius: 999px;
+  border: 1px solid transparent;
+  border-top-color: rgba(168, 132, 78, 0.9);
+  animation: obsSpin 5s linear infinite;
+}
+.btn-observe:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(28, 35, 51, 0.3); }
+.btn-observe:hover::before { border-color: rgba(168, 132, 78, 0.9); }
+.btn-observe:active { transform: scale(.985); }
+@keyframes observeBreath {
+  0%, 100% { box-shadow: 0 12px 30px rgba(28, 35, 51, 0.24); }
+  50% { box-shadow: 0 14px 38px rgba(168, 132, 78, 0.38); }
+}
 .hero-eyebrow::after {
   content: ""; display: block; width: 34px; height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
@@ -292,8 +332,8 @@ html, body { overflow-x: hidden; overflow-x: clip; }
     linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)),
     url("../assets/site/card_texture.webp") center / cover;
   border: 1px solid var(--hairline); border-radius: var(--radius);
-  padding: 26px 24px;
-  display: flex; flex-direction: column; justify-content: flex-end; gap: 6px;
+  padding: 26px 24px 20px;
+  display: flex; flex-direction: column; justify-content: flex-start; gap: 6px;
   transition: transform .3s ease, border-color .3s ease, box-shadow .3s ease;
   box-shadow: var(--shadow-soft);
 }
@@ -303,14 +343,23 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   box-shadow: var(--shadow-lift);
 }
 .bento-card h3 {
-  font-family: var(--serif); font-size: 20px; font-weight: 700; letter-spacing: .08em;
+  font-family: var(--serif); font-size: 19.5px; font-weight: 700; letter-spacing: .08em;
   color: var(--indigo);
+  position: relative; padding-bottom: 10px; margin-bottom: 2px;
 }
-.bento-card p { font-size: 15px; color: var(--muted); line-height: 1.9; }
+.bento-card h3::after {
+  content: ""; position: absolute; left: 0; bottom: 0;
+  width: 26px; height: 1px; background: var(--gold); opacity: .65;
+  transition: width .3s ease;
+}
+.bento-card:hover h3::after { width: 48px; }
+.bento-card p { font-size: 13.5px; color: var(--muted); line-height: 1.85; }
 .bento-icon {
-  height: 52px; width: auto; align-self: flex-start;
-  margin-bottom: auto; opacity: .92;
+  height: 54px; width: auto; align-self: flex-start;
+  margin-bottom: 14px; opacity: .92;
+  transition: transform .35s ease;
 }
+.bento-card:hover .bento-icon { transform: scale(1.06) rotate(-2deg); }
 .bento-glyph {
   position: absolute; top: -14px; right: 2px;
   font-family: var(--serif); font-size: 96px; line-height: 1; font-weight: 500;
@@ -323,10 +372,13 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   transform: rotate(-6deg) scale(1.05);
 }
 .bento-link {
-  font-size: 12.5px; font-weight: 700; letter-spacing: .08em;
-  color: color-mix(in srgb, var(--hue) 80%, var(--ink));
-  margin-top: 6px;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 12px; font-weight: 700; letter-spacing: .14em;
+  color: var(--gold-bright);
+  margin-top: auto; padding-top: 14px;
 }
+.bento-link::after { content: "→"; transition: transform .25s ease; }
+.bento-card:hover .bento-link::after { transform: translateX(4px); }
 .bento-main { grid-column: span 2; grid-row: span 2; padding: 34px 30px; }
 .bento-main .bento-glyph { font-size: 180px; top: -22px; right: 10px; }
 .bento-main h3 { font-size: 28px; }
@@ -353,7 +405,9 @@ html, body { overflow-x: hidden; overflow-x: clip; }
     linear-gradient(78deg, rgba(10, 16, 38, 0.93) 30%, rgba(10, 16, 38, 0.5) 62%, rgba(10, 16, 38, 0.06)),
     url("../images/tarot/tarot_10_wheel_of_fortune.webp") right 22% / cover no-repeat;
 }
+.bento-main { justify-content: flex-end; }
 .bento-art h3 { font-size: 28px; color: var(--chamber-ink); }
+.bento-art h3::after { background: var(--chamber-gold); }
 .bento-art p { max-width: 30ch; font-size: 14.5px; color: var(--chamber-muted); }
 .bento-art .bento-link { color: var(--chamber-gold-bright); }
 
@@ -1256,7 +1310,7 @@ body.ritual-open { overflow: hidden; }
   width: 100%; max-width: 250px; border-radius: 12px;
   border: 1px solid rgba(168, 132, 78, 0.45);
   box-shadow: var(--shadow-lift);
-  margin-bottom: 14px;
+  margin-bottom: 0;
   animation: viewIn .6s ease;
 }
 
@@ -1449,6 +1503,8 @@ body.ritual-open { overflow: hidden; }
 @media (max-width: 720px) {
   .pc-only { display: none; }
   .brand-logo { height: 28px; }
+  .mypage-btn { order: 1; margin-left: auto; width: 36px; height: 36px; flex-basis: 36px; }
+  .header-inner .nav { order: 2; margin-left: 0; }
   .nav {
     width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none;
     mask-image: linear-gradient(to right, #000 88%, transparent);
