@@ -572,6 +572,11 @@ function renderMypage() {
           <button class="btn btn-primary" id="install-app">アプリとして追加する</button>
         </div>
         <p class="sub app-ios-hint" style="margin-top:10px">iPhoneの方: Safariの共有ボタン → 「ホーム画面に追加」でインストールできます。</p>
+        <div class="result-actions" style="margin-top:18px">
+          <button class="btn btn-ghost" id="backup-export">引き継ぎコードをコピー</button>
+          <button class="btn btn-ghost" id="backup-import">コードを入力して復元</button>
+        </div>
+        <p class="sub" style="margin-top:8px">機種変更や新しいドメインへの移行時に、称号図鑑・履歴・連続日数をそのまま持ち越せます。</p>
       </div>
 
       <div class="result-card span-all">
@@ -617,6 +622,28 @@ function renderMypage() {
       installBtn.style.display = "none";
     });
   }
+
+  document.getElementById("backup-export")?.addEventListener("click", async (e) => {
+    try {
+      await navigator.clipboard.writeText(exportBackupCode());
+      e.target.textContent = "コピーしました ✓";
+    } catch {
+      prompt("このコードを控えてください:", exportBackupCode());
+    }
+    setTimeout(() => { e.target.textContent = "引き継ぎコードをコピー"; }, 1800);
+  });
+  document.getElementById("backup-import")?.addEventListener("click", () => {
+    const code = prompt("引き継ぎコード(FTN1.〜)を貼り付けてください:");
+    if (!code) return;
+    if (importBackupCode(code.trim())) {
+      alert("復元しました。マイページを更新します。");
+      prefillForms(loadProfile());
+      renderHomeDaily();
+      renderMypage();
+    } else {
+      alert("コードを読み取れませんでした。全文がコピーされているか確認してください。");
+    }
+  });
 
   document.getElementById("logout").addEventListener("click", () => {
     if (!confirm("この端末に保存された登録情報と来訪記録を削除します。よろしいですか?")) return;
@@ -1418,6 +1445,29 @@ function addToCollection(title, owner) {
     list.unshift({ title, owner: owner || "", d: todayKey() });
     localStorage.setItem(COLLECTION_KEY, JSON.stringify(list.slice(0, 200)));
   } catch { /* noop */ }
+}
+
+/* ---------- 引き継ぎコード(機種変更・ドメイン移行対応) ---------- */
+const BACKUP_KEYS = ["fortuna:profile", "fortuna:visits", "fortuna:collection", "fortuna:history", "fortuna:dailycard"];
+
+function exportBackupCode() {
+  const data = {};
+  for (const k of BACKUP_KEYS) {
+    const v = localStorage.getItem(k);
+    if (v) data[k] = v;
+  }
+  return "FTN1." + btoa(unescape(encodeURIComponent(JSON.stringify(data))));
+}
+
+function importBackupCode(code) {
+  if (!code?.startsWith("FTN1.")) return false;
+  try {
+    const data = JSON.parse(decodeURIComponent(escape(atob(code.slice(5)))));
+    for (const k of BACKUP_KEYS) {
+      if (typeof data[k] === "string") localStorage.setItem(k, data[k]);
+    }
+    return true;
+  } catch { return false; }
 }
 
 /* ---------- 招待状(シェアURLから来た人へ) ---------- */
