@@ -1,5 +1,5 @@
-/* Fortuna Service Worker — ネットワーク優先+オフラインフォールバック */
-const CACHE = "fortuna-v1";
+/* MYOURISCOPE Service Worker — ネットワーク優先+オフラインフォールバック */
+const CACHE = "myouriscope-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

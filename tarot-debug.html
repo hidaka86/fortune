@@ -4,15 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="robots" content="noindex, nofollow" />
-  <title>Tarot Debug — 全カード確認(非公開)</title>
+  <title>Tarot Debug — 全78枚確認(非公開)</title>
   <link rel="stylesheet" href="css/style.css?v=dev" />
   <style>
     body { padding: 30px 20px; }
     h1 { font-family: var(--serif); font-size: 22px; margin-bottom: 6px; }
+    h2 { font-family: var(--serif); font-size: 17px; margin: 26px 0 12px; color: var(--gold-bright); }
     .note { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
     .dbg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 18px; }
     .dbg-item { text-align: center; }
     .dbg-item .tarot-reveal { margin: 0 auto; animation: none; }
+    .dbg-item .tarot-reveal::before { animation: none; opacity: 0; }
     .dbg-cap { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
     .dbg-item.broken .tarot-reveal { border-color: #c0392b; box-shadow: 0 0 0 2px #c0392b; }
     .dbg-item.broken .dbg-cap::after { content: " — 画像なし(フォールバック表示)"; color: #e07b6d; }
@@ -22,60 +24,62 @@
 </head>
 <body>
   <h1>タロット画像デバッグ(非公開ページ)</h1>
-  <p class="note">images/tarot/ の23枚(大アルカナ22+裏面)の読み込み状態を目視確認します。赤枠=画像未読み込み(CSSフォールバック表示中)。</p>
+  <p class="note">images/tarot/ の79枚(大アルカナ22+小アルカナ56+裏面)の読み込み状態を目視確認します。赤枠=画像未読み込み(CSSフォールバック表示中)。</p>
   <p id="stats"></p>
-  <div class="dbg-grid" id="grid"></div>
+  <div id="root"></div>
 
   <script src="js/data.js?v=dev"></script>
   <script>
     const ROMAN = ["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"];
     const ICONS = ["🃏","🎩","📖","👑","🏛","🔑","💞","🏇","🦁","🏮","🎡","⚖️","🙃","🦋","🏺","⛓","🗼","⭐","🌙","☀️","🎺","🌍"];
-    const img = (n) => `images/tarot/tarot_${String(n).padStart(2, "0")}_${TAROT_SLUGS[n]}.webp`;
-
-    let okCount = 0, ngCount = 0;
-    const updateStats = () => {
-      document.getElementById("stats").innerHTML =
-        `読み込み成功 <strong>${okCount}</strong> / 23  ・ 失敗(フォールバック) <strong>${ngCount}</strong>`;
-    };
+    const TOTAL = 1 + TAROT.length + TAROT_MINOR.length + 1; // back + 78 + 逆位置サンプル
+    const img = (c) => c.n < 22
+      ? `images/tarot/tarot_${String(c.n).padStart(2, "0")}_${TAROT_SLUGS[c.n]}.webp`
+      : `images/tarot/tarot_${c.suit}_${c.rank}.webp`;
+    const no = (c) => (c.n < 22 ? ROMAN[c.n] : c.no);
+    const icon = (c) => (c.n < 22 ? ICONS[c.n] : MINOR_SUITS[c.suit].icon);
 
     function cardHtml(c, reversed) {
       return `
-        <div class="dbg-item" data-n="${c.n}${reversed ? "r" : ""}">
+        <div class="dbg-item">
           <div class="tarot-reveal ${reversed ? "is-rev" : ""}">
-            <img class="tarot-art" src="${img(c.n)}" alt="${c.name}"
-              onload="this.closest('.dbg-item').dataset.ok=1"
+            <img class="tarot-art" src="${img(c)}" alt="${c.name}"
               onerror="this.parentElement.classList.add('no-art');this.closest('.dbg-item').classList.add('broken')" />
             <div class="tface">
-              <span class="no">${ROMAN[c.n]}</span><span class="sym">${ICONS[c.n]}</span>
+              <span class="no">${no(c)}</span><span class="sym">${icon(c)}</span>
               <span class="nm">${c.name}</span><span class="en">${c.en}</span>
               <span class="ori ${reversed ? "rev" : "up"}">${reversed ? "逆位置" : "正位置"}</span>
             </div>
           </div>
-          <p class="dbg-cap">${String(c.n).padStart(2, "0")} ${TAROT_SLUGS[c.n]}</p>
+          <p class="dbg-cap">${c.en}</p>
         </div>`;
     }
 
-    const grid = document.getElementById("grid");
-    grid.innerHTML =
-      `<div class="dbg-item" id="back-item">
+    const backHtml = `
+      <div class="dbg-item">
         <div class="tarot-reveal">
           <img class="tarot-art" src="images/tarot/tarot_back.webp" alt="裏面"
             onerror="this.parentElement.classList.add('no-art');this.closest('.dbg-item').classList.add('broken')" />
           <div class="tface"><span class="nm">裏面</span><span class="en">tarot_back</span></div>
         </div>
         <p class="dbg-cap">back</p>
-      </div>` +
-      TAROT.map((c) => cardHtml(c, false)).join("") +
-      cardHtml(TAROT[0], true); // 逆位置の回転確認用サンプル
+      </div>`;
 
-    // 集計
+    const suits = { wands: [], cups: [], swords: [], pentacles: [] };
+    TAROT_MINOR.forEach((c) => suits[c.suit].push(c));
+
+    document.getElementById("root").innerHTML =
+      `<h2>裏面+大アルカナ(22)</h2><div class="dbg-grid">${backHtml}${TAROT.map((c) => cardHtml(c, false)).join("")}${cardHtml(TAROT[0], true)}</div>` +
+      Object.entries(suits).map(([k, cards]) =>
+        `<h2>${MINOR_SUITS[k].ja} — ${MINOR_SUITS[k].theme}(14)</h2><div class="dbg-grid">${cards.map((c) => cardHtml(c, false)).join("")}</div>`).join("");
+
     setTimeout(() => {
       const items = document.querySelectorAll(".dbg-item");
       let ok = 0, ng = 0;
       items.forEach((it) => (it.classList.contains("broken") ? ng++ : ok++));
-      okCount = ok; ngCount = ng;
-      updateStats();
-    }, 1500);
+      document.getElementById("stats").innerHTML =
+        `読み込み成功 <strong>${ok}</strong> / ${TOTAL}  ・ 失敗(フォールバック) <strong>${ng}</strong>`;
+    }, 2500);
   </script>
 </body>
 </html>

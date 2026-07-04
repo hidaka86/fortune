@@ -1,4 +1,4 @@
-/* Fortuna — UIロジック */
+/* MYOURISCOPE — UIロジック */
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -32,13 +32,12 @@ document.addEventListener("click", (e) => {
     <span class="status-item status-quote">${dailyQuote()}</span>`;
 })();
 
-/* ---------- ヒーローの星空キャンバス ---------- */
+/* ---------- ヒーローの観測盤キャンバス(orbital layering / temporal arcs) ---------- */
 (function initSky() {
   const canvas = document.getElementById("sky");
   if (!canvas) return;
   const ctx = canvas.getContext("2d");
-  let stars = [];
-  let shooting = null;
+  let orbits = [];
   let w = 0, h = 0;
 
   function resize() {
@@ -47,46 +46,37 @@ document.addEventListener("click", (e) => {
     w = rect.width; h = rect.height;
     canvas.width = w * dpr; canvas.height = h * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    stars = Array.from({ length: Math.floor((w * h) / 4200) }, () => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: Math.random() * 1.3 + 0.3,
-      tw: Math.random() * Math.PI * 2,
-      sp: 0.4 + Math.random() * 1.4,
-      gold: Math.random() < 0.16,
+    const R = Math.max(w, h) * 0.72;
+    orbits = Array.from({ length: 7 }, (_, i) => ({
+      r: R * (0.16 + i * 0.14),
+      speed: (i % 2 ? 1 : -1) * (0.018 + 0.011 * i),
+      dots: 1 + (i % 3),
+      phase: i * 1.9,
+      alpha: 0.085 - i * 0.009,
     }));
   }
 
   function frame(t) {
     ctx.clearRect(0, 0, w, h);
-    for (const s of stars) {
-      const a = REDUCED_MOTION ? 0.7 : 0.35 + 0.55 * (0.5 + 0.5 * Math.sin(s.tw + t * 0.001 * s.sp));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-      ctx.fillStyle = s.gold ? `rgba(237,217,163,${a})` : `rgba(220,228,255,${a * 0.85})`;
-      ctx.fill();
-    }
-    if (!REDUCED_MOTION) {
-      if (!shooting && Math.random() < 0.004) {
-        shooting = { x: Math.random() * w * 0.7 + w * 0.15, y: Math.random() * h * 0.35, life: 1 };
+    const cx = w / 2, cy = h * 0.46;
+    ctx.fillStyle = "rgba(168,132,78,.85)";
+    ctx.beginPath(); ctx.arc(cx, cy, 2.4, 0, Math.PI * 2); ctx.fill();
+    for (const o of orbits) {
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = `rgba(28,35,51,${Math.max(o.alpha, 0.03)})`;
+      ctx.beginPath(); ctx.arc(cx, cy, o.r, 0, Math.PI * 2); ctx.stroke();
+      const a0 = o.phase + t * 0.00012 * o.speed * 60;
+      ctx.strokeStyle = "rgba(168,132,78,.20)";
+      ctx.beginPath(); ctx.arc(cx, cy, o.r, a0, a0 + 0.85); ctx.stroke();
+      for (let d = 0; d < o.dots; d++) {
+        const ang = o.phase + (d / o.dots) * Math.PI * 2 + t * 0.001 * o.speed;
+        const x = cx + Math.cos(ang) * o.r;
+        const y = cy + Math.sin(ang) * o.r;
+        ctx.fillStyle = d === 0 ? "rgba(168,132,78,.6)" : "rgba(28,35,51,.28)";
+        ctx.beginPath(); ctx.arc(x, y, d === 0 ? 2.2 : 1.5, 0, Math.PI * 2); ctx.fill();
       }
-      if (shooting) {
-        shooting.life -= 0.025;
-        shooting.x += 7; shooting.y += 3.2;
-        if (shooting.life <= 0) { shooting = null; }
-        else {
-          const g = ctx.createLinearGradient(shooting.x - 70, shooting.y - 32, shooting.x, shooting.y);
-          g.addColorStop(0, "rgba(237,217,163,0)");
-          g.addColorStop(1, `rgba(237,217,163,${shooting.life * 0.9})`);
-          ctx.strokeStyle = g; ctx.lineWidth = 1.4;
-          ctx.beginPath();
-          ctx.moveTo(shooting.x - 70, shooting.y - 32);
-          ctx.lineTo(shooting.x, shooting.y);
-          ctx.stroke();
-        }
-      }
-      requestAnimationFrame(frame);
     }
+    if (!REDUCED_MOTION) requestAnimationFrame(frame);
   }
 
   resize();
@@ -355,7 +345,7 @@ function renderHomeDaily() {
       ${(() => {
         const dc = loadDailyCard();
         if (!dc) return '<button class="chip chip-cta" data-nav="tarot">今日の一枚 まだ引いていません →</button>';
-        const base = TAROT.find((t) => t.n === dc.n);
+        const base = cardByN(dc.n);
         return `<span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />今日の一枚 <strong>${base.name}</strong></span>`;
       })()}
       <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
@@ -403,16 +393,16 @@ function compassSvg(kichi) {
     const dy = cy + Math.sin(rad) * r;
     const good = kichi.good.find((g) => g.dir === dir.name);
     const bad = kichi.bad[dir.name];
-    const color = good ? (good.grade === "大吉" ? "#edd9a3" : "#d9b36a") : bad ? "#a25a4d" : "rgba(240,237,228,.25)";
+    const color = good ? (good.grade === "大吉" ? "#8F6C38" : "#A8844E") : bad ? "#a25a4d" : "rgba(28,35,51,.22)";
     const size = good ? 7 : 4;
     marks += `
       <circle cx="${dx}" cy="${dy}" r="${size}" fill="${color}" />
-      <text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="14" fill="${good ? "#edd9a3" : bad ? "#a25a4d" : "#96a0b9"}" font-weight="${good ? 700 : 400}">${dir.name}</text>`;
+      <text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="14" fill="${good ? "#8F6C38" : bad ? "#a25a4d" : "#5D6270"}" font-weight="${good ? 700 : 400}">${dir.name}</text>`;
   }
   return `<svg viewBox="0 0 280 280" class="compass" role="img" aria-label="今月の方位盤">
-    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(240,237,228,.16)" stroke-width="1" />
-    <circle cx="${cx}" cy="${cy}" r="${r - 22}" fill="none" stroke="rgba(240,237,228,.08)" stroke-width="1" />
-    <circle cx="${cx}" cy="${cy}" r="3" fill="#d9b36a" />
+    <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(28,35,51,.16)" stroke-width="1" />
+    <circle cx="${cx}" cy="${cy}" r="${r - 22}" fill="none" stroke="rgba(28,35,51,.07)" stroke-width="1" />
+    <circle cx="${cx}" cy="${cy}" r="3" fill="#A8844E" />
     ${marks}
   </svg>`;
 }
@@ -573,7 +563,7 @@ function renderMypage() {
 
       <div class="result-card span-all app-card">
         ${cardH4("APP", "ホーム画面に追加")}
-        <p>Fortunaをホーム画面に追加すると、毎朝ワンタップで「今日の羅針盤」が開きます。</p>
+        <p>MYOURISCOPEをホーム画面に追加すると、毎朝ワンタップで「今日の流れ」が開きます。</p>
         <div class="result-actions" style="margin-top:14px">
           <button class="btn btn-primary" id="install-app">アプリとして追加する</button>
         </div>
@@ -667,7 +657,7 @@ function renderMypage() {
 function buildShareText(r) {
   const ori = r.card.reversed ? "逆位置" : "正位置";
   return [
-    `【Fortuna 統合鑑定】${r.name ? r.name + "さん" : ""}`,
+    `【MYOURISCOPE 統合鑑定】${r.name ? r.name + "さん" : ""}`,
     `運命の称号:「${fortuneTitle(r.birthdateStr).title}」(1080タイプにひとつ)`,
     `太陽 ${r.zodiac.name} × 月 ${r.moon.name} × ${r.kyusei.name}`,
     `日主: ${r.pillars.day.kan}(${r.pillars.nikkan.symbol}) / 干支: ${r.jikkan}${r.eto.name}`,
@@ -734,60 +724,67 @@ async function makeShareCard(p) {
   try { await document.fonts.load('700 60px "Zen Old Mincho"'); } catch { /* fallback */ }
   const serif = '"Zen Old Mincho", "Hiragino Mincho ProN", serif';
 
+  // アイボリーの観測所トーン(MYOURISCOPE)
   const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, "#0a0d1d"); bg.addColorStop(1, "#171b3a");
+  bg.addColorStop(0, "#F5F1E8"); bg.addColorStop(1, "#EDE6D8");
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
 
-  for (let i = 0; i < 90; i++) {
-    ctx.globalAlpha = 0.2 + Math.random() * 0.6;
-    ctx.fillStyle = Math.random() < 0.22 ? "#edd9a3" : "#dce4ff";
-    ctx.beginPath();
-    ctx.arc(Math.random() * W, Math.random() * H, Math.random() * 1.8 + 0.4, 0, Math.PI * 2);
-    ctx.fill();
+  // 観測盤:同心円と時のアーク
+  const ocx = W / 2, ocy = H / 2;
+  for (let i = 0; i < 5; i++) {
+    ctx.strokeStyle = `rgba(28,35,51,${0.07 - i * 0.011})`;
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(ocx, ocy, 180 + i * 95, 0, Math.PI * 2); ctx.stroke();
+    ctx.strokeStyle = "rgba(168,132,78,.22)";
+    ctx.beginPath(); ctx.arc(ocx, ocy, 180 + i * 95, 1.1 + i * 1.3, 1.95 + i * 1.3); ctx.stroke();
   }
-  ctx.globalAlpha = 1;
+  ctx.fillStyle = "rgba(168,132,78,.55)";
+  for (let i = 0; i < 5; i++) {
+    const ang = 0.7 + i * 1.35, rr = 180 + i * 95;
+    ctx.beginPath(); ctx.arc(ocx + Math.cos(ang) * rr, ocy + Math.sin(ang) * rr, 3, 0, Math.PI * 2); ctx.fill();
+  }
 
-  ctx.strokeStyle = "rgba(217,179,106,.6)"; ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(168,132,78,.65)"; ctx.lineWidth = 2;
   ctx.strokeRect(30, 30, W - 60, H - 60);
-  ctx.strokeStyle = "rgba(217,179,106,.25)";
+  ctx.strokeStyle = "rgba(168,132,78,.28)"; ctx.lineWidth = 1;
   ctx.strokeRect(40, 40, W - 80, H - 80);
 
   ctx.textAlign = "center";
-  ctx.fillStyle = "#d9b36a";
-  ctx.font = `600 26px ${serif}`;
-  ctx.fillText("F O R T U N A", W / 2, 96);
-  ctx.fillStyle = "#96a0b9";
+  ctx.fillStyle = "#8F6C38";
+  ctx.font = `600 27px ${serif}`;
+  ctx.fillText("M Y O U R I S C O P E", W / 2, 96);
+  ctx.fillStyle = "#5D6270";
   ctx.font = `500 19px ${serif}`;
   ctx.fillText(p.eyebrow || "", W / 2, 130);
 
-  ctx.fillStyle = "#f0ede4";
+  ctx.fillStyle = "#1C2333";
   ctx.font = `700 56px ${serif}`;
   ctx.fillText(p.title, W / 2, 218);
 
   if (p.keywords?.length) {
-    ctx.fillStyle = "#edd9a3";
+    ctx.fillStyle = "#8F6C38";
     ctx.font = `600 30px ${serif}`;
-    ctx.fillText(p.keywords.join("  ✦  "), W / 2, 282);
+    ctx.fillText(p.keywords.join("  ◉  "), W / 2, 282);
   }
 
   if (p.score != null) {
-    ctx.fillStyle = "#96a0b9";
+    ctx.fillStyle = "#5D6270";
     ctx.font = `500 24px ${serif}`;
     ctx.fillText(p.scoreLabel || "今日の運気", W / 2, 348);
-    ctx.fillStyle = "#edd9a3";
+    ctx.fillStyle = "#8F6C38";
     ctx.font = `700 120px ${serif}`;
     ctx.fillText(String(p.score), W / 2, 462);
-    ctx.fillStyle = "#96a0b9";
+    ctx.fillStyle = "#5D6270";
     ctx.font = `500 28px ${serif}`;
     ctx.fillText(p.scoreSuffix || "/100", W / 2 + 130, 456);
   } else if (p.sub) {
-    ctx.fillStyle = "#c9cfe0";
+    ctx.fillStyle = "#3A4152";
     ctx.font = `500 28px ${serif}`;
     ctx.fillText(p.sub, W / 2, 400);
   }
 
   const d = new Date();
-  ctx.fillStyle = "#d9b36a";
+  ctx.fillStyle = "#A8844E";
   ctx.font = `500 22px ${serif}`;
   ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}  —  hidaka86.github.io/fortune`, W / 2, 556);
 
@@ -803,9 +800,9 @@ document.addEventListener("click", async (e) => {
     imgBtn.textContent = "生成中…";
     try {
       const blob = await makeShareCard(p);
-      const file = new File([blob], `fortuna-${todayKey()}.png`, { type: "image/png" });
+      const file = new File([blob], `myouriscope-${todayKey()}.png`, { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Fortuna" });
+        await navigator.share({ files: [file], title: "MYOURISCOPE" });
       } else {
         const aEl = document.createElement("a");
         aEl.href = URL.createObjectURL(blob);
@@ -950,7 +947,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
     title: `太陽は${z.name}、月は${moon.name}`,
     keywords: [z.keyword],
     score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `【Fortuna 星占い】太陽星座は${z.name}、月星座は${moon.name}。今日の運気は${daily.score100}/100 ✦`,
+    x: `【MYOURISCOPE 星占い】太陽星座は${z.name}、月星座は${moon.name}。今日の運気は${daily.score100}/100 ✦`,
   };
   recordHistory("星占い", `太陽${z.name} × 月${moon.name}`, `${z.keyword}。今日の運気${daily.score100}/100。`);
 
@@ -1008,7 +1005,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
     title: `日主「${pillars.day.kan}」— ${pillars.nikkan.symbol}の人`,
     keywords: [kyusei.name, `${pillars.year.kan}${pillars.year.shi}年生まれ`],
     score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `【Fortuna 東洋占術】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
+    x: `【MYOURISCOPE 東洋占術】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
   };
   recordHistory("東洋占術", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
 
@@ -1055,10 +1052,47 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
 const tarotStage = document.getElementById("tarot-stage");
 const tarotSummary = document.getElementById("tarot-summary");
 
+/* 儀式の間:明るい観測所から、扉一枚で深い紺の間へ。
+   シャッフル以降はフルスクリーンで没入させ、リビールは「カードだけ→言葉が浮かぶ」の順で見せる */
+const ritualOverlay = document.getElementById("ritual-overlay");
+
+function openChamber() {
+  ritualOverlay.hidden = false;
+  document.body.classList.add("ritual-open");
+}
+
+function closeChamber() {
+  ritualOverlay.hidden = true;
+  ritualOverlay.innerHTML = "";
+  document.body.classList.remove("ritual-open");
+}
+
+function chamberScreen(html) {
+  ritualOverlay.innerHTML = `
+    <button class="ritual-close" id="ritual-close" aria-label="儀式を中断する">×</button>
+    <div class="ritual-screen">${html}</div>`;
+  document.getElementById("ritual-close").addEventListener("click", () => {
+    closeChamber();
+    renderAsk();
+  });
+  ritualOverlay.scrollTop = 0;
+}
+
 const ROMAN = ["0","I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX","XXI"];
 const TAROT_ICONS = ["🃏","🎩","📖","👑","🏛","🔑","💞","🏇","🦁","🏮","🎡","⚖️","🙃","🦋","🏺","⛓","🗼","⭐","🌙","☀️","🎺","🌍"];
 const TAROT_BACK_IMG = "images/tarot/tarot_back.webp";
-const tarotImg = (n) => `images/tarot/tarot_${String(n).padStart(2, "0")}_${TAROT_SLUGS[n]}.webp`;
+
+/* フルデッキ:大アルカナ22枚+小アルカナ56枚=78枚 */
+const FULL_DECK = TAROT.concat(TAROT_MINOR);
+const DRAW_FAN_COUNT = FULL_DECK.length;
+const cardByN = (n) => FULL_DECK.find((t) => t.n === n);
+const cardNo = (c) => (c.n < 22 ? ROMAN[c.n] : c.no);
+const cardIcon = (c) => (c.n < 22 ? TAROT_ICONS[c.n] : MINOR_SUITS[c.suit].icon);
+const tarotImg = (n) => {
+  if (n < 22) return `images/tarot/tarot_${String(n).padStart(2, "0")}_${TAROT_SLUGS[n]}.webp`;
+  const c = cardByN(n);
+  return `images/tarot/tarot_${c.suit}_${c.rank}.webp`;
+};
 
 // 裏面画像があればCSSデザインから差し替え(後日画像を置くだけで切り替わる)
 (() => {
@@ -1115,8 +1149,8 @@ function revealedCardHtml(c) {
       <img class="tarot-art" src="${tarotImg(c.n)}" alt="${c.name}" loading="lazy"
         onerror="this.parentElement.classList.add('no-art')" />
       <div class="tface">
-        <span class="no">${ROMAN[c.n]}</span>
-        <span class="sym">${TAROT_ICONS[c.n]}</span>
+        <span class="no">${cardNo(c)}</span>
+        <span class="sym">${cardIcon(c)}</span>
         <span class="nm">${c.name}</span>
         <span class="en">${c.en}</span>
         <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span>
@@ -1145,7 +1179,7 @@ function renderAsk() {
       </div>
       <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
         placeholder="問いを言葉にする(入力しなくてもOK)" value="" />
-      <p class="form-note">問いはこの端末のブラウザにのみ保存され、外部には一切送信されません。</p>
+      <p class="form-note">大アルカナ22枚+小アルカナ56枚、計78枚のフルデッキで占います。問いはこの端末のブラウザにのみ保存され、外部には一切送信されません。</p>
       <button class="btn btn-primary btn-lg btn-block" id="ritual-start" style="margin-top:14px">儀式をはじめる</button>
     </div>`;
 
@@ -1166,6 +1200,7 @@ function renderAsk() {
     try { localStorage.setItem(QUESTION_KEY, ritual.question); } catch { /* noop */ }
     ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
     if (ritual.spread === "daily" && loadDailyCard()) { restoreDaily(); return; }
+    openChamber();
     renderShuffle();
   });
 }
@@ -1173,15 +1208,15 @@ function renderAsk() {
 /* --- 2. シャッフル画面(長押し) --- */
 function renderShuffle() {
   const short = RITUAL_SPREADS[ritual.spread].short;
-  tarotStage.innerHTML = `
+  chamberScreen(`
     <div class="ritual-step">
-      <p class="ritual-eyebrow">STEP 2 — SHUFFLE</p>
-      <p class="ritual-inst">カードを<strong>長押し</strong>して、止めたいところで指を離してください</p>
+      <p class="ritual-eyebrow emerge">STEP 2 — SHUFFLE</p>
+      <p class="ritual-inst emerge" style="--ed:.2s">カードを<strong>長押し</strong>して、止めたいところで指を離してください</p>
       <div class="shuffle-stack" id="shuffle-stack">
         ${Array.from({ length: 7 }, (_, i) => tbackHtml("sc", `style="--i:${i}"`)).join("")}
       </div>
       <p class="ritual-hint" id="shuffle-hint">束に触れると、速く混ざります</p>
-    </div>`;
+    </div>`);
 
   const stack = document.getElementById("shuffle-stack");
   const hint = document.getElementById("shuffle-hint");
@@ -1210,10 +1245,10 @@ function renderShuffle() {
 
 /* --- 3. カット画面(3つの山) --- */
 function renderCut() {
-  tarotStage.innerHTML = `
+  chamberScreen(`
     <div class="ritual-step">
-      <p class="ritual-eyebrow">STEP 3 — CUT</p>
-      <p class="ritual-inst">山がみっつ。<strong>直感で</strong>ひとつ選んでください</p>
+      <p class="ritual-eyebrow emerge">STEP 3 — CUT</p>
+      <p class="ritual-inst emerge" style="--ed:.2s">山がみっつ。<strong>直感で</strong>ひとつ選んでください</p>
       <div class="cut-piles">
         ${[0, 1, 2].map((k) => `
           <button class="cut-pile" data-k="${k}">
@@ -1221,13 +1256,13 @@ function renderCut() {
             <span class="cut-label">${["ひとつ目", "ふたつ目", "みっつ目"][k]}</span>
           </button>`).join("")}
       </div>
-    </div>`;
-  tarotStage.querySelectorAll(".cut-pile").forEach((b) => {
+    </div>`);
+  ritualOverlay.querySelectorAll(".cut-pile").forEach((b) => {
     b.addEventListener("click", () => {
       ritual.cutIdx = Number(b.dataset.k); // シード成分2: カット選択
       vibrate(15);
       b.classList.add("chosen");
-      tarotStage.querySelectorAll(".cut-pile").forEach((x) => { if (x !== b) x.classList.add("faded"); });
+      ritualOverlay.querySelectorAll(".cut-pile").forEach((x) => { if (x !== b) x.classList.add("faded"); });
       setTimeout(renderDraw, 450);
     });
   });
@@ -1236,15 +1271,15 @@ function renderCut() {
 /* --- 4. ドロー画面(扇から引く) --- */
 function renderDraw() {
   const conf = RITUAL_SPREADS[ritual.spread];
-  tarotStage.innerHTML = `
+  chamberScreen(`
     <div class="ritual-step">
-      <p class="ritual-eyebrow">STEP ${conf.short ? "3" : "4"} — DRAW</p>
+      <p class="ritual-eyebrow emerge">STEP ${conf.short ? "3" : "4"} — DRAW</p>
       ${slotsHtml(-1)}
       <p class="ritual-inst">横にスクロールして、呼ばれた気がするカードを<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong></p>
       <div class="draw-strip" id="draw-strip">
-        ${Array.from({ length: 22 }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--r:${((k % 5) - 2) * 1.8}deg"`)).join("")}
+        ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--r:${((k % 5) - 2) * 1.8}deg"`)).join("")}
       </div>
-    </div>`;
+    </div>`);
 
   const strip = document.getElementById("draw-strip");
   strip.addEventListener("click", (e) => {
@@ -1257,14 +1292,14 @@ function renderDraw() {
     // ユーザー操作の合成シードからカードを決定(Math.random非使用)
     const seedStr = `${ritual.releaseT.toFixed(3)}|${ritual.cutIdx}|${ritual.positions.join("-")}`;
     const rng = seededRng(seedStr);
-    const remaining = TAROT.filter((t) => !ritual.cards.some((c) => c.n === t.n));
+    const remaining = FULL_DECK.filter((t) => !ritual.cards.some((c) => c.n === t.n));
     const base = remaining[Math.floor(rng() * remaining.length)];
     const card = { ...base, reversed: rng() < 0.5 }; // 逆位置は50%
     ritual.cards.push(card);
     new Image().src = tarotImg(card.n); // リビール直前の先読み
     vibrate(25);
 
-    const slotBody = tarotStage.querySelector(`[data-slot="${ritual.cards.length - 1}"]`);
+    const slotBody = ritualOverlay.querySelector(`[data-slot="${ritual.cards.length - 1}"]`);
     if (slotBody) slotBody.innerHTML = tbackHtml("slot-back");
     const left = document.getElementById("draw-left");
     if (left) left.textContent = conf.count - ritual.cards.length;
@@ -1277,37 +1312,68 @@ function renderDraw() {
   });
 }
 
-/* --- 5. リビール画面(溜め0.8秒 -> フリップ) --- */
+/* --- 5. リビール:一枚ずつ全画面でカードと向き合う ---
+   まずカードだけ(テキストなし)を大きく見せ、フリップの後に言葉が浮かび上がる */
 function renderReveal() {
   const conf = RITUAL_SPREADS[ritual.spread];
-  tarotStage.innerHTML = `
-    <div class="ritual-step">
-      <p class="ritual-eyebrow">REVEAL</p>
-      <p class="ritual-inst" id="reveal-inst">カードが、答えを準備しています……</p>
-      ${slotsHtml(-1)}
-    </div>`;
-  // 全スロットを裏向きで表示
-  tarotStage.querySelectorAll(".tarot-slot-body").forEach((b) => { b.innerHTML = tbackHtml("slot-back"); });
+  let i = 0;
 
-  ritual.cards.forEach((card, i) => {
-    const body = tarotStage.querySelector(`[data-slot="${i}"]`);
-    setTimeout(() => body?.querySelector(".tback")?.classList.add("charging"), i * 1700); // 溜め
+  function showCard() {
+    const card = ritual.cards[i];
+    const pos = conf.positions[i];
+    chamberScreen(`
+      <div class="rv-stage" id="rv-stage">
+        <p class="rv-count emerge">${i + 1} / ${conf.count}</p>
+        <p class="rv-label emerge" style="--ed:.15s">${pos.en}</p>
+        <p class="rv-label-ja emerge" style="--ed:.35s">${pos.ja}</p>
+        <div class="rv-card" id="rv-card">${tbackHtml("slot-back")}</div>
+        <div class="rv-text" id="rv-text"></div>
+      </div>`);
+    const rvCard = document.getElementById("rv-card");
+    const rvText = document.getElementById("rv-text");
+    let ready = false;
+
+    setTimeout(() => rvCard.querySelector(".tback")?.classList.add("charging"), 900); // 溜め
     setTimeout(() => {
-      if (body) body.innerHTML = revealedCardHtml(card);
-      vibrate(12);
-    }, i * 1700 + 800); // 0.8秒の溜めの後にフリップ
-  });
-  setTimeout(() => {
-    const inst = document.getElementById("reveal-inst");
-    if (inst) inst.textContent = "カードが出そろいました";
+      rvCard.innerHTML = revealedCardHtml(card); // フリップ:まずカードだけ
+      vibrate(25);
+    }, 1700);
+    setTimeout(() => { // 言葉が浮かび上がる
+      rvText.innerHTML = `
+        <span class="rv-no emerge">${cardNo(card)}</span>
+        <span class="rv-name emerge" style="--ed:.25s">${card.name}</span>
+        <span class="rv-en emerge" style="--ed:.5s">${card.en}</span>
+        <span class="rv-ori ${card.reversed ? "rev" : "up"} emerge" style="--ed:.8s">${card.reversed ? "逆位置" : "正位置"}</span>
+        <span class="rv-hint emerge" style="--ed:1.5s">${i + 1 < conf.count ? "─ タップして、つぎの一枚へ ─" : "─ タップして、読み解きへ ─"}</span>`;
+      ready = true;
+    }, 2650);
+
+    document.getElementById("rv-stage").addEventListener("click", () => {
+      if (!ready) return;
+      vibrate(10);
+      i += 1;
+      if (i < conf.count) showCard();
+      else finish();
+    });
+  }
+
+  function finish() {
+    closeChamber();
+    tarotStage.innerHTML = `
+      <div class="ritual-step">
+        <p class="ritual-eyebrow">YOUR CARDS</p>
+        ${slotsHtml(ritual.cards.length - 1)}
+      </div>`;
     showTarotSummary(false);
-  }, (ritual.cards.length - 1) * 1700 + 2100);
+  }
+
+  showCard();
 }
 
 /* 今日の一枚: 引き直し不可、当日分を復元 */
 function restoreDaily() {
   const saved = loadDailyCard();
-  const base = TAROT.find((t) => t.n === saved.n);
+  const base = cardByN(saved.n);
   ritual.cards = [{ ...base, reversed: saved.reversed }];
   ritual.question = (() => { try { return localStorage.getItem(QUESTION_KEY) || ""; } catch { return ""; } })();
   tarotStage.innerHTML = `
@@ -1368,7 +1434,7 @@ function showTarotSummary(restored) {
     title: ritual.cards.length === 1 ? `「${ritual.cards[0].name}」` : `${conf.label}の答え`,
     keywords: cardsLabel,
     sub: genreMeaning(ritual.cards[0]).split("。")[0] + "。",
-    x: `【Fortuna タロット・${conf.label}】引いたのは ${cardsLabel.join("、")} ✦`,
+    x: `【MYOURISCOPE タロット・${conf.label}】引いたのは ${cardsLabel.join("、")} ✦`,
   };
   if (!restored) {
     recordHistory(`タロット(${conf.label})`, cardsLabel.join(" / "),
@@ -1478,7 +1544,7 @@ document.getElementById("palm-form").addEventListener("submit", (e) => {
     title: "手のひらに刻まれた資質",
     keywords: readings.map(({ q, opt }) => `${q.name}:${opt.label}`).slice(0, 2),
     sub: readings[0].opt.text.split("。")[0] + "。",
-    x: `【Fortuna 手相】${readings.map(({ q, opt }) => q.name + "は「" + opt.label + "」").join("、")}でした ✦`,
+    x: `【MYOURISCOPE 手相】${readings.map(({ q, opt }) => q.name + "は「" + opt.label + "」").join("、")}でした ✦`,
   };
   recordHistory("手相", readings.map(({ q, opt }) => `${q.name}:${opt.label}`).join(" / "), readings.map(({ opt }) => opt.text).join(" "));
 
