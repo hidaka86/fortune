@@ -463,7 +463,15 @@ function renderToday() {
     return;
   }
 
-  // その日はじめて開いたときだけ、観測の溜めを演出(ドキドキは一日一回が新鮮)
+  // カードがまだなら、結果より先にカードの場が開く(選んで引くだけの1工程)
+  const dcPre = loadDailyCard();
+  if (!dcPre) {
+    try { localStorage.setItem("fortuna:obsday", todayKey()); } catch { /* noop */ }
+    renderQuickDraw();
+    return;
+  }
+
+  // カード済みでその日はじめての表示なら、観測の溜めを一度だけ
   const OBS_TODAY_KEY = "fortuna:obsday";
   let obsSeen = true;
   try { obsSeen = localStorage.getItem(OBS_TODAY_KEY) === todayKey(); } catch { /* noop */ }
@@ -476,12 +484,12 @@ function renderToday() {
   const daily = dailyFortune(p.birthdate);
   const verdict = dailyVerdict(p.birthdate);
   const dc = loadDailyCard();
-  const card = dc ? { ...cardByN(dc.n), reversed: dc.reversed } : null;
+  const card = { ...cardByN(dc.n), reversed: dc.reversed };
   const mind = mindForToday(verdict, card, daily);
   const who = p.name ? `${esc(p.name)}さん` : "あなた";
 
   lastShare.today = {
-    cards: dc ? [{ n: dc.n, reversed: dc.reversed }] : null,
+    cards: [{ n: dc.n, reversed: dc.reversed }],
     eyebrow: `TODAY — ${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`,
     title: mind.word,
     keywords: [`「${verdict.word}」`, `「${daily.dayStar.name}」の日`, `ラッキーカラーは${daily.luckyColor}`],
@@ -490,7 +498,7 @@ function renderToday() {
     x: `【MYOURISCOPE 今日の占い】「${verdict.word}」— ${mind.word}。今日の運気は${daily.score100}/100 ✦`,
   };
 
-  const cardBlock = card ? `
+  const cardBlock = `
     <div class="result-card span-all">
       ${cardH4("TODAY'S CARD", "今日の一枚")}
       <div class="tp-body">
@@ -502,13 +510,6 @@ function renderToday() {
         <div class="tp-detail">
           <p>${card.reversed ? card.rev : card.up}</p>
         </div>
-      </div>
-    </div>` : `
-    <div class="result-card span-all draw-cta">
-      ${cardH4("TODAY'S CARD", "今日の一枚")}
-      <p>一枚引くと、今日の占いが完成します。</p>
-      <div class="result-actions" style="justify-content:center;margin-top:16px">
-        <button class="btn btn-primary btn-lg" id="today-draw">今日の一枚を引く</button>
       </div>
     </div>`;
 
@@ -552,13 +553,6 @@ function renderToday() {
       <button data-nav="mypage">マイページ</button>
     </div>`);
 
-  document.getElementById("today-draw")?.addEventListener("click", () => {
-    ritual.spread = "daily"; ritual.genre = "total"; ritual.question = "";
-    ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
-    ritual.returnTo = "today";
-    openChamber();
-    renderShuffle();
-  });
   renderSharePreview("today");
 }
 
@@ -1477,8 +1471,11 @@ function chamberScreen(html) {
     <button class="ritual-close" id="ritual-close" aria-label="儀式を中断する">×</button>
     <div class="ritual-screen">${html}</div>`;
   document.getElementById("ritual-close").addEventListener("click", () => {
+    const fromToday = ritual.returnTo === "today";
+    ritual.returnTo = null;
     closeChamber();
-    renderAsk();
+    if (fromToday) navigate("home");
+    else renderAsk();
   });
   ritualOverlay.scrollTop = 0;
 }
@@ -1561,6 +1558,41 @@ function revealedCardHtml(c) {
         <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span>
       </div>
     </div>`;
+}
+
+/* 今日の一枚・クイックドロー:場から一枚取るだけの1工程 */
+function renderQuickDraw() {
+  ritual.spread = "daily"; ritual.genre = "total"; ritual.question = "";
+  ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
+  ritual.returnTo = "today";
+  ritual.releaseT = performance.now(); // シード成分1: 場が開かれた時刻
+  openChamber();
+  chamberScreen(`
+    <div class="ritual-step">
+      <p class="ritual-eyebrow emerge">TODAY'S CARD</p>
+      <p class="ritual-inst emerge" style="--ed:.15s">呼ばれた気がする一枚を、<strong>そのまま引いて</strong>ください</p>
+      <div class="draw-strip" id="draw-strip">
+        ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--k:${k % 7}"`)).join("")}
+      </div>
+    </div>`);
+  const strip = document.getElementById("draw-strip");
+  strip.scrollLeft = Math.max(0, (strip.scrollWidth - strip.clientWidth) / 2); // 真ん中から
+  strip.addEventListener("click", (e) => {
+    const el = e.target.closest(".draw-card");
+    if (!el || ritual.cards.length) return;
+    el.classList.add("taken");
+    const k = Number(el.dataset.k);
+    ritual.positions.push(k); // シード成分2: 引いた位置
+    const rng = seededRng(`${performance.now().toFixed(3)}|${ritual.releaseT.toFixed(3)}|${k}`);
+    const base = FULL_DECK[Math.floor(rng() * FULL_DECK.length)];
+    const card = { ...base, reversed: rng() < 0.5 };
+    ritual.cards.push(card);
+    saveDailyCard(card);
+    new Image().src = tarotImg(card.n);
+    vibrate(25);
+    strip.classList.add("fan-done");
+    setTimeout(renderReveal, 500);
+  });
 }
 
 /* --- 1. 問いかけ画面 --- */

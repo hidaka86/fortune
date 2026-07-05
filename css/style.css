@@ -207,9 +207,12 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 }
 .btn-observe::after {
   content: ""; position: absolute; inset: -8px; border-radius: 999px;
-  border: 1px solid transparent;
-  border-top-color: rgba(168, 132, 78, 0.9);
-  animation: obsSpin 5s linear infinite;
+  animation: haloPulse 3.6s ease-out infinite;
+}
+@keyframes haloPulse {
+  0% { box-shadow: 0 0 0 0 rgba(184, 154, 90, 0.32); }
+  70% { box-shadow: 0 0 0 16px rgba(184, 154, 90, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(184, 154, 90, 0); }
 }
 .btn-observe:hover { transform: translateY(-2px); box-shadow: 0 16px 38px rgba(28, 35, 51, 0.3); }
 .btn-observe:hover::before { border-color: rgba(168, 132, 78, 0.9); }
