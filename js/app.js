@@ -1615,6 +1615,7 @@ function renderAsk() {
               <em class="so-count">${s.count}枚</em>
               ${s.deep ? '<span class="so-tag">DEEP</span>' : ""}
             </span>
+            ${s.deep ? `<span class="so-desc">${s.desc}</span>` : ""}
             ${key === "daily" && dailyDone ? '<span class="so-desc">本日分は引きました — 結果を見る</span>' : ""}
           </button>`;
         }).join("")}
