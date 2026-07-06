@@ -154,18 +154,22 @@ const TAROT_THEMES = {
 /* 儀式フローのスプレッド定義 */
 const RITUAL_SPREADS = {
   daily: {
+    purpose: "今日は、どんな日?",
     label: "今日の一枚", desc: "儀式短縮版。シャッフルして、直感の一枚を。", count: 1, short: true, once: true,
     positions: [{ en: "TODAY", ja: "今日のあなたへ" }],
   },
   yesno: {
+    purpose: "はい か いいえ で、答えがほしい",
     label: "Yes / No", desc: "迷いに、一枚で答えを出す。", count: 1,
     positions: [{ en: "ANSWER", ja: "カードの答え" }],
   },
   three: {
+    purpose: "これまでと、これからの流れを知りたい",
     label: "3枚引き", desc: "過去・現在・未来の流れを読む。", count: 3,
     positions: [{ en: "PAST", ja: "過去" }, { en: "PRESENT", ja: "現在" }, { en: "FUTURE", ja: "未来" }],
   },
   celtic: {
+    purpose: "いまの状況を、深くぜんぶ観てほしい",
     label: "ケルト十字",
     desc: "現状・課題・意識と無意識・過去と未来・周囲・結末——10枚で人生の局面を立体的に読む、いちばん深い本格スプレッド。",
     count: 10,
@@ -184,6 +188,7 @@ const RITUAL_SPREADS = {
     ],
   },
   choice: {
+    purpose: "AとBで、迷っている",
     label: "2択スプレッド", desc: "AとB、それぞれの行方と助言。", count: 3,
     positions: [{ en: "CHOICE A", ja: "選択肢A" }, { en: "CHOICE B", ja: "選択肢B" }, { en: "ADVICE", ja: "助言" }],
   },

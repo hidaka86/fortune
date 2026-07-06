@@ -1602,13 +1602,22 @@ function renderAsk() {
   tarotStage.innerHTML = `
     <div class="ritual-step panel" style="max-width:760px">
       <p class="ritual-eyebrow">STEP 1 — QUESTION</p>
-      <h3 class="ritual-title">占いたいことを、心に思い浮かべてください</h3>
+      <h3 class="ritual-title">なにを知りたいですか?</h3>
       <div class="spread-picker">
-        ${Object.entries(RITUAL_SPREADS).map(([key, s]) => `
+        ${Object.entries(RITUAL_SPREADS).map(([key, s]) => {
+          const pips = Array.from({ length: s.count }, () => "<i></i>").join("");
+          return `
           <button class="spread-opt ${key === ritual.spread ? "active" : ""} ${s.deep ? "spread-deep" : ""}" data-spread="${key}" ${key === "daily" && dailyDone ? 'data-done="1"' : ""}>
-            <span class="so-label">${s.label}${s.deep ? '<span class="so-tag">DEEP</span>' : ""}</span>
-            <span class="so-desc">${key === "daily" && dailyDone ? "本日分は引きました — 結果を見る" : s.desc}</span>
-          </button>`).join("")}
+            <span class="so-purpose">${s.purpose}</span>
+            <span class="so-meta">
+              <em class="so-name">${s.label}</em>
+              <span class="so-pips" aria-hidden="true">${pips}</span>
+              <em class="so-count">${s.count}枚</em>
+              ${s.deep ? '<span class="so-tag">DEEP</span>' : ""}
+            </span>
+            ${key === "daily" && dailyDone ? '<span class="so-desc">本日分は引きました — 結果を見る</span>' : ""}
+          </button>`;
+        }).join("")}
       </div>
       <div class="genre-row">
         <span class="genre-label">問いのジャンル</span>

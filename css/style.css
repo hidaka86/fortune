@@ -772,9 +772,22 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   transition: border-color .25s ease, background .25s ease;
 }
 .spread-opt.active { border-color: var(--gold); background: rgba(168, 132, 78, 0.09); }
-.so-label { font-family: var(--serif); font-size: 17px; font-weight: 700; letter-spacing: .06em; color: var(--indigo); }
-.spread-opt.active .so-label { color: var(--gold-bright); }
-.so-desc { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+.so-purpose {
+  font-family: var(--serif); font-size: 16.5px; font-weight: 700;
+  letter-spacing: .03em; color: var(--indigo); line-height: 1.7;
+}
+.spread-opt.active .so-purpose { color: var(--gold-bright); }
+.so-meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
+.so-name { font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
+.so-count { font-style: normal; font-family: var(--num); font-size: 11px; font-weight: 700; color: var(--gold-bright); }
+.so-pips { display: inline-flex; gap: 2.5px; }
+.so-pips i {
+  width: 8px; height: 13px; border-radius: 2px;
+  background: linear-gradient(165deg, #1b2148, #12183a);
+  border: 1px solid rgba(168, 132, 78, 0.55);
+}
+.spread-opt.active .so-pips i { box-shadow: 0 0 5px rgba(168, 132, 78, 0.5); }
+.so-desc { font-size: 12.5px; color: var(--muted); line-height: 1.7; margin-top: 6px; }
 .spread-opt.spread-deep {
   grid-column: 1 / -1;
   border-color: rgba(168, 132, 78, 0.5);
