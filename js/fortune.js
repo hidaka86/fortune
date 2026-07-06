@@ -496,10 +496,18 @@ function perspectiveCompat(me, other, meName, otherName) {
     score: 80, label: "つい尽くしたくなる相手",
     note: `${meName}の気が${otherName}を育てる巡り。与える喜びが大きい関係です。自分の充電も忘れずに。`,
   };
-  if (em === eo) return {
-    score: 84, label: "以心伝心の同志",
-    note: `同じ「${em}」の気を持つ者同士。言葉にしなくても通じ合える、居心地の良い関係です。`,
-  };
+  if (em === eo) {
+    // 同じ五行でも、視点ごとに星座エレメントで書き分ける
+    const zm = me.zodiac.element, zo = other.zodiac.element;
+    if (zm === zo) return {
+      score: 84, label: "以心伝心の同志",
+      note: `五行も星座の気質も同じ。${meName}にとって${otherName}は、言葉にしなくても通じ合える鏡のような存在です。`,
+    };
+    return {
+      score: 78, label: "似た者同士の好相性",
+      note: `同じ「${em}」の気を持ちつつ、${otherName}は星座では「${zo}」の質。${meName}から見ると、根っこは同じなのに違う景色を見せてくれる相手です。`,
+    };
+  }
   if (GOGYO_KOKU[eo] === em) return {
     score: 62, label: "あなたを鍛えてくれる相手",
     note: `${otherName}の「${eo}」は${meName}の「${em}」に負荷をかける巡り。ぶつかった分だけ、あなたを強くしてくれる存在です。`,

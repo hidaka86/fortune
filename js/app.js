@@ -386,7 +386,7 @@ function renderHomeDaily() {
       <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span></h1>
       <p class="hero-sub">今日の流れは、まだ誰も知りません。</p>
       <div class="hero-cta" style="margin-top:26px">
-        <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の運勢を占う</button>
+        <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の占いをはじめる</button>
       </div>
       ${(visits.streak || 1) >= 2 ? `<p class="hero-streak">連続 ${visits.streak} 日目の観測${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>` : ""}`;
     return;
@@ -407,7 +407,7 @@ function renderHomeDaily() {
     <p class="hero-action">今日の一手 — <strong>${daily.action}</strong></p>
     ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
     <div class="hero-cta" style="margin-top:22px">
-      <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の観測をひらく</button>
+      <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の結果をみる</button>
     </div>`;
 }
 
@@ -529,8 +529,8 @@ function renderToday() {
       ${verdictHtml(verdict)}
       <div class="result-card span-all">
         ${cardH4("TODAY'S KI", "今日の気流")}
-        ${todayLogicHtml(daily)}
-        <div style="margin-top:18px">${metersHtml(daily.scores)}</div>
+        ${metersHtml(daily.scores)}
+        <div style="margin-top:20px">${todayLogicHtml(daily)}</div>
       </div>
       <div class="result-card span-all">
         ${cardH4("LUCKY GUIDE", "今日の開運キー")}
@@ -1127,6 +1127,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   };
   recordHistory("統合鑑定", `「${shogo.title}」— 運気${r.daily.score100}/100`, `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`);
 
+  document.getElementById("integrated-form").classList.add("form-quiet");
   observeThen("integrated", () => showResult(document.getElementById("integrated-result"), `
     <div class="result-hero">
       <span class="result-symbol">${r.zodiac.symbol}︎</span>
@@ -1153,6 +1154,10 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
       </div>
     </div>
     <div class="result-grid">
+      <div class="result-card span-all">
+        ${cardH4("WEST × EAST", "西の星 × 東の暦の重ね読み")}
+        <p>西洋の星はあなたを<strong style="color:var(--gold-bright)">${r.zodiac.name}(${r.zodiac.element}のサイン)</strong>、東洋の暦は<strong style="color:var(--gold-bright)">「${r.pillars.nikkan.symbol}」(${r.pillars.nikkan.yinyang}の${r.pillars.nikkan.element})</strong>と観ています。${ELEMENT_STYLE[r.zodiac.element]}外向きのエンジンに、${r.pillars.nikkan.symbol}の器 — この掛け合わせは1080通りの中であなたの称号だけのもの。どちらか一方ではなく、両方を使い分けられるのがあなたの強みです。</p>
+      </div>
       <div class="result-card">
         ${cardH4("SUN & MOON", "星がしめす二つの顔")}
         <p><strong style="color:var(--gold-bright)">☉︎ ${r.zodiac.name}</strong> — ${r.zodiac.trait}</p>
@@ -1257,6 +1262,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   };
   recordHistory("ホロスコープ", `太陽${z.name} × 月${moonName}(${themeLabel})`, `${z.keyword}。${flow.blocks[2].title}へ向かう流れ。10天体のホロスコープ鑑定。`);
 
+  document.getElementById("western-form").classList.add("form-quiet");
   observeThen("western", () => showResult(document.getElementById("western-result"), `
     <div class="result-hero">
       <span class="result-symbol">${z.symbol}︎</span>
@@ -1317,28 +1323,38 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         </div>
       </div>
       <div class="result-card span-all">
-        ${cardH4("PLANETS", "10天体の配置")}
-        <div class="planet-list">
-          ${horo.planets.map((pl) => `
-            <div class="planet-row">
-              <span class="pr-glyph">${pl.glyph}</span>
-              <span class="pr-name">${pl.ja}<small>${pl.role}</small></span>
-              <span class="pr-sign">${pl.sign.symbol}︎ ${pl.sign.name}<small>${pl.deg}°${pl.gen ? " ・世代" : ""}</small></span>
-              <span class="pr-note">${ELEMENT_STYLE[pl.sign.element]}、${pl.sign.element}のサイン</span>
-            </div>`).join("")}
-        </div>
-        ${explainHtml("天体の配置って何?", "西洋占星術では、太陽だけでなく10の天体すべてがあなたの一部を担当すると考えます。太陽=生き方、月=素の感情、水星=言葉、金星=愛し方、火星=行動力……。同じ牡羊座生まれでも、金星や火星の星座が違えば恋愛や仕事のスタイルはまったく変わります。これがホロスコープ(出生図)の読み方です。")}
+        ${cardH4("DETAILS", "もっと深く読む")}
+        <details class="explain">
+          <summary>10天体の配置(あなたの設計図)</summary>
+          <div class="planet-list" style="padding:0 16px 14px">
+            ${horo.planets.map((pl) => `
+              <div class="planet-row">
+                <span class="pr-glyph">${pl.glyph}</span>
+                <span class="pr-name">${pl.ja}<small>${pl.role}</small></span>
+                <span class="pr-sign">${pl.sign.symbol}︎ ${pl.sign.name}<small>${pl.deg}°${pl.gen ? " ・世代" : ""}</small></span>
+                <span class="pr-note">${ELEMENT_STYLE[pl.sign.element]}、${pl.sign.element}のサイン</span>
+              </div>`).join("")}
+          </div>
+        </details>
+        ${horo.aspects.length ? `
+        <details class="explain">
+          <summary>天体同士の会話(アスペクト ${horo.aspects.length}件)</summary>
+          <div style="padding:0 16px 14px">
+            ${horo.aspects.map((x) => `
+              <div class="aspect-row">
+                <p class="ar-pair"><strong>${x.a.glyph}︎ ${x.a.ja} × ${x.b.glyph}︎ ${x.b.ja}</strong><span class="ar-type ${x.type.tone}">${x.type.ja}</span></p>
+                <p class="ar-note">「${x.a.role}」と「${x.b.role}」— ${x.type.note}</p>
+              </div>`).join("")}
+          </div>
+        </details>
+        ` : ""}
       </div>
-      ${horo.aspects.length ? `
-      <div class="result-card span-all">
-        ${cardH4("ASPECTS", "天体同士の会話")}
-        ${horo.aspects.map((x) => `
-          <div class="aspect-row">
-            <p class="ar-pair"><strong>${x.a.glyph}︎ ${x.a.ja} × ${x.b.glyph}︎ ${x.b.ja}</strong><span class="ar-type ${x.type.tone}">${x.type.ja}</span></p>
-            <p class="ar-note">「${x.a.role}」と「${x.b.role}」— ${x.type.note}</p>
-          </div>`).join("")}
-        ${explainHtml("アスペクトって何?", "天体同士がつくる角度のこと。120°(トライン)や60°(セクスタイル)は自然に調和する角度、90°(スクエア)や180°(オポジション)は緊張を生む角度ですが、緊張は成長のエネルギーでもあります。角度の誤差(オーブ)が小さいものほど、あなたへの影響が濃い配置です。")}
-      </div>` : ""}
+      <div class="result-card span-all mind-card">
+        ${cardH4("THIS YEAR'S MOVE", "今年の一手")}
+        <p class="mind-point" style="border-top:none;padding-top:0"><span class="mp-k">流れ</span>いまは「${flow.blocks[1].title}」の章(${flow.chapterSpan}年)。${flow.blocks[1].jupText}</p>
+        <p class="mind-point"><span class="mp-k">広げる</span>今年の幸運は「${yearly.jupiter.theme}」の部屋に。この方面の誘いには、乗ってください。</p>
+        <p class="mind-point"><span class="mp-k">鍛える</span>「${yearly.saturn.theme}」は今年しっかり試される場所。ここでの粘りが${flow.nextShift}年からの次の章の土台になります。</p>
+      </div>
     </div>
     ${crossLinksHtml("western")}
   `), () => renderSharePreview("western"));
@@ -1388,6 +1404,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
   };
   recordHistory("四柱推命", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
 
+  document.getElementById("eastern-form").classList.add("form-quiet");
   observeThen("eastern", () => showResult(document.getElementById("eastern-result"), `
     <div class="result-hero">
       <span class="result-symbol">${pillars.day.kan}</span>
@@ -1625,7 +1642,7 @@ function renderAsk() {
         <div class="seg">${TAROT_GENRES.map(([k, l]) => `<button class="seg-btn ${k === ritual.genre ? "active" : ""}" data-genre="${k}">${l}</button>`).join("")}</div>
       </div>
       <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
-        placeholder="問いを言葉にする(入力しなくてもOK)" value="" />
+        placeholder="問いを言葉に(任意)" value="" />
       <p class="form-note">78枚のフルデッキで占います。問いはこの端末にのみ保存されます。</p>
       <button class="btn btn-primary btn-lg btn-block" id="ritual-start" style="margin-top:14px">儀式をはじめる</button>
     </div>`;
@@ -2134,11 +2151,8 @@ function showTarotSummary(restored) {
     </div>
     <div class="result-grid">
       ${tarotConclusionHtml()}
-      ${ritual.spread === "yesno" ? yesNoVerdictHtml(ritual.cards[0]) : ""}
-      ${deckReadingHtml()}
       ${items}
-      ${tarotOverallHtml()}
-      ${ritual.spread === "choice" ? choiceVerdictHtml() : ""}
+      ${deckReadingHtml()}
       ${dailyNote}
     </div>
     <div class="crosslinks">
@@ -2201,6 +2215,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <p class="sub" style="margin-top:12px">${x.note}</p>
     </div>`).join("");
 
+  document.getElementById("aisho-form").classList.add("form-quiet");
   observeThen("aisho", () => showResult(document.getElementById("aisho-result"), `
     <div class="result-hero" style="text-align:center">
       <span class="result-symbol">縁</span>
@@ -2236,6 +2251,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     </div>
     <div class="result-card span-all" style="margin-bottom:18px">
       ${cardH4("HOW IT WORKS", "総合スコアの計算式")}
+      <p class="sub" style="margin-bottom:10px">上の「見え方」は九星の五行だけで見た二人の景色。総合スコアは星座・五行・干支の三つを合算するため、見え方と点が違うことがあります。</p>
       ${logicFlowHtml([
         { tag: "星座エレメント", main: String(r.zodiac.score), sub: "× 40%" },
         "+",

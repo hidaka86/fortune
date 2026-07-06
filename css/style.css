@@ -287,6 +287,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 .hero-action {
   margin-top: 14px; font-family: var(--serif); font-size: 15.5px;
   color: var(--muted); letter-spacing: .05em;
+  text-wrap: balance; max-width: 34ch; margin-inline: auto;
 }
 .hero-action strong { color: var(--gold-bright); font-weight: 700; }
 .milestone {
@@ -446,7 +447,7 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 .bento-art {
   min-height: 300px;
   background:
-    linear-gradient(78deg, rgba(10, 16, 38, 0.96) 30%, rgba(10, 16, 38, 0.6) 62%, rgba(10, 16, 38, 0.14)),
+    linear-gradient(78deg, rgba(14, 19, 40, 0.97) 38%, rgba(14, 19, 40, 0.72) 64%, rgba(14, 19, 40, 0.18)),
     url("../images/tarot/tarot_10_wheel_of_fortune.webp") right 24% / cover no-repeat;
   border-color: rgba(28, 35, 51, 0.5);
 }
@@ -481,6 +482,8 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   box-shadow: var(--shadow-soft);
 }
 .form-row { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 22px; }
+form.form-quiet { opacity: .55; transition: opacity .3s ease; }
+form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .field { flex: 1 1 180px; display: flex; flex-direction: column; gap: 7px; }
 .field-label { font-size: 13.5px; font-weight: 700; color: var(--muted); letter-spacing: .08em; }
 .field-label em {
@@ -875,9 +878,9 @@ body.ritual-open { overflow: hidden; }
 .ritual-screen .ritual-step { width: 100%; max-width: 860px; justify-self: center; min-width: 0; }
 
 /* 夜の間の中では文字は月色に */
-.ritual-overlay .ritual-eyebrow { color: var(--chamber-gold); }
+.ritual-overlay .ritual-eyebrow { color: var(--chamber-gold-bright); }
 .ritual-overlay .ritual-title { color: var(--chamber-ink); }
-.ritual-overlay .ritual-inst { color: var(--chamber-muted); }
+.ritual-overlay .ritual-inst { color: #CBD0E0; }
 .ritual-overlay .ritual-inst strong { color: var(--chamber-gold-bright); }
 .ritual-overlay .ritual-hint { color: var(--chamber-muted); }
 .ritual-overlay .tarot-slot-label { color: var(--chamber-gold); }
@@ -1598,8 +1601,8 @@ body.ritual-open { overflow: hidden; }
   .header-inner .nav { order: 2; margin-left: 0; }
   .nav {
     width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none;
-    mask-image: linear-gradient(to right, #000 88%, transparent);
-    -webkit-mask-image: linear-gradient(to right, #000 88%, transparent);
+    mask-image: linear-gradient(to right, #000 82%, transparent 98%);
+    -webkit-mask-image: linear-gradient(to right, #000 82%, transparent 98%);
     padding-right: 24px;
   }
   .nav::-webkit-scrollbar { display: none; }
@@ -1655,12 +1658,14 @@ body.ritual-open { overflow: hidden; }
 .verdict-card .explain p { color: var(--chamber-muted); }
 .result-card h4 {
   font-family: var(--latin);
-  font-size: 14px; font-weight: 600; letter-spacing: .28em;
+  font-size: 13px; font-weight: 600; letter-spacing: .22em;
   color: var(--gold); text-transform: uppercase;
   padding-bottom: 12px; margin-bottom: 16px;
   border-bottom: 1px solid var(--hairline);
-  display: flex; align-items: baseline; justify-content: space-between; gap: 8px;
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 4px 12px; flex-wrap: wrap;
 }
+.result-card h4 .h4-ja { white-space: nowrap; }
 .result-card h4 .h4-ja {
   font-family: var(--serif); font-size: 17.5px; color: var(--indigo);
   letter-spacing: .1em; font-weight: 600;
