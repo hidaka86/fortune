@@ -1780,8 +1780,193 @@ function renderAsk() {
   });
 }
 
-/* --- 2. シャッフル画面(長押し) --- */
+/* --- 2. シャッフル ---
+   2つの混ぜ方: 「散らして選ぶ」(全画面に散らばるカードを指でかき混ぜて選ぶ)と
+   「重ねて混ぜる」(長押しシャッフル -> カット -> ドロー)。好みは端末に保存 */
+const SHUF_MODE_KEY = "fortuna:shufmode";
+
+function shuffleModeSwitchHtml(cur) {
+  return `
+    <div class="shuf-modes emerge" style="--ed:.5s">
+      <button class="shuf-mode ${cur === "field" ? "active" : ""}" data-shufmode="field">散らして選ぶ</button>
+      <button class="shuf-mode ${cur === "stack" ? "active" : ""}" data-shufmode="stack">重ねて混ぜる</button>
+    </div>`;
+}
+
+function bindShuffleModeSwitch() {
+  ritualOverlay.querySelectorAll("[data-shufmode]").forEach((b) => {
+    b.addEventListener("click", () => {
+      try { localStorage.setItem(SHUF_MODE_KEY, b.dataset.shufmode); } catch { /* noop */ }
+      renderShuffle();
+    });
+  });
+}
+
 function renderShuffle() {
+  let mode = "field";
+  try { mode = localStorage.getItem(SHUF_MODE_KEY) || "field"; } catch { /* noop */ }
+  if (mode === "stack") renderShuffleStack();
+  else renderShuffleField();
+}
+
+/* --- 2a. 散らして選ぶ: カードの海を指でかき混ぜ、ピンときた札に触れる --- */
+function renderShuffleField() {
+  const conf = RITUAL_SPREADS[ritual.spread];
+  ritual.releaseT = performance.now();
+  chamberScreen(`
+    <div class="ritual-step field-step">
+      <p class="ritual-eyebrow emerge">SHUFFLE & DRAW</p>
+      <p class="ritual-inst emerge" style="--ed:.15s" id="field-inst">指で<strong>かき混ぜて</strong>、ピンときた${conf.count > 1 ? `<strong>${conf.count}枚</strong>` : "<strong>一枚</strong>"}に触れてください</p>
+      <div class="card-field" id="card-field" aria-label="散らばったカード"></div>
+      ${shuffleModeSwitchHtml("field")}
+    </div>`);
+  bindShuffleModeSwitch();
+
+  const field = document.getElementById("card-field");
+  const inst = document.getElementById("field-inst");
+  const N = 34;
+  const cards = [];
+  let entropy = 0;
+  let finished = false;
+
+  const spawn = () => {
+    const W = field.clientWidth, H = field.clientHeight;
+    for (let i = 0; i < N; i++) {
+      const el = document.createElement("div");
+      el.className = "fc";
+      el.innerHTML = '<div class="tback fc-back"><span>✦</span></div>';
+      field.appendChild(el);
+      cards.push({
+        el, k: i,
+        x: 30 + Math.random() * (W - 60),
+        y: 34 + Math.random() * (H - 88),
+        vx: (Math.random() - 0.5) * 3.5, vy: (Math.random() - 0.5) * 3.5,
+        rot: Math.random() * 360, vr: (Math.random() - 0.5) * 3,
+        fs: 0.4 + Math.random() * 0.7, ph: Math.random() * Math.PI * 2,
+        picked: false,
+      });
+    }
+  };
+  spawn();
+
+  /* 物理: 指の動きが近くの札を押し流す。慣性+摩擦でぬるっと漂う */
+  let lastP = null;
+  const stir = (e) => {
+    if (finished) return;
+    const r = field.getBoundingClientRect();
+    const nx = e.clientX - r.left, ny = e.clientY - r.top;
+    let pvx = 0, pvy = 0;
+    if (lastP) { pvx = nx - lastP.x; pvy = ny - lastP.y; }
+    lastP = { x: nx, y: ny };
+    const sp = Math.hypot(pvx, pvy);
+    if (sp < 1) return;
+    entropy = (entropy + sp + (e.timeStamp % 97)) % 99991;
+    const R = 150;
+    for (const c of cards) {
+      if (c.picked) continue;
+      const dx = c.x - nx, dy = c.y - ny;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > R * R) continue;
+      const d = Math.sqrt(d2) || 1;
+      const f = (1 - d / R);
+      c.vx += pvx * f * 0.5 + (dx / d) * f * sp * 0.16;
+      c.vy += pvy * f * 0.5 + (dy / d) * f * sp * 0.16;
+      c.vr += (pvx * dy - pvy * dx) / (d * 18);
+    }
+    if (sp > 26) vibrate(4);
+  };
+  field.addEventListener("pointermove", stir);
+  field.addEventListener("pointerdown", (e) => { lastP = null; stir(e); });
+
+  const tick = (t) => {
+    if (!field.isConnected) return; // 画面が変わったら停止
+    const W = field.clientWidth, H = field.clientHeight;
+    // カード同士のやわらかい反発: 固まらず、押し合ってぬるっと広がる
+    for (let i = 0; i < cards.length; i++) {
+      const a = cards[i];
+      if (a.picked) continue;
+      for (let j = i + 1; j < cards.length; j++) {
+        const b = cards[j];
+        if (b.picked) continue;
+        const dx = a.x - b.x, dy = a.y - b.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 > 2704 || d2 === 0) continue; // 52px以内だけ
+        const d = Math.sqrt(d2);
+        const f = (1 - d / 52) * 0.32;
+        const ux = dx / d, uy = dy / d;
+        a.vx += ux * f; a.vy += uy * f;
+        b.vx -= ux * f; b.vy -= uy * f;
+      }
+    }
+    for (const c of cards) {
+      if (c.picked) continue;
+      // 慣性+摩擦+ゆらぎ(常にかすかに漂う)
+      c.vx *= 0.94; c.vy *= 0.94; c.vr *= 0.93;
+      c.x += c.vx + Math.sin(t / 1000 * c.fs + c.ph) * 0.12;
+      c.y += c.vy + Math.cos(t / 1200 * c.fs + c.ph) * 0.1;
+      c.rot += c.vr;
+      // 柔らかい壁
+      if (c.x < 26) { c.x = 26; c.vx = Math.abs(c.vx) * 0.6; }
+      if (c.x > W - 26) { c.x = W - 26; c.vx = -Math.abs(c.vx) * 0.6; }
+      if (c.y < 40) { c.y = 40; c.vy = Math.abs(c.vy) * 0.6; }
+      if (c.y > H - 44) { c.y = H - 44; c.vy = -Math.abs(c.vy) * 0.6; }
+      c.el.style.transform = `translate(${(c.x - 26).toFixed(1)}px, ${(c.y - 42).toFixed(1)}px) rotate(${c.rot.toFixed(1)}deg)`;
+    }
+    requestAnimationFrame(tick);
+  };
+  requestAnimationFrame(tick);
+
+  /* タップ(ほぼ動かさず短く触れる)で1枚選ぶ */
+  let downAt = null;
+  field.addEventListener("pointerdown", (e) => { downAt = { x: e.clientX, y: e.clientY, t: performance.now() }; });
+  field.addEventListener("pointerup", (e) => {
+    if (finished || !downAt) return;
+    const moved = Math.hypot(e.clientX - downAt.x, e.clientY - downAt.y);
+    const heldMs = performance.now() - downAt.t;
+    downAt = null;
+    if (moved > 14 || heldMs > 450) return; // かき混ぜ操作はタップ扱いにしない
+    const r = field.getBoundingClientRect();
+    const nx = e.clientX - r.left, ny = e.clientY - r.top;
+    let best = null, bestD = 46 * 46;
+    for (const c of cards) {
+      if (c.picked) continue;
+      const d2 = (c.x - nx) ** 2 + (c.y - ny) ** 2;
+      if (d2 < bestD) { bestD = d2; best = c; }
+    }
+    if (!best) return;
+    pick(best);
+  });
+
+  const pick = (c) => {
+    c.picked = true;
+    const idx = ritual.cards.length;
+    // シード: 選んだ札・タップ時刻・場が開かれた時刻・かき混ぜの軌跡
+    const rng = seededRng(`${performance.now().toFixed(3)}|${ritual.releaseT.toFixed(3)}|${c.k}|${entropy.toFixed(2)}`);
+    const base = FULL_DECK[Math.floor(rng() * FULL_DECK.length)];
+    const card = { ...base, reversed: rng() < 0.5 };
+    ritual.cards.push(card);
+    ritual.positions.push(c.k);
+    if (RITUAL_SPREADS[ritual.spread].once) saveDailyCard(card);
+    new Image().src = tarotImg(card.n);
+    vibrate(22);
+    // 選ばれた札は光って浮かび上がる
+    const W = field.clientWidth;
+    c.el.classList.add("fc-picked");
+    c.el.style.transform = `translate(${(W / 2 - 26 - (RITUAL_SPREADS[ritual.spread].count - 1) * 30 + idx * 60).toFixed(1)}px, 6px) rotate(0deg) scale(1.14)`;
+    const left = RITUAL_SPREADS[ritual.spread].count - ritual.cards.length;
+    if (left > 0) {
+      inst.innerHTML = `いいですね。あと<strong>${left}枚</strong>、ピンときた札に触れてください`;
+    } else {
+      finished = true;
+      inst.textContent = "そろいました";
+      field.classList.add("field-done");
+      setTimeout(renderReveal, 750);
+    }
+  };
+}
+
+/* --- 2b. 重ねて混ぜる(長押しシャッフル) --- */
+function renderShuffleStack() {
   const short = RITUAL_SPREADS[ritual.spread].short;
   chamberScreen(`
     <div class="ritual-step">
@@ -1791,7 +1976,9 @@ function renderShuffle() {
         ${Array.from({ length: 7 }, (_, i) => tbackHtml("sc", `style="--i:${i}"`)).join("")}
       </div>
       <p class="ritual-hint" id="shuffle-hint">束に触れると、速く混ざります</p>
+      ${shuffleModeSwitchHtml("stack")}
     </div>`);
+  bindShuffleModeSwitch();
 
   const stack = document.getElementById("shuffle-stack");
   const hint = document.getElementById("shuffle-hint");
