@@ -1358,6 +1358,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
               <p class="fb-jup">${b.jupText}</p>
             </div>`).join("")}
         </div>
+        <p class="fb-personal">${flow.personal}</p>
         ${flow.nextShift ? `<p class="fb-shift">いまの章は <strong>${flow.chapterSpan}年</strong>。次の章替わりは <strong>${flow.nextShift}年ごろ</strong> — 土星のリズム(約7年ごと)が変わり目を示しています。</p>` : ""}
         ${explainHtml("この「流れ」はどう読んでいる?", "約29.5年で空を一周する土星は、生まれた位置から約7年ごとに「種まき→鍛錬→収穫→手放し」の節目を刻みます。約12年で一周する木星は幸運の巡りを示します。あなたの出生図と現在の星の位置(トランジット)の角度から、過去5年・いま・これから5年の章を読んでいます。可能性の読みとして、答え合わせしながら使ってください。")}
       </div>

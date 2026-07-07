@@ -813,17 +813,36 @@ function horoscopeFlow(y, m, d, theme) {
   const prevQ = (curQ + 3) % 4;
   const nextQ = (curQ + 1) % 4;
 
+  /* パーソナライズ層:章のリズム(いつ)は万人共通の土星周期だが、
+     「どこで起きるか」= トランジット土星のソーラーハウス(生まれ月で変わる)
+     「どう進むか」= テーマ担当天体のあなたのサイン(出生図で変わる)を重ねる */
+  const sunSignIdx = Math.floor(natal.sun / 30);
+  const houseOf = (lon) => ((Math.floor(lon / 30) - sunSignIdx) + 12) % 12;
+  const arenaNow = HOUSE_THEMES[houseOf(planetLongitudes(Y, now.getMonth() + 1, 15, 12).saturn)];
+  const arenaNext = HOUSE_THEMES[houseOf(planetLongitudes(end + 1, 6, 15, 12).saturn)];
+
+  const themePlanet = theme === "work"
+    ? { key: "mars", ja: "火星", role: "攻め方" }
+    : theme === "love"
+      ? { key: "venus", ja: "金星", role: "愛し方" }
+      : { key: "sun", ja: "太陽", role: "生き方" };
+  const pSign = SIGN_ORDER[Math.floor(natal[themePlanet.key] / 30)];
+  const pEl = ZODIAC.find((z) => z.name === pSign).element;
+  const personal = `この章を進むあなたの型 — ${themePlanet.ja}(${themePlanet.role})が${pSign}にあるあなたは、「${ELEMENT_STYLE[pEl]}」やり方がいちばん通ります。章のテーマが同じでも、勝ち筋は人それぞれ。あなたはこの型で。`;
+
   const blocks = [
     { era: `${start - 1}年ごろまで`, label: "前の章", q: prevQ, jq: jupQ(start - 1) },
-    { era: `${start}年 〜 ${end}年(いま)`, label: "いまの章", q: curQ, jq: jupQ(Y), now: true },
-    { era: `${end + 1}年ごろから`, label: "次の章", q: nextQ, jq: jupQ(end + 1) },
+    { era: `${start}年 〜 ${end}年(いま)`, label: "いまの章", q: curQ, jq: jupQ(Y), now: true, arena: arenaNow },
+    { era: `${end + 1}年ごろから`, label: "次の章", q: nextQ, jq: jupQ(end + 1), arena: arenaNext !== arenaNow ? arenaNext : null },
   ].map((b) => ({
     ...b,
     title: SATURN_PHASES[b.q].title,
-    text: SATURN_PHASES[b.q][theme],
+    text: SATURN_PHASES[b.q][theme]
+      + (b.now ? `いま、その主戦場になっているのは「${b.arena}」のエリアです。` : "")
+      + (!b.now && b.arena ? `この章は「${b.arena}」のエリアから幕を開けます。` : ""),
     jupText: JUPITER_PHASES[b.jq],
   }));
-  return { blocks, nextShift: end + 1, chapterSpan: `${start}〜${end}` };
+  return { blocks, nextShift: end + 1, chapterSpan: `${start}〜${end}`, personal };
 }
 
 /* 今年の星模様:トランジット木星・土星が、太陽から見てどの部屋にいるか(ソーラーハウス) */
