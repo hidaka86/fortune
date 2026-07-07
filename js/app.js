@@ -10,6 +10,7 @@ function navigate(target, push = true) {
   if (!document.getElementById(`view-${target}`)) target = "home";
   if (target === "mypage") renderMypage();
   if (target === "today") renderToday();
+  if (target === "guide") renderGuide();
   views.forEach((v) => v.classList.toggle("active", v.id === `view-${target}`));
   navBtns.forEach((b) => b.classList.toggle("active", b.dataset.nav === target));
   if (push) {
@@ -1729,7 +1730,6 @@ function renderQuickDraw() {
 /* --- 1. 問いかけ画面 --- */
 function renderAsk() {
   tarotSummary.hidden = true;
-  const dailyDone = !!loadDailyCard();
   tarotStage.innerHTML = `
     <div class="ritual-step panel" style="max-width:760px">
       <p class="ritual-eyebrow">STEP 1 — QUESTION</p>
@@ -1742,10 +1742,10 @@ function renderAsk() {
         placeholder="問いを言葉に(任意)" value="" />
       <p class="ritual-hint" style="margin:14px 0 12px">知りたいことを選ぶと、そのまま儀式がはじまります</p>
       <div class="spread-picker">
-        ${Object.entries(RITUAL_SPREADS).map(([key, s]) => {
+        ${Object.entries(RITUAL_SPREADS).filter(([key]) => key !== "daily").map(([key, s]) => {
           const pips = Array.from({ length: s.count }, () => "<i></i>").join("");
           return `
-          <button class="spread-opt ${s.deep ? "spread-deep" : ""}" data-spread="${key}" ${key === "daily" && dailyDone ? 'data-done="1"' : ""}>
+          <button class="spread-opt ${s.deep ? "spread-deep" : ""}" data-spread="${key}">
             <span class="so-purpose">${s.purpose}</span>
             <span class="so-meta">
               <em class="so-name">${s.label}</em>
@@ -1754,11 +1754,10 @@ function renderAsk() {
               ${s.deep ? '<span class="so-tag">DEEP</span>' : ""}
             </span>
             ${s.deep ? `<span class="so-desc">${s.desc}</span>` : ""}
-            ${key === "daily" && dailyDone ? '<span class="so-desc">本日分は引きました — タップで結果を見る</span>' : ""}
           </button>`;
         }).join("")}
       </div>
-      <p class="form-note">78枚のフルデッキで占います。問いはこの端末にのみ保存されます。</p>
+      <p class="form-note">78枚のフルデッキで占います。問いはこの端末にのみ保存されます。今日の一枚は<button class="linklike" data-nav="today">「今日の占い」</button>からどうぞ。</p>
     </div>`;
 
   /* カードをタップ = 選択して、そのまま儀式へ(1工程) */
@@ -1769,7 +1768,6 @@ function renderAsk() {
       ritual.question = document.getElementById("tarot-question").value.trim();
       try { localStorage.setItem(QUESTION_KEY, ritual.question); } catch { /* noop */ }
       ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
-      if (ritual.spread === "daily" && loadDailyCard()) { restoreDaily(); return; }
       vibrate(15);
       setTimeout(() => { openChamber(); renderShuffle(); }, 200); // 選択の発光を見せてから扉を開く
     });
@@ -2072,6 +2070,11 @@ function tarotConclusion() {
     const k = c[0];
     word = k.reversed ? "今日は「攻める」より「整える」日" : "今日は、迷わず進んでいい日";
     reason = `今日の一枚は「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    action = k.advice;
+  } else if (ritual.spread === "one") {
+    const k = c[0];
+    word = k.reversed ? "いったん立ち止まるが正解 — 角度を変えれば通ります" : "その件、動いて大丈夫";
+    reason = `答えの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
     action = k.advice;
   } else if (ritual.spread === "yesno") {
     const k = c[0];
@@ -2461,6 +2464,150 @@ function renderInviteBanner() {
       <p class="invite-line">でした。1080タイプにひとつ — <strong>あなたの称号は?</strong></p>
       <button class="btn btn-primary" data-nav="integrated">自分の称号を知る</button>
     </div>`;
+}
+
+/* ---------- 読みもの(占いの手引き) ---------- */
+const GUIDE_ARTICLES = {
+  tarot: { icon: "🂠", title: "タロットとは", lead: "78枚のカードが映す、大きな物語と日常の機微。大アルカナ・小アルカナ・スプレッドのすべて。" },
+  western: { icon: "☉", title: "ホロスコープとは", lead: "生まれた瞬間の空の写真から、いま動いている空まで。10天体と星座の読み方。" },
+  eastern: { icon: "干", title: "四柱推命と九星気学とは", lead: "生年月日は4本の柱でできている。日主・通変星・本命星——東洋の暦の仕組み。" },
+  aisho: { icon: "縁", title: "相性診断のしくみ", lead: "なぜ「あなたから」と「相手から」で答えが違うのか。4つの層の重ね方。" },
+  about: { icon: "◉", title: "MYOURISCOPEの思想", lead: "占いは、決定ではなく観測。このサイトが大切にしていること、統合鑑定のロジック。" },
+};
+
+function guideCardImg(n, cap) {
+  return `<figure class="ga-fig"><img src="${tarotImg(n)}" alt="${cap}" loading="lazy" /><figcaption>${cap}</figcaption></figure>`;
+}
+
+function guideArticleHtml(key) {
+  if (key === "tarot") {
+    const suits = Object.entries(MINOR_SUITS).map(([k, s]) => `
+      <figure class="ga-fig"><img src="images/tarot/tarot_${k}_ace.webp" alt="${s.ja}のエース" loading="lazy" />
+      <figcaption><strong>${s.ja}</strong><br>${s.theme}</figcaption></figure>`).join("");
+    return `
+      <h3>タロットは、78枚でひとつの世界</h3>
+      <p>タロットの起源は15世紀イタリアの札遊びに遡り、18世紀以降に占いの道具として体系化されました。1組は<strong>大アルカナ22枚</strong>と<strong>小アルカナ56枚</strong>、あわせて78枚。「アルカナ」はラテン語で「秘密」という意味です。</p>
+      <h3>大アルカナ — 人生の大きな節目</h3>
+      <p>0「愚者」から21「世界」までの22枚は、旅立ちから完成までの人生の物語になっています。鑑定でこの札が出るときは、日常より一段大きなテーマが動いているサイン。</p>
+      <div class="ga-cards">
+        ${guideCardImg(0, "0 愚者<br>はじまりの一歩")}
+        ${guideCardImg(6, "VI 恋人<br>選択と愛")}
+        ${guideCardImg(10, "X 運命の輪<br>転機")}
+        ${guideCardImg(16, "XVI 塔<br>崩壊と再生")}
+        ${guideCardImg(17, "XVII 星<br>希望")}
+        ${guideCardImg(21, "XXI 世界<br>完成")}
+      </div>
+      <h3>小アルカナ — 日常の機微</h3>
+      <p>残りの56枚は4つのスート(組)に分かれ、それぞれが暮らしのひとつの領域を映します。各スートはエース〜10の数札と、ペイジ・ナイト・クイーン・キングの人物札で構成されます。</p>
+      <div class="ga-cards">${suits}</div>
+      <h3>正位置と逆位置</h3>
+      <p>引いたカードが上向きなら<strong>正位置</strong>、逆さまなら<strong>逆位置</strong>。逆位置は「悪い意味」ではなく、そのカードの力が<em>過剰・不足・内向き</em>になっている状態を示します。たとえば「太陽」の逆位置は、輝きが消えたのではなく「曇りがかかっている」と読みます。</p>
+      <h3>スプレッド — 並べ方が問いを決める</h3>
+      <p>カードを何枚・どの配置で引くかを「スプレッド」と呼びます。MYOURISCOPEでは3つを用意しています。</p>
+      <ul class="ga-list">
+        <li><strong>今日の一枚(1枚)</strong> — 今日という日の空気をひとことで。毎日の羅針盤に。</li>
+        <li><strong>3枚引き</strong> — 過去・現在・未来。流れの中のいまを知りたいときに。</li>
+        <li><strong>ケルト十字(10枚)</strong> — 根本原因・現状・無意識・周囲・未来の可能性まで、ひとつのテーマを多角的に。100年以上使われてきた、もっとも有名な本格スプレッドです。</li>
+      </ul>
+      <h3>このサイトの引き方 — 結果を決めるのは、あなたの手</h3>
+      <p>MYOURISCOPEのタロットは、乱数を機械任せにしません。<strong>シャッフルで指を離した瞬間の時刻、カットで選んだ山、カードの帯から引いた位置</strong>——あなたの手の動きそのものが混ざって1枚が決まります。同じ問いでも、同じ手つきは二度とない。だから、その1枚はあなたのものです。</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="tarot">タロットを引いてみる</button></p>`;
+  }
+  if (key === "western") {
+    const planets = PLANET_BODIES.map((b) => `<li><strong>${b.glyph}︎ ${b.ja}</strong> — ${b.role}${b.gen ? "(世代のテーマ)" : ""}</li>`).join("");
+    return `
+      <h3>ホロスコープは「生まれた瞬間の空の写真」</h3>
+      <p>あなたが生まれたその時刻、太陽・月・惑星が空のどこにいたか——それを一枚の円に描いたものが<strong>出生図(ネイタルチャート)</strong>です。星占いでおなじみの「◯◯座」は、このうち太陽の位置だけを見たもの。実際の空にはあと9つの天体があり、それぞれが人生の別の領域を担当しています。</p>
+      <h3>10天体 — それぞれの担当</h3>
+      <ul class="ga-list">${planets}</ul>
+      <h3>12星座と4つのエレメント</h3>
+      <p>12星座は4つの気質(エレメント)に分かれます。<strong>火</strong>(牡羊・獅子・射手)は直感と情熱、<strong>地</strong>(牡牛・乙女・山羊)は現実と着実さ、<strong>風</strong>(双子・天秤・水瓶)は知性と言葉、<strong>水</strong>(蟹・蠍・魚)は感情と共感。たとえば「月が水のサイン」なら、素の感情は共感型——という具合に、天体×星座の掛け算で読みます。</p>
+      <h3>アスペクト — 天体同士の会話</h3>
+      <p>チャートの中で天体同士が特定の角度を結ぶと、互いに影響し合います。0°(重なり)は強調、120°(トライン)は生まれつきの才能、90°(スクエア)は乗り越えるたび力になる摩擦。出生図のアスペクトは、あなたの中の「よく起きる化学反応」の一覧です。</p>
+      <h3>アセンダント — 出生時刻と出生地でわかること</h3>
+      <p>生まれた瞬間に東の地平線から昇っていた星座を<strong>アセンダント(上昇星座)</strong>と呼びます。これは「人に与える第一印象」と「人生の入り口」。地平線は場所によって違うため、<em>出生時刻と出生地の両方</em>があってはじめて計算できます。母子手帳に出生時刻が載っていることが多いですよ。</p>
+      <h3>動き続ける空 — トランジット</h3>
+      <p>出生図が「生まれ持った設計図」なら、いまの空(トランジット)は「今日の天気」。月は約2.5日でつぎの星座へ移り、木星は約12年、土星は約29.5年で空を一周します。MYOURISCOPEの「今日の空」は今日の天体とあなたの出生図の対話を、「5年周期の流れ」は土星がつくる約7年ごとの章を読んでいます。</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="western">自分の星を調べる</button></p>`;
+  }
+  if (key === "eastern") {
+    const stars = Object.entries(TSUHENSEI).map(([name, t]) => `<li><strong>${name}</strong> — ${t.gloss}</li>`).join("");
+    return `
+      <h3>生年月日は、4本の柱でできている</h3>
+      <p>四柱推命は、生まれた<strong>年・月・日・時</strong>それぞれに干支(十干×十二支)を割り当て、4本の柱として読む東洋占術の王様です。名前の「四柱」はこの4本のこと。なかでも重要なのが<strong>日柱の干=日主(にっしゅ)</strong>で、これがあなた自身を表します。</p>
+      <h3>十干 — あなたは自然界のなにか</h3>
+      <p>日主は10種類。それぞれ自然のものにたとえられます。大樹(甲)・草花(乙)・太陽(丙)・灯火(丁)・山岳(戊)・田畑(己)・鋼鉄(庚)・宝石(辛)・大河(壬)・雨露(癸)。「太陽の人」と「灯火の人」では、同じ火でも輝き方がまるで違う——そんな解像度で人を観る道具です。</p>
+      <h3>通変星 — 巡ってくる10種類の風</h3>
+      <p>あなたの日主と、その日・その月にめぐる干支の関係を読んだものが<strong>通変星(つうへんせい)</strong>です。同じ日でも、日主が違えば吹く風が違う——これが「今日の気流」の正体です。</p>
+      <ul class="ga-list">${stars}</ul>
+      <h3>日運・月運・年運の重なり</h3>
+      <p>日ごとの風(日運)は、月全体の気流(月運)の上に吹き、さらにその下には年の地形(年運)があります。MYOURISCOPEの「今日の結論」は、この重なりに干支の巡り(三合・支合・冲)と月の満ち欠けを加えて、複数の暦の「票」として集計しています。</p>
+      <h3>九星気学 — もうひとつの東洋の羅針盤</h3>
+      <p>生まれ年から定まる<strong>本命星</strong>(一白水星〜九紫火星の9種)で気質と巡りを読むのが九星気学。9つの星は五行(木火土金水)に対応し、毎月方位盤の上を巡るため「吉方位」が出せるのが特徴です。マイページの方位盤はこの仕組みで動いています。</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="eastern">自分の命式を観る</button></p>`;
+  }
+  if (key === "aisho") {
+    return `
+      <h3>相性は、ひとつの物差しでは測れない</h3>
+      <p>MYOURISCOPEの相性診断は、独立した4つの手法を重ねて総合スコアを出します。ひとつの占術だけだと「たまたま良い/悪い」が出やすい——複数の物差しで測って、それでも揃うところにふたりの本質が現れる、という設計です。</p>
+      <ul class="ga-list">
+        <li><strong>星座エレメント(30%)</strong> — 火・地・風・水の気質の噛み合わせ。日々のノリとテンポの相性。</li>
+        <li><strong>九星の五行(25%)</strong> — 木火土金水の相生・相剋。エネルギーがどちらに流れるか。</li>
+        <li><strong>干支の配置(25%)</strong> — 生まれ年の十二支の角度。三合・支合は引き合い、冲は正反対。</li>
+        <li><strong>日主の対話(20%)</strong> — 生まれた「日」の十干同士の通変星。同学年でも生まれ日で変わる、いちばん個人的な層。</li>
+      </ul>
+      <h3>なぜ「あなたから」と「相手から」で答えが違うのか</h3>
+      <p>五行の気は<em>向き</em>を持って流れます。水は木を育てますが、木が水を育てるわけではない——だから「あなたにとって相手は充電させてくれる人」なのに「相手にとってあなたは頑張らせてくる人」という非対称が生まれます。この見え方は5つの関係×10の通変星で<strong>50通り</strong>。ふたりで見せ合うと、たいてい会話が始まります。</p>
+      <h3>ふたりの吉日</h3>
+      <p>向こう30日の暦を実際にめくり、その日の十二支がふたりの生まれ年と「三合」や「支合」を結ぶ日を探しています。占いを「いつ会うか」の実用に落とすための機能です。</p>
+      <h3>ケンカの火種</h3>
+      <p>4つの層のうち<em>いちばん点が低かった層</em>から、起こりやすいすれ違いと回避策を出しています。良いところだけでなく弱点も言う——それが信用できる相性診断だと考えています。</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="aisho">誰かと診断してみる</button></p>`;
+  }
+  return `
+    <h3>MYOURISCOPE — 妙なる理(ことわり)を観る場所</h3>
+    <p>名前は「妙理(みょうり)」と「scope(観測器)」から。言葉にしがたい、ものごとの奥にあるかすかな理を、望遠鏡を覗くように静かに観る——そんな場所でありたいと思っています。</p>
+    <h3>占いは、決定ではなく観測</h3>
+    <p>占いはあなたの未来を決めるものではありません。空の配置や暦の巡りという「いまの風向き」を観測して、今日をどう歩くかの参考にする——それだけのものです。だからこのサイトは、断定しません。脅しません。買わせません。かわりに、毎朝そっと背中を押します。</p>
+    <h3>大切にしていること</h3>
+    <ul class="ga-list">
+      <li><strong>1日1回の楽しみを守る</strong> — 今日の一枚は1日1回だけ。何度も引き直せたら、その1枚の意味が薄れてしまうから。</li>
+      <li><strong>結果のネタバレをしない</strong> — その日まだ観測していないあなたに、先に答えを見せません。</li>
+      <li><strong>根拠を見せる</strong> — スコアにも結論にも、必ず「どう計算したか」を添えます。ブラックボックスの神託より、仕組みごと楽しめる占いを。</li>
+      <li><strong>データは端末の中だけ</strong> — 生年月日も履歴も、あなたの端末のlocalStorageにだけ保存されます。サーバーには何も送りません。</li>
+    </ul>
+    <h3>統合鑑定のロジック</h3>
+    <p>西洋占星術(太陽星座・月星座)、四柱推命(日主)、九星気学(本命星)、タロット——それぞれ別の文明が磨いてきた物差しをひとりに重ねると、一面的でない立体的な輪郭が浮かびます。<strong>運命の称号</strong>はその要約で、日主(10)×太陽星座(12)×本命星(9)=<strong>1080通り</strong>。称号の下には、どの言葉がどの占術から来たかの由来も添えています。</p>
+    <h3>今日の結論のロジック</h3>
+    <p>四柱推命の日運・月運、干支の巡り、月相——独立した暦の手法それぞれに今日を採点してもらい、「票」として集計して大吉〜休の結論を出しています。すべてが同じ方向を向く日は年に数回。その日は、ちゃんとそう言います。</p>
+    <p class="ga-cta"><button class="btn btn-primary" data-nav="integrated">統合鑑定を受けてみる</button></p>`;
+}
+
+function renderGuide(articleKey) {
+  const root = document.getElementById("guide-root");
+  if (!articleKey) {
+    root.innerHTML = `
+      <div class="guide-grid">
+        ${Object.entries(GUIDE_ARTICLES).map(([k, a]) => `
+          <button class="guide-card" data-guide="${k}">
+            <span class="gc-icon">${a.icon}</span>
+            <span class="gc-body"><strong>${a.title}</strong><small>${a.lead}</small></span>
+            <span class="gc-arrow">→</span>
+          </button>`).join("")}
+      </div>`;
+  } else {
+    const a = GUIDE_ARTICLES[articleKey];
+    root.innerHTML = `
+      <article class="guide-article panel">
+        <button class="ga-back" data-guide-back>← 手引きにもどる</button>
+        <p class="ritual-eyebrow" style="margin-top:14px">GUIDE</p>
+        <h2 class="ga-title">${a.title}</h2>
+        ${guideArticleHtml(articleKey)}
+      </article>`;
+    window.scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" });
+  }
+  root.querySelectorAll("[data-guide]").forEach((b) => b.addEventListener("click", () => renderGuide(b.dataset.guide)));
+  root.querySelector("[data-guide-back]")?.addEventListener("click", () => renderGuide());
 }
 
 /* ---------- トップのタロットコピー(毎回ランダム) ---------- */

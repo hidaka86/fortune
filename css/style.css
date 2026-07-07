@@ -785,6 +785,14 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
   background-size: cover, cover;
   background-repeat: no-repeat;
 }
+.spread-opt[data-spread="one"] {
+  background-image:
+    linear-gradient(80deg, rgba(10, 16, 38, 0.96) 40%, rgba(10, 16, 38, 0.78) 62%, rgba(10, 16, 38, 0.3)),
+    url("../images/tarot/tarot_01_magician.webp");
+  background-position: center, right 20%;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
 .spread-opt[data-spread="three"] {
   background-image:
     linear-gradient(80deg, rgba(10, 16, 38, 0.96) 40%, rgba(10, 16, 38, 0.78) 62%, rgba(10, 16, 38, 0.3)),
@@ -1792,3 +1800,67 @@ body.ritual-open { overflow: hidden; }
 .sg-part strong { font-family: var(--serif); font-size: 16px; color: var(--gold-bright); letter-spacing: .06em; }
 .sg-part small { font-size: 10.5px; line-height: 1.65; color: var(--muted); text-align: center; }
 .sg-x { align-self: center; color: var(--gold); font-family: var(--latin); font-size: 14px; }
+
+/* ---------- 読みもの(占いの手引き) ---------- */
+.guide-grid { display: flex; flex-direction: column; gap: 12px; max-width: 720px; margin: 0 auto; }
+.guide-card {
+  display: flex; align-items: center; gap: 16px; text-align: left;
+  padding: 20px 20px;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.93)),
+    url("../assets/site/card_texture.webp") center / cover;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
+  transition: border-color .25s ease, transform .25s ease;
+}
+.guide-card:hover { border-color: rgba(168, 132, 78, 0.55); transform: translateY(-2px); }
+.gc-icon {
+  flex: 0 0 52px; height: 52px; display: grid; place-items: center;
+  font-family: var(--serif); font-size: 24px; color: var(--gold-bright);
+  border: 1px solid rgba(168, 132, 78, 0.4); border-radius: 50%;
+  background: rgba(168, 132, 78, 0.06);
+}
+.gc-body { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.gc-body strong { font-family: var(--serif); font-size: 17.5px; letter-spacing: .05em; color: var(--indigo); }
+.gc-body small { font-size: 13px; line-height: 1.75; color: var(--muted); }
+.gc-arrow { margin-left: auto; color: var(--gold-bright); font-family: var(--latin); font-size: 18px; }
+
+.guide-article { max-width: 720px; text-align: left; }
+.ga-back {
+  font-size: 13.5px; color: var(--muted); letter-spacing: .04em;
+  border: 1px solid var(--hairline); border-radius: 999px; padding: 7px 16px;
+  transition: color .2s ease, border-color .2s ease;
+}
+.ga-back:hover { color: var(--gold-bright); border-color: rgba(168, 132, 78, 0.5); }
+.ga-title { font-family: var(--serif); font-size: clamp(22px, 4.6vw, 30px); font-weight: 700; letter-spacing: .05em; margin: 6px 0 4px; }
+.guide-article h3 {
+  font-family: var(--serif); font-size: 18.5px; font-weight: 700; letter-spacing: .05em;
+  color: var(--indigo); margin: 34px 0 12px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+.guide-article p { font-size: 15.5px; line-height: 2.05; color: var(--ink); }
+.guide-article p + p { margin-top: 12px; }
+.guide-article strong { color: var(--gold-bright); font-weight: 700; }
+.guide-article em { font-style: normal; border-bottom: 2px solid rgba(168, 132, 78, 0.35); }
+.ga-list { list-style: none; display: flex; flex-direction: column; gap: 10px; margin: 14px 0; }
+.ga-list li { font-size: 15px; line-height: 1.95; padding-left: 18px; position: relative; }
+.ga-list li::before { content: "✦"; position: absolute; left: 0; top: 2px; color: var(--gold); font-size: 11px; }
+.ga-cards {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 14px; margin: 18px 0 6px;
+}
+.ga-fig { margin: 0; text-align: center; }
+.ga-fig img {
+  width: 100%; aspect-ratio: 152 / 244; object-fit: cover;
+  border-radius: 8px; border: 1px solid rgba(168, 132, 78, 0.45);
+  box-shadow: 0 8px 20px rgba(28, 35, 51, 0.18);
+}
+.ga-fig figcaption { font-size: 11.5px; line-height: 1.6; color: var(--muted); margin-top: 7px; }
+.ga-fig figcaption strong { color: var(--indigo); font-size: 12.5px; }
+.ga-cta { text-align: center; margin-top: 30px; }
+
+/* 本文中のリンク風ボタン */
+.linklike { color: var(--gold-bright); text-decoration: underline; text-underline-offset: 3px; font-size: inherit; }
+
+/* スプレッドが2種になったため縦積みに(どちらも全幅の夜の窓) */
+.spread-picker { grid-template-columns: 1fr; }

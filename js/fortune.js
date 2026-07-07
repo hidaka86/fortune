@@ -573,14 +573,26 @@ function aishoTopics(r) {
   return { play, friction: friction.text, lucky: { m: best.m, d: best.d, note: luckyNote } };
 }
 
-/* 二人の関係を一言で */
+/* 二人の関係を一言で(ペアごとに決定的に選ぶ = 同じふたりなら毎回同じ言葉) */
 function aishoKeyword(r) {
-  if (r.total >= 85) return "運命の共鳴";
   const em = r.a.kyusei.element, eo = r.b.kyusei.element;
   const sei = GOGYO_RELATION[em]?.boosts === eo || GOGYO_RELATION[eo]?.boosts === em;
-  if (r.total >= 72) return sei ? "育て合うふたり" : em === eo ? "以心伝心の同志" : "磨き合う原石";
-  if (r.total >= 60) return "伸びしろだらけのふたり";
-  return "正反対という才能";
+  const pools = r.total >= 85
+    ? ["運命の共鳴", "宿縁のふたり", "星が引き合わせた縁", "出会うべくして出会ったふたり", "重なり合う軌道"]
+    : r.total >= 72
+      ? (sei
+        ? ["育て合うふたり", "呼吸の合う縁", "追い風を送り合うふたり", "順風のパートナー"]
+        : em === eo
+          ? ["以心伝心の同志", "同じ星を見るふたり", "阿吽の呼吸", "似た魂の道連れ", "説明のいらない仲"]
+          : ["磨き合う原石", "凸凹が噛み合うふたり", "違いが武器になる縁", "混ぜると強い配合"])
+      : r.total >= 60
+        ? ["伸びしろだらけのふたり", "これから深まる縁", "発展途上の名コンビ", "育てがいのある関係"]
+        : ["正反対という才能", "真逆だから出会えた縁", "刺激と学びのふたり", "遠いからこそ惹かれる縁"];
+  // ふたりの日主と干支から決定的に選ぶ(同じペアは何度やっても同じ言葉)
+  const seed = `${r.a.kan}${r.b.kan}${r.a.eto.name}${r.b.eto.name}`;
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.codePointAt(0)) % 9973;
+  return pools[h % pools.length];
 }
 
 /* ---------- 統合鑑定 ---------- */

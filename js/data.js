@@ -158,6 +158,11 @@ const RITUAL_SPREADS = {
     label: "今日の一枚", desc: "儀式短縮版。シャッフルして、直感の一枚を。", count: 1, short: true, once: true,
     positions: [{ en: "TODAY", ja: "今日のあなたへ" }],
   },
+  one: {
+    purpose: "目の前のこと、ずばりどうなる?",
+    label: "ワンオラクル", desc: "迷いをひとつ、カードに即答してもらう1枚引き。", count: 1,
+    positions: [{ en: "ORACLE", ja: "答え" }],
+  },
   three: {
     purpose: "過去、現在、未来を占う",
     label: "3枚引き", desc: "過去・現在・未来の流れを読む。", count: 3,
