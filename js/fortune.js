@@ -433,6 +433,51 @@ function dailyQuote() {
   return DAILY_QUOTES[hashString(todayKey()) % DAILY_QUOTES.length];
 }
 
+/* ---------- 緩急の仕掛け:時と月齢がひらく「窓」 ----------
+   締切はアプリの都合ではなく、空の都合。急がせる理由は世界観の中に置く。 */
+
+/* 夜の窓(22:00〜3:59)。日付をまたいでも「同じ夜」として扱うキーも返す */
+function nightWindow(now = new Date()) {
+  const h = now.getHours();
+  const open = h >= 22 || h < 4;
+  // 深夜0〜3時は前日の夜に属する
+  const d = new Date(now);
+  if (h < 4) d.setDate(d.getDate() - 1);
+  const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  return { open, key, opensAt: "22:00" };
+}
+
+/* 新月・満月の日だけ現れる窓。月齢そのものが締切になる */
+function celestialWindows() {
+  const phase = moonPhaseToday();
+  const wins = [];
+  if (phase.name === "新月") {
+    wins.push({ spread: "newmoon", until: "今夜まで", note: `${phase.emoji} 今日は新月 — 種を蒔く日。この窓は月が動くと閉じます。` });
+  }
+  if (phase.name === "満月") {
+    wins.push({ spread: "fullmoon", until: "今夜まで", note: `${phase.emoji} 今日は満月 — 手放す日。この窓は月が欠けはじめると閉じます。` });
+  }
+  return wins;
+}
+
+/* 水星逆行(みかけの逆行)。今日と明日の黄経を比べて判定 */
+function isMercuryRetrograde() {
+  const now = new Date();
+  const t1 = planetLongitudes(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12);
+  const tm = new Date(now); tm.setDate(tm.getDate() + 1);
+  const t2 = planetLongitudes(tm.getFullYear(), tm.getMonth() + 1, tm.getDate(), 12);
+  let d = t2.mercury - t1.mercury;
+  if (d > 180) d -= 360;
+  if (d < -180) d += 360;
+  return d < 0;
+}
+
+/* 風のざわめき:ごく稀に(およそ8日に1度)カードがざわつく日。
+   日付シードで決定的に決まる — 全員同じ日にざわつく、小さな祭り */
+function windCallToday() {
+  return seededRng(todayKey() + "|windcall")() < 0.125;
+}
+
 /* ---------- 相性診断 ---------- */
 const GOGYO_KOKU = { "木": "土", "土": "水", "水": "火", "火": "金", "金": "木" }; // 相剋
 const SHIGOU_PAIRS = [["子", "丑"], ["寅", "亥"], ["卯", "戌"], ["辰", "酉"], ["巳", "申"], ["午", "未"]]; // 支合
