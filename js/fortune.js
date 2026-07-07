@@ -473,13 +473,20 @@ function compatibilityReading(p1, p2) {
       zodiac: getZodiac(m, d),
       eto: getEto(y, m, d),
       kyusei: getKyusei(y, m, d),
+      kan: dayPillar(y, m, d).kan,
     };
   };
   const a = parse(p1), b = parse(p2);
   const zodiac = zodiacCompatScore(a.zodiac.element, b.zodiac.element);
   const gogyo = gogyoCompatScore(a.kyusei, b.kyusei);
   const eto = etoCompatScore(a.eto, b.eto);
-  const total = Math.round(zodiac.score * 0.4 + gogyo.score * 0.3 + eto.score * 0.3);
+  /* 絆の質: 日主(生まれた「日」の十干)同士の通変星。年や月が同じでも、日が違えばここが変わる */
+  const bondAB = { star: tsuhensei(a.kan, b.kan).name };
+  const bondBA = { star: tsuhensei(b.kan, a.kan).name };
+  Object.assign(bondAB, AISHO_BOND[bondAB.star]);
+  Object.assign(bondBA, AISHO_BOND[bondBA.star]);
+  const bond = { ab: bondAB, ba: bondBA, score: Math.round((bondAB.score + bondBA.score) / 2) };
+  const total = Math.round(zodiac.score * 0.3 + gogyo.score * 0.25 + eto.score * 0.25 + bond.score * 0.2);
 
   const band = total >= 85 ? "運命的な好相性" : total >= 72 ? "とても良い相性" : total >= 60 ? "磨けば光る相性" : "刺激し合う成長の相性";
   const advice = total >= 85
@@ -490,7 +497,7 @@ function compatibilityReading(p1, p2) {
         ? "違いが目につく時期もありますが、それは伸びしろの証。相手の得意分野を頼ってみると関係が好転します。"
         : "正反対だからこそ学びの多い二人。「自分と違う」を「面白い」に変換できれば、唯一無二のパートナーになります。";
 
-  return { a, b, zodiac, gogyo, eto, total, band, advice };
+  return { a, b, zodiac, gogyo, eto, bond, total, band, advice };
 }
 
 /* 相性: あなたから見た相手/相手から見たあなた(五行の向きで読む) */
@@ -524,6 +531,46 @@ function perspectiveCompat(me, other, meName, otherName) {
     score: 68, label: "あなたがリードする相手",
     note: `${meName}の「${em}」が主導権を握る巡り。引っ張る場面が多い分、相手の歩幅への気配りが絆を深めます。`,
   };
+}
+
+/* ふたりの取扱説明書: 遊び方・ケンカの火種・ふたりの吉日 */
+function aishoTopics(r) {
+  // 遊び方(星座エレメントの組み合わせ)
+  const pairKey = [r.a.zodiac.element, r.b.zodiac.element].sort().join("");
+  const play = AISHO_PLAY[pairKey];
+
+  // ケンカの火種: 4層のうちいちばん点が低い層から具体的に
+  const weakerBond = r.bond.ab.score <= r.bond.ba.score ? r.bond.ab : r.bond.ba;
+  const layers = [
+    { s: r.zodiac.score, text: "ノリとテンポのズレ。誘いの返事の速さや盛り上がり方は違って当たり前、と最初から知っておくだけで衝突が減ります。" },
+    { s: r.gogyo.score, text: "「正しさ」のぶつかり合い。どちらも間違っていないことが多いので、先に相手の言い分を全部聞いた方が勝ちです。" },
+    { s: r.eto.score, text: "予定と価値観の食い違い。大事な決めごとは、どちらかが疲れている日を避けるだけで驚くほど揉めなくなります。" },
+    { s: r.bond.score, text: BOND_FRICTION[weakerBond.star] },
+  ];
+  const friction = layers.reduce((a, b) => (b.s < a.s ? b : a));
+
+  // ふたりの吉日: 向こう30日で、日の十二支がふたりの年支と良い角度を結ぶ日
+  const rate = (dayShi, yearShi) => {
+    if (SANGO_GROUPS.some((g) => g.includes(dayShi) && g.includes(yearShi)) && dayShi !== yearShi) return 2;
+    if (SHIGOU_PAIRS.some(([x, z]) => (x === dayShi && z === yearShi) || (z === dayShi && x === yearShi))) return 2;
+    const diff = Math.abs(JUNISHI.indexOf(dayShi) - JUNISHI.indexOf(yearShi));
+    if (diff === 6) return -3;
+    return 0;
+  };
+  const now = new Date();
+  let best = null;
+  for (let k = 1; k <= 30; k++) {
+    const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + k);
+    const shi = dayPillar(t.getFullYear(), t.getMonth() + 1, t.getDate()).shi;
+    const score = rate(shi, r.a.eto.name) + rate(shi, r.b.eto.name);
+    if (!best || score > best.score) best = { score, m: t.getMonth() + 1, d: t.getDate(), shi };
+  }
+  const luckyNote = best.score >= 4
+    ? "ふたりの生まれ年の気と強く響き合う、この30日でいちばんの吉日です。"
+    : best.score >= 2
+      ? "どちらかの気と良い角度を結ぶ、ふたりで動くのに向いた日です。"
+      : "大きな衝突のない、穏やかに過ごせる日です。";
+  return { play, friction: friction.text, lucky: { m: best.m, d: best.d, note: luckyNote } };
 }
 
 /* 二人の関係を一言で */

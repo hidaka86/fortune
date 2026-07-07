@@ -400,7 +400,7 @@ function renderHomeDaily() {
     <p class="hero-eyebrow">Today's Compass — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
     <h1 class="hero-title hero-title-member"><span class="nw">今日は<em>「${verdict.word}」</em>。</span></h1>
     <div class="hero-score">
-      <span><span class="hs-num">${daily.score100}</span><span class="hs-denom"> /100</span></span>
+      <span><span class="hs-num" data-count="${daily.score100}">0</span><span class="hs-denom"> /100</span></span>
       <span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />${base.name}</span>
       <span class="chip">連続 <strong>${visits.streak || 1}日目</strong>${(visits.streak || 1) >= 7 ? " 🔥" : ""}</span>
     </div>
@@ -409,6 +409,7 @@ function renderHomeDaily() {
     <div class="hero-cta" style="margin-top:22px">
       <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の結果をみる</button>
     </div>`;
+  heroContentEl.querySelectorAll("[data-count]").forEach(countUp);
 }
 
 /* ---------- 今日の占い(朝の羅針盤:結論=マインドは最後に) ---------- */
@@ -569,6 +570,11 @@ function verdictHtml(v) {
       <span class="vf-vote ${f.score > 0 ? "up" : f.score < 0 ? "down" : "flat"}">${f.score > 0 ? "▲" : f.score < 0 ? "▼" : "―"}</span>
       <span class="vf-body"><span class="vf-method">${f.method}</span><strong>${f.label}</strong> — ${f.note}</span>
     </div>`).join("");
+  const rare = v.rank === "大吉"
+    ? "独立した複数の暦がここまで同時に揃う日は、年に数えるほどしかありません。"
+    : v.rank === "休"
+      ? "ここまで揃って「休め」と出る日もめったにありません。堂々と充電してください。"
+      : "";
   return `
     <div class="result-card span-all verdict-card">
       ${cardH4("VERDICT", "今日の結論")}
@@ -577,6 +583,7 @@ function verdictHtml(v) {
         <div class="verdict-text">
           <p class="verdict-word">今日は「${v.word}」</p>
           <p class="verdict-advice">${v.advice}</p>
+          ${rare ? `<p class="verdict-rare">✦ ${rare}</p>` : ""}
         </div>
       </div>
       <div class="vf-list">${rows}</div>
@@ -1017,6 +1024,37 @@ async function makeShareCard(p) {
       ctx.restore();
       ctx.drawImage(im, W / 2 - sz / 2, visTop + visH / 2 - sz / 2, sz, sz);
     }
+  } else if (p.duo) {
+    // 相性: 交わるふたつの円(縁)+ 中央にスコア
+    const cy = visTop + visH / 2 - 30;
+    const R = 300, off = 160;
+    for (const [dx, name] of [[-off, p.duo.nameA], [off, p.duo.nameB]]) {
+      ctx.strokeStyle = "rgba(217,192,138,.75)"; ctx.lineWidth = 2.5;
+      ctx.shadowColor = "rgba(217,192,138,.4)"; ctx.shadowBlur = 26;
+      ctx.beginPath(); ctx.arc(W / 2 + dx, cy, R, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowColor = "transparent";
+      ctx.fillStyle = "#D9C08A";
+      ctx.font = `600 44px ${serif}`;
+      ctx.fillText(name, W / 2 + dx * 2.2, cy - R - 46);
+    }
+    // 交差部分をほんのり満たす
+    ctx.save();
+    ctx.beginPath(); ctx.arc(W / 2 - off, cy, R, 0, Math.PI * 2);
+    ctx.clip();
+    ctx.beginPath(); ctx.arc(W / 2 + off, cy, R, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(217,192,138,.10)"; ctx.fill();
+    ctx.restore();
+    ctx.fillStyle = "#EFE9DC";
+    ctx.font = `700 190px ${latin}`;
+    ctx.fillText(String(p.score), W / 2, cy + 62);
+    ctx.fillStyle = "#9AA0B8";
+    ctx.font = `500 38px ${serif}`;
+    ctx.fillText(p.scoreLabel || "", W / 2, cy + 138);
+    // 非対称の見え方(話のタネ)
+    ctx.font = `500 38px ${serif}`;
+    ctx.fillStyle = "#C9CEE0";
+    ctx.fillText(`${p.duo.nameA}から見ると「${p.duo.labelA}」`, W / 2, cy + R + 96);
+    ctx.fillText(`${p.duo.nameB}から見ると「${p.duo.labelB}」`, W / 2, cy + R + 158);
   } else {
     // 観測盤モチーフ
     const cy = visTop + visH / 2;
@@ -2256,6 +2294,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
   const keyword = aishoKeyword(r);
   const fromA = perspectiveCompat(r.a, r.b, nameA, nameB);
   const fromB = perspectiveCompat(r.b, r.a, nameB, nameA);
+  const topics = aishoTopics(r);
   const shogoA = fortuneTitle(fd.get("birthdate1"));
   const shogoB = fortuneTitle(fd.get("birthdate2"));
   addToCollection(shogoA.title, r.a.name || "あなた");
@@ -2266,6 +2305,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     title: `「${keyword}」`,
     keywords: [`${shogoA.title} × ${shogoB.title}`],
     score: r.total, scoreLabel: "ふたりの相性", scoreSuffix: "/100",
+    duo: { nameA, nameB, labelA: fromA.label, labelB: fromB.label },
     x: `「${shogoA.title}」と「${shogoB.title}」の相性は ${r.total}/100 —「${keyword}」でした ✦ あなたたちは?`,
     url: buildInviteUrl(r.a.name, shogoA.title),
   };
@@ -2275,6 +2315,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     { en: "ZODIAC", ja: "星座エレメント", pair: `${r.a.zodiac.name}(${r.a.zodiac.element}) × ${r.b.zodiac.name}(${r.b.zodiac.element})`, ...r.zodiac },
     { en: "GOGYO", ja: "九星の五行", pair: `${r.a.kyusei.name} × ${r.b.kyusei.name}`, ...r.gogyo },
     { en: "ETO", ja: "干支の配置", pair: `${r.a.eto.name}(${r.a.eto.animal}) × ${r.b.eto.name}(${r.b.eto.animal})`, ...r.eto },
+    { en: "BOND", ja: "絆の質(日主の対話)", pair: `${r.a.kan} × ${r.b.kan}`, score: r.bond.score, note: `生まれた「日」の気同士の相性です。${nameA}にとって${nameB}は「${r.bond.ab.label}」(${r.bond.ab.star}) — ${r.bond.ab.note} 逆に${nameB}から見た${nameA}は「${r.bond.ba.label}」(${r.bond.ba.star})です。` },
   ].map((x) => `
     <div class="result-card">
       ${cardH4(x.en, x.ja)}
@@ -2322,14 +2363,22 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       </div>
     </div>
     <div class="result-card span-all" style="margin-bottom:18px">
+      ${cardH4("HANDBOOK", "ふたりの取扱説明書")}
+      <p class="theme-point" style="border-top:none;padding-top:0"><strong>◎ ふたりの遊び方</strong> — ${topics.play}</p>
+      <p class="theme-point"><strong>⚠ ケンカの火種はここ</strong> — ${topics.friction}</p>
+      <p class="theme-point"><strong>✦ ふたりの吉日は ${topics.lucky.m}月${topics.lucky.d}日</strong> — ${topics.lucky.note}遊びの予定・大事な話はこの日に。</p>
+    </div>
+    <div class="result-card span-all" style="margin-bottom:18px">
       ${cardH4("HOW IT WORKS", "総合スコアの計算式")}
-      <p class="sub" style="margin-bottom:10px">上の「見え方」は九星の五行だけで見た二人の景色。総合スコアは星座・五行・干支の三つを合算するため、見え方と点が違うことがあります。</p>
+      <p class="sub" style="margin-bottom:10px">上の「見え方」は九星の五行だけで見た二人の景色。総合スコアは星座・五行・干支・日主の四つの手法を合算するため、見え方と点が違うことがあります。</p>
       ${logicFlowHtml([
-        { tag: "星座エレメント", main: String(r.zodiac.score), sub: "× 40%" },
+        { tag: "星座エレメント", main: String(r.zodiac.score), sub: "× 30%" },
         "+",
-        { tag: "九星の五行", main: String(r.gogyo.score), sub: "× 30%" },
+        { tag: "九星の五行", main: String(r.gogyo.score), sub: "× 25%" },
         "+",
-        { tag: "干支の配置", main: String(r.eto.score), sub: "× 30%" },
+        { tag: "干支の配置", main: String(r.eto.score), sub: "× 25%" },
+        "+",
+        { tag: "日主の対話", main: String(r.bond.score), sub: "× 20%" },
         "=",
         { tag: "総合", main: String(r.total), sub: "/ 100", result: true },
       ])}
