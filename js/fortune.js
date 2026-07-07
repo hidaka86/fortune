@@ -337,9 +337,16 @@ function fortuneTitle(birthdate) {
   const zodiac = getZodiac(m, d);
   const kyusei = getKyusei(y, m, d);
   const nikkan = NIKKAN_DESC[dayPillar(y, m, d).kan];
+  const kan = dayPillar(y, m, d).kan;
   return {
-    title: `${nikkan.symbol}を抱く、${SHOGO_ZODIAC[zodiac.name]}${SHOGO_KYUSEI[kyusei.name]}`,
+    title: `${SHOGO_NIKKAN[kan]}を宿す、${SHOGO_ZODIAC[zodiac.name]}${SHOGO_KYUSEI[kyusei.name]}`,
     parts: { nikkan: nikkan.symbol, zodiac: zodiac.name, kyusei: kyusei.name },
+    // 称号の由来(ユーザーに見せる分解)
+    origin: [
+      { word: SHOGO_NIKKAN[kan], from: `日主「${kan}」(${nikkan.symbol})`, why: "生まれた日の十干 — あなたの本質" },
+      { word: SHOGO_ZODIAC[zodiac.name], from: zodiac.name, why: "太陽星座 — 外に向かう顔" },
+      { word: SHOGO_KYUSEI[kyusei.name], from: kyusei.name, why: "九星の本命星 — 世界での役回り" },
+    ],
     total: 1080,
   };
 }

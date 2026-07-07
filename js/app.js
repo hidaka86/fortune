@@ -1184,6 +1184,9 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
         <p class="shogo-label">あなたの運命の称号</p>
         <p class="shogo-title">「${shogo.title}」</p>
         <p class="shogo-rarity">日主 × 太陽星座 × 本命星が織りなす、<strong>1080タイプ</strong>にひとつのあなた</p>
+        <div class="shogo-origin">
+          ${shogo.origin.map((o) => `<span class="sg-part"><strong>${o.word}</strong><small>${o.from}<br>${o.why}</small></span>`).join('<span class="sg-x">×</span>')}
+        </div>
       </div>
       <div class="chip-row">
         <span class="chip">太陽 <strong>${r.zodiac.name}</strong></span>
