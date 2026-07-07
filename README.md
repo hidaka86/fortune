@@ -5,7 +5,8 @@
 
 ## 公開URL
 
-- 本番: https://hidaka86.github.io/fortune/ (GitHub Pages / pushで自動デプロイ)
+- 本番: https://myouscope.com/ (GitHub Pages + 独自ドメイン / pushで自動デプロイ)
+- 旧URL: https://hidaka86.github.io/fortune/ (独自ドメイン有効化後は自動リダイレクト)
 
 ## 主な機能
 
