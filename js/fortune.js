@@ -355,20 +355,25 @@ function dailyVerdict(birthdate) {
   const factors = [];
   const starPower = (star) => Object.values(star.weights).reduce((a, b) => a + b, 0);
 
-  // 1. 四柱推命・日運
-  const dp = starPower(flow.day.star);
+  // 1. 四柱推命・日運(星の意味+その日どう過ごすかまで解説)
+  const ds = flow.day.star;
+  const dp = starPower(ds);
   const dScore = dp >= 1.2 ? 2 : dp >= 0.5 ? 1 : dp >= 0 ? 0 : -1;
   factors.push({
-    method: "四柱推命・日運", label: `「${flow.day.star.name}」の日`,
-    score: dScore, note: flow.day.star.day.split("。")[0] + "。",
+    method: "四柱推命・日運", label: `「${ds.name}」の日`,
+    score: dScore,
+    note: `「${ds.name}」は${ds.gloss}。今日は${ds.day}`,
   });
 
-  // 2. 四柱推命・月運
-  const mp = starPower(flow.month.star);
+  // 2. 四柱推命・月運(月全体に流れる気流の解説)
+  const ms = flow.month.star;
+  const mp = starPower(ms);
   const mScore = mp >= 1.2 ? 1 : mp >= 0 ? 0 : -1;
+  const monthDetail = ms.month.includes("— ") ? ms.month.split("— ")[1] : ms.month;
   factors.push({
-    method: "四柱推命・月運", label: `「${flow.month.star.name}」の月`,
-    score: mScore, note: mScore > 0 ? "月の基調も追い風です。" : mScore === 0 ? "月の基調は穏やか。" : "月の基調は充電寄りです。",
+    method: "四柱推命・月運", label: `「${ms.name}」の月`,
+    score: mScore,
+    note: `日ごとの運気の土台になる、月全体の気流です。今月は${monthDetail}`,
   });
 
   // 3. 干支の巡り(今日の日支 × 生まれ年支)
@@ -378,11 +383,11 @@ function dailyVerdict(birthdate) {
   const diff = ((JUNISHI.indexOf(todayBranch) - JUNISHI.indexOf(myBranch)) % 12 + 12) % 12;
   const isSango = SANGO_GROUPS.some((g) => g.includes(myBranch) && g.includes(todayBranch)) && myBranch !== todayBranch;
   const isShigou = SHIGOU_PAIRS.some(([a, b]) => (a === myBranch && b === todayBranch) || (b === myBranch && a === todayBranch));
-  let eScore = 0, eNote = "穏やかな巡り合わせです。";
-  if (isSango) { eScore = 2; eNote = `${myBranch}と${todayBranch}は「三合」。強力な援軍が巡る吉日です。`; }
-  else if (isShigou) { eScore = 2; eNote = `${myBranch}と${todayBranch}は「支合」。縁がまとまりやすい日です。`; }
-  else if (diff === 6) { eScore = -2; eNote = `${myBranch}と${todayBranch}は正反対の「冲」。予定変更や衝突が起きやすい日です。`; }
-  else if (diff === 0) { eScore = 1; eNote = "生まれ年と同じ気が巡る、自分らしくいられる日。"; }
+  let eScore = 0, eNote = `あなたの生まれ年(${myBranch})と今日の暦(${todayBranch})の十二支の相性です。今日は特別な引き合いも反発もない、ニュートラルな巡り。普段どおりの自分でいられる組み合わせです。`;
+  if (isSango) { eScore = 2; eNote = `${myBranch}と${todayBranch}は、十二支の中でも強く引き合う「三合」の関係。強力な援軍が巡る吉日で、人に頼ること・共同作業が驚くほどスムーズに進みます。`; }
+  else if (isShigou) { eScore = 2; eNote = `${myBranch}と${todayBranch}は、ぴたりと組み合う「支合」の関係。ご縁がまとまりやすい日で、約束・契約・仲直りに向いています。`; }
+  else if (diff === 6) { eScore = -2; eNote = `${myBranch}と${todayBranch}は十二支の正反対に位置する「冲(ちゅう)」の関係。予定変更や衝突が起きやすい日なので、大事な決断はずらし、確認をいつもより丁寧に。`; }
+  else if (diff === 0) { eScore = 1; eNote = `今日は生まれ年と同じ「${myBranch}」の気が巡る日。自分らしさが自然に出せる、ホームグラウンドのような一日です。`; }
   factors.push({ method: "干支の巡り", label: `${todayBranch}の日 × ${myBranch}年生まれ`, score: eScore, note: eNote });
 
   // 4. 月相
@@ -390,7 +395,10 @@ function dailyVerdict(birthdate) {
   const pScore = ["新月", "上弦の月", "満月"].includes(phase.name) ? 1 : waxing ? 0 : -1;
   factors.push({
     method: "月相", label: `${phase.emoji} ${phase.name}`,
-    score: pScore, note: waxing || phase.name === "満月" ? "月が満ちていく、始めることに向く時期。" : "月が欠けていく、整理と手放しに向く時期。",
+    score: pScore,
+    note: waxing || phase.name === "満月"
+      ? "月が満ちていく時期。新しく始める・育てる・人に会うことに、月のリズムが味方します。"
+      : "月が欠けていく時期。手放す・整理する・締めくくることが自然とうまくいくタイミング。焦って新しく始めるより、身軽になる準備を。",
   });
 
   const total = factors.reduce((a, f) => a + f.score, 0);
@@ -697,6 +705,59 @@ function horoscope(y, m, d, hourJST = 12, hasTime = false) {
   aspects.sort((x, y2) => x.orb - y2.orb);
 
   return { planets, aspects: aspects.slice(0, 7), hasTime };
+}
+
+/* ---------- アセンダント(上昇星座) ----------
+   出生時刻+出生地の緯度経度から、生まれた瞬間に東の地平線を昇っていた星座を求める。
+   GMST -> 地方恒星時 -> 標準のアセンダント公式(検証: 日の出時に太陽黄経と一致) */
+function ascendantSign(y, m, d, hourJST, lat, lon) {
+  const rad = Math.PI / 180;
+  const rev = (x) => ((x % 360) + 360) % 360;
+  const ut = hourJST - 9;
+  const a = Math.floor((14 - m) / 12), yy = y + 4800 - a, mm = m + 12 * a - 3;
+  const jdn = d + Math.floor((153 * mm + 2) / 5) + 365 * yy + Math.floor(yy / 4) - Math.floor(yy / 100) + Math.floor(yy / 400) - 32045;
+  const jd = jdn + (ut - 12) / 24;
+  const gmst = rev(280.46061837 + 360.98564736629 * (jd - 2451545.0));
+  const lst = rev(gmst + lon);
+  const eps = 23.4393;
+  const ascR = Math.atan2(
+    Math.cos(lst * rad),
+    -(Math.sin(lst * rad) * Math.cos(eps * rad) + Math.tan(lat * rad) * Math.sin(eps * rad))
+  );
+  const asc = rev(ascR / rad);
+  return { lon: asc, sign: SIGN_ORDER[Math.floor(asc / 30)], deg: Math.floor(asc % 30) };
+}
+
+/* ---------- 今日の空(トランジット) ----------
+   いま空にある天体と、あなたの出生図の対話を毎日読む。月は約2.5日で星座を移る */
+function skyToday(natalLons) {
+  const now = new Date();
+  const t = planetLongitudes(now.getFullYear(), now.getMonth() + 1, now.getDate(), 12);
+  const moonSign = SIGN_ORDER[Math.floor(t.moon / 30)];
+  const tm = new Date(now); tm.setDate(tm.getDate() + 1);
+  const t2 = planetLongitudes(tm.getFullYear(), tm.getMonth() + 1, tm.getDate(), 12);
+  const moonTomorrow = SIGN_ORDER[Math.floor(t2.moon / 30)];
+
+  const hits = [];
+  const transitKeys = ["moon", "sun", "venus", "mars", "jupiter", "saturn"];
+  const natalKeys = ["sun", "moon", "mercury", "venus", "mars"];
+  for (const tk of transitKeys) {
+    for (const nk of natalKeys) {
+      let diff = Math.abs(t[tk] - natalLons[nk]);
+      if (diff > 180) diff = 360 - diff;
+      for (const at of ASPECT_TYPES) {
+        const orb = Math.abs(diff - at.angle);
+        const maxOrb = tk === "moon" ? 4 : tk === "sun" ? 3 : 2.5;
+        if (orb <= maxOrb) hits.push({ t: tk, n: nk, type: at, orb });
+      }
+    }
+  }
+  hits.sort((a, b) => a.orb - b.orb);
+  return {
+    moonSign, moonTomorrow,
+    moonNote: MOON_TODAY_DESC[moonSign],
+    hits: hits.slice(0, 3),
+  };
 }
 
 /* ---------- ホロスコープ:テーマ別の「流れ」読み ----------

@@ -32,6 +32,7 @@
   --shadow-lift: 0 18px 44px rgba(28, 35, 51, 0.13);
   --serif: "Zen Old Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
   --num: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", -apple-system, sans-serif;
+  --num-display: "Cormorant Garamond", "Zen Old Mincho", serif; /* 大きな数字はセリフで格調高く */
   --latin: "Cormorant Garamond", "Zen Old Mincho", serif;
   --sans: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", -apple-system, sans-serif;
 }
@@ -271,9 +272,9 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   gap: 10px 16px; flex-wrap: wrap; margin-top: 20px;
 }
 .hs-num {
-  font-family: var(--num); font-size: 54px; font-weight: 900; line-height: 1;
-  color: var(--gold-bright);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--num-display); font-size: 62px; font-weight: 600; line-height: 1;
+  color: var(--gold-bright); letter-spacing: .01em;
+  font-variant-numeric: lining-nums;
 }
 .hs-denom { color: var(--muted); font-size: 15px; margin-left: -8px; }
 .hero-register-hint {
@@ -600,8 +601,8 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 
 .total-score { text-align: center; margin-bottom: 14px; }
 .total-score .num {
-  font-family: var(--num); font-size: 52px; font-weight: 900;
-  color: var(--gold-bright); font-variant-numeric: tabular-nums;
+  font-family: var(--num-display); font-size: 58px; font-weight: 600;
+  color: var(--gold-bright); font-variant-numeric: lining-nums;
 }
 .total-score .denom { color: var(--muted); font-size: 14px; }
 .stars { color: var(--gold); letter-spacing: 4px; font-size: 15px; }
@@ -648,8 +649,8 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .home-daily-sub { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
 .home-daily-right { display: flex; align-items: center; gap: 18px; }
 .home-daily-score {
-  font-family: var(--num); font-size: 28px; font-weight: 900; color: var(--gold-bright);
-  font-variant-numeric: tabular-nums;
+  font-family: var(--num-display); font-size: 34px; font-weight: 600; color: var(--gold-bright);
+  font-variant-numeric: lining-nums; line-height: 1;
 }
 .home-daily-score small { font-size: 12px; color: var(--muted); font-weight: 400; }
 
@@ -806,6 +807,14 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
   background: linear-gradient(90deg, transparent, rgba(217, 192, 138, 0.55), transparent);
   opacity: .6; transition: opacity .3s ease;
 }
+/* タップで即はじまる合図の矢印 */
+.spread-opt::after {
+  content: "→"; position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
+  font-family: var(--latin); font-size: 18px; color: var(--chamber-gold-bright);
+  opacity: .75; transition: transform .25s ease, opacity .25s ease;
+  text-shadow: 0 1px 8px rgba(10, 16, 38, 0.9);
+}
+.spread-opt:hover::after { transform: translate(4px, -50%); opacity: 1; }
 .spread-opt:hover { border-color: rgba(184, 154, 90, 0.45); filter: brightness(1.06); }
 .spread-opt.active {
   border-color: rgba(217, 192, 138, 0.75);
@@ -1304,6 +1313,31 @@ body.ritual-open { overflow: hidden; }
 .mypage-hero { margin-top: 12px; }
 .nav-btn-my { color: var(--gold-bright); }
 
+/* マイページ:占い結果と「記録」の区切り */
+.mypage-divider {
+  display: flex; align-items: center; justify-content: center; gap: 12px;
+  margin: 52px 4px 20px; text-align: center;
+}
+.mypage-divider::before, .mypage-divider::after {
+  content: ""; flex: 1; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--hairline));
+}
+.mypage-divider::after { background: linear-gradient(90deg, var(--hairline), transparent); }
+.mypage-divider .md-en {
+  font-family: var(--latin); font-size: 11px; font-weight: 600;
+  letter-spacing: .34em; color: var(--gold); text-transform: uppercase;
+}
+.mypage-divider .md-ja { font-family: var(--serif); font-size: 13.5px; letter-spacing: .12em; color: var(--muted); white-space: nowrap; }
+
+/* 記録カード:占い結果(白い鑑定カード)と区別した、平らな台帳スタイル */
+.result-card.archive-card {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(215, 207, 194, 0.8);
+  box-shadow: none;
+}
+.result-card.archive-card h4 { font-size: 12px; color: var(--muted); }
+.result-card.archive-card h4 .h4-ja { font-size: 16px; color: var(--ink); }
+
 /* ---------- 今日の結論 ---------- */
 .verdict-card { border-color: rgba(168, 132, 78, 0.45); background: linear-gradient(160deg, rgba(168, 132, 78, 0.06), var(--surface)); }
 .verdict-main { display: flex; align-items: center; gap: 24px; margin-bottom: 18px; flex-wrap: wrap; }
@@ -1425,7 +1459,7 @@ body.ritual-open { overflow: hidden; }
 
 /* ---------- 称号図鑑 ---------- */
 .col-count { font-size: 15.5px; color: var(--muted); }
-.col-count strong { font-family: var(--num); font-size: 22px; font-weight: 900; color: var(--gold-bright); }
+.col-count strong { font-family: var(--num-display); font-size: 26px; font-weight: 600; color: var(--gold-bright); }
 .col-grid {
   display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   gap: 10px;

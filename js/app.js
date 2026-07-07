@@ -742,7 +742,10 @@ function renderMypage() {
       </div>
     </div>
 
-      <div class="result-card span-all">
+    <div class="mypage-divider" role="separator"><span class="md-en">ARCHIVE</span><span class="md-ja">ここから下は、あなたの記録</span></div>
+
+    <div class="result-grid archive-grid">
+      <div class="result-card archive-card span-all">
         ${cardH4("COLLECTION", "称号図鑑")}
         ${(() => {
           addToCollection(fortuneTitle(p.birthdate).title, p.name || "あなた");
@@ -764,7 +767,7 @@ function renderMypage() {
         })()}
       </div>
 
-      <div class="result-card span-all app-card">
+      <div class="result-card archive-card span-all app-card">
         ${cardH4("APP", "ホーム画面に追加")}
         <p>MYOURISCOPEをホーム画面に追加すると、毎朝ワンタップで「今日の流れ」が開きます。</p>
         <div class="result-actions" style="margin-top:14px">
@@ -778,7 +781,7 @@ function renderMypage() {
         <p class="sub" style="margin-top:8px">機種変更や新しいドメインへの移行時に、称号図鑑・履歴・連続日数をそのまま持ち越せます。</p>
       </div>
 
-      <div class="result-card span-all">
+      <div class="result-card archive-card span-all">
         ${cardH4("HISTORY", "鑑定の記録")}
         ${(() => {
           const hist = loadHistory();
@@ -1241,6 +1244,21 @@ document.querySelectorAll("#western-theme [data-wtheme]").forEach((b) => {
   });
 });
 
+/* 出生地セレクトに47都道府県を流し込む */
+(function fillPlaceSelect() {
+  const sel = document.getElementById("western-place");
+  if (!sel) return;
+  PREF_GEO.forEach(([name], i) => {
+    const o = document.createElement("option");
+    o.value = i; o.textContent = name;
+    sel.appendChild(o);
+  });
+  try {
+    const saved = localStorage.getItem("fortuna:bp");
+    if (saved !== null && saved !== "") sel.value = saved;
+  } catch { /* noop */ }
+})();
+
 document.getElementById("western-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -1250,12 +1268,31 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   const moon = moonSign(y, m, d);
   const daily = dailyFortune(birthdate);
   const hasTime = fd.get("bh") !== "" && fd.get("bh") !== null;
-  const horo = horoscope(y, m, d, hasTime ? Number(fd.get("bh")) + Number(fd.get("bm") || 0) / 60 : 12, hasTime);
+  const birthHour = hasTime ? Number(fd.get("bh")) + Number(fd.get("bm") || 0) / 60 : 12;
+  const horo = horoscope(y, m, d, birthHour, hasTime);
   const horoMoonSign = horo.planets.find((p) => p.key === "moon").sign;
   const flow = horoscopeFlow(y, m, d, westernTheme);
   const themeReading = horoscopeTheme(horo, westernTheme);
   const themeLabel = WESTERN_THEME_LABEL[westernTheme];
   const yearly = horoscopeYear(y, m, d);
+
+  // 出生地 × 出生時刻 → アセンダント(上昇星座)
+  const bp = fd.get("bp");
+  try { localStorage.setItem("fortuna:bp", bp ?? ""); } catch { /* noop */ }
+  const place = bp !== null && bp !== "" ? PREF_GEO[Number(bp)] : null;
+  const asc = hasTime && place ? ascendantSign(y, m, d, birthHour, place[1], place[2]) : null;
+
+  // 今日の空(トランジット)— ここは毎日変わる
+  const sky = skyToday(Object.fromEntries(horo.planets.map((pl) => [pl.key, pl.lon])));
+  const now = new Date();
+  const planetJa = (k) => PLANET_BODIES.find((b) => b.key === k);
+  const toneText = { soft: "やさしい追い風を送っています。この組み合わせの事柄が、するすると進む日", hard: "少し緊張を生んでいます。ここを扱うときはひと呼吸おいて。丁寧に越えれば力になる日", hard0: "ぴたりと重なり、このテーマを強く照らしています。意識がそこへ向かう日" };
+  const skyHits = sky.hits.length
+    ? sky.hits.map((h) => {
+        const tp = planetJa(h.t), np = planetJa(h.n);
+        return `<p class="theme-point">${tp.glyph}︎ <strong>今日の${tp.ja}</strong> × あなたの${np.glyph}︎ ${np.ja}(${np.role}) — ${toneText[h.type.tone]}です。</p>`;
+      }).join("")
+    : '<p class="theme-point">今日はあなたの出生図に強く触れる角度のない、静かな空。ニュートラルに過ごせる日です。</p>';
 
   const moonName = hasTime ? horoMoonSign.name : moon.name;
   lastShare.western = {
@@ -1279,10 +1316,17 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         <span class="chip">エレメント <strong>${z.element}</strong></span>
         <span class="chip">守護星 <strong>${z.planet}</strong></span>
         <span class="chip">月星座 <strong>${moonName}</strong></span>
+        ${asc ? `<span class="chip">上昇星座 <strong>${asc.sign}</strong></span>` : ""}
       </div>
       ${shareRowHtml("western")}
     </div>
     <div class="result-grid">
+      <div class="result-card span-all">
+        ${cardH4("TODAY'S SKY", `今日の空 — ${now.getMonth() + 1}月${now.getDate()}日`)}
+        <p><strong style="color:var(--gold-bright)">☽︎ 月は${sky.moonSign}に</strong> — ${sky.moonNote}。</p>
+        <div style="margin-top:8px">${skyHits}</div>
+        <p class="sub" style="margin-top:12px">${sky.moonTomorrow !== sky.moonSign ? `月は明日、${sky.moonTomorrow}へ移ります。空の気分もそこで切り替わります。` : `月はもうしばらく${sky.moonSign}に滞在します。`}空は毎日動いているので、この欄は来るたびに変わります。</p>
+      </div>
       <div class="result-card">
         ${cardH4("SUN SIGN", "外に向かうあなた")}
         <p>${z.trait}</p>
@@ -1293,6 +1337,16 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         <p style="margin-top:12px">${sunMoonBlend(z, ZODIAC.find((zz) => zz.name === moonName))}</p>
         <p class="sub" style="margin-top:12px">${hasTime ? "※ 出生時刻をもとに計算しています。" : "※ 月は約2.5日で星座を移動します。出生時刻を入れると精度が上がります。"}</p>
       </div>
+      ${asc ? `
+      <div class="result-card">
+        ${cardH4("RISING", "纏う雰囲気(上昇星座)")}
+        <p><strong style="color:var(--gold-bright)">↑ ${asc.sign}(${asc.deg}°)</strong> — ${ASCENDANT_DESC[asc.sign]}。</p>
+        <p class="sub" style="margin-top:12px">上昇星座(アセンダント)は、生まれた瞬間に東の地平線から昇っていた星座。出生時刻と出生地(${place[0]})から計算した、あなたの「第一印象」と「人生の入り口」です。</p>
+      </div>` : `
+      <div class="result-card">
+        ${cardH4("RISING", "纏う雰囲気(上昇星座)")}
+        <p class="sub">出生時刻と出生地の両方を入れると、ここに「上昇星座(アセンダント)」— あなたが人に与える第一印象と人生の入り口 — が表示されます。母子手帳に出生時刻が載っていることが多いですよ。</p>
+      </div>`}
       <div class="result-card span-all flow-card">
         ${cardH4("YOUR FLOW", `${themeLabel}の流れ — 5年周期で読む`)}
         <div class="flow-line">
@@ -1435,6 +1489,18 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
         ${cardH4("NINE STARS", "本命星の気質")}
         <p><strong style="color:var(--gold-bright)">${kyusei.name}(五行は${kyusei.element})</strong></p>
         <p style="margin-top:8px">${kyusei.trait}</p>
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("TODAY", `今日の気流 — ${now.getMonth() + 1}月${now.getDate()}日`)}
+        ${logicFlowHtml([
+          { tag: "あなたの日主", main: flow.myKan, sub: flow.nikkan.symbol },
+          "×",
+          { tag: "今日の干支", main: flow.day.pillar.kan + flow.day.pillar.shi, sub: "日替わり" },
+          "=",
+          { tag: "今日の気流", main: flow.day.star.name, sub: "", result: true },
+        ])}
+        <p style="margin-top:10px">「${flow.day.star.name}」は${flow.day.star.gloss}。今日は${flow.day.star.day}</p>
+        <p class="sub" style="margin-top:12px">日運は毎日変わります。ここは来るたびに違う風が吹く場所 — 朝いちばんの羅針盤にどうぞ。</p>
       </div>
       <div class="result-card span-all">
         ${cardH4("THIS MONTH", "今月と今年の気流")}
@@ -1626,11 +1692,18 @@ function renderAsk() {
     <div class="ritual-step panel" style="max-width:760px">
       <p class="ritual-eyebrow">STEP 1 — QUESTION</p>
       <h3 class="ritual-title">なにを知りたいですか?</h3>
+      <div class="genre-row">
+        <span class="genre-label">問いのジャンル</span>
+        <div class="seg">${TAROT_GENRES.map(([k, l]) => `<button class="seg-btn ${k === ritual.genre ? "active" : ""}" data-genre="${k}">${l}</button>`).join("")}</div>
+      </div>
+      <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
+        placeholder="問いを言葉に(任意)" value="" />
+      <p class="ritual-hint" style="margin:14px 0 12px">知りたいことを選ぶと、そのまま儀式がはじまります</p>
       <div class="spread-picker">
         ${Object.entries(RITUAL_SPREADS).map(([key, s]) => {
           const pips = Array.from({ length: s.count }, () => "<i></i>").join("");
           return `
-          <button class="spread-opt ${key === ritual.spread ? "active" : ""} ${s.deep ? "spread-deep" : ""}" data-spread="${key}" ${key === "daily" && dailyDone ? 'data-done="1"' : ""}>
+          <button class="spread-opt ${s.deep ? "spread-deep" : ""}" data-spread="${key}" ${key === "daily" && dailyDone ? 'data-done="1"' : ""}>
             <span class="so-purpose">${s.purpose}</span>
             <span class="so-meta">
               <em class="so-name">${s.label}</em>
@@ -1639,24 +1712,24 @@ function renderAsk() {
               ${s.deep ? '<span class="so-tag">DEEP</span>' : ""}
             </span>
             ${s.deep ? `<span class="so-desc">${s.desc}</span>` : ""}
-            ${key === "daily" && dailyDone ? '<span class="so-desc">本日分は引きました — 結果を見る</span>' : ""}
+            ${key === "daily" && dailyDone ? '<span class="so-desc">本日分は引きました — タップで結果を見る</span>' : ""}
           </button>`;
         }).join("")}
       </div>
-      <div class="genre-row">
-        <span class="genre-label">問いのジャンル</span>
-        <div class="seg">${TAROT_GENRES.map(([k, l]) => `<button class="seg-btn ${k === ritual.genre ? "active" : ""}" data-genre="${k}">${l}</button>`).join("")}</div>
-      </div>
-      <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
-        placeholder="問いを言葉に(任意)" value="" />
       <p class="form-note">78枚のフルデッキで占います。問いはこの端末にのみ保存されます。</p>
-      <button class="btn btn-primary btn-lg btn-block" id="ritual-start" style="margin-top:14px">儀式をはじめる</button>
     </div>`;
 
+  /* カードをタップ = 選択して、そのまま儀式へ(1工程) */
   tarotStage.querySelectorAll(".spread-opt").forEach((b) => {
     b.addEventListener("click", () => {
       ritual.spread = b.dataset.spread;
       tarotStage.querySelectorAll(".spread-opt").forEach((x) => x.classList.toggle("active", x === b));
+      ritual.question = document.getElementById("tarot-question").value.trim();
+      try { localStorage.setItem(QUESTION_KEY, ritual.question); } catch { /* noop */ }
+      ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
+      if (ritual.spread === "daily" && loadDailyCard()) { restoreDaily(); return; }
+      vibrate(15);
+      setTimeout(() => { openChamber(); renderShuffle(); }, 200); // 選択の発光を見せてから扉を開く
     });
   });
   tarotStage.querySelectorAll("[data-genre]").forEach((b) => {
@@ -1664,14 +1737,6 @@ function renderAsk() {
       ritual.genre = b.dataset.genre;
       tarotStage.querySelectorAll("[data-genre]").forEach((x) => x.classList.toggle("active", x === b));
     });
-  });
-  document.getElementById("ritual-start").addEventListener("click", () => {
-    ritual.question = document.getElementById("tarot-question").value.trim();
-    try { localStorage.setItem(QUESTION_KEY, ritual.question); } catch { /* noop */ }
-    ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
-    if (ritual.spread === "daily" && loadDailyCard()) { restoreDaily(); return; }
-    openChamber();
-    renderShuffle();
   });
 }
 
@@ -2344,6 +2409,19 @@ function renderInviteBanner() {
       <button class="btn btn-primary" data-nav="integrated">自分の称号を知る</button>
     </div>`;
 }
+
+/* ---------- トップのタロットコピー(毎回ランダム) ---------- */
+(function rotateTarotCopy() {
+  const el = document.getElementById("tarot-bento-copy");
+  if (!el) return;
+  const copies = [
+    "カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。",
+    "言葉にできない迷いは、カードに聞く。あなたの手で引いた1枚だから、意味があります。",
+    "決められない夜に、深呼吸して1枚。78枚のフルデッキが、いまの答えをくれます。",
+    "シャッフルするその指先が、運命の1枚を選びます。答えは、もう78枚の中に。",
+  ];
+  el.textContent = copies[Math.floor(Math.random() * copies.length)];
+})();
 
 /* ---------- 初期化 ---------- */
 prefillForms(loadProfile());

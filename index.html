@@ -82,7 +82,7 @@
         <button class="bento-card bento-main bento-art" data-nav="tarot" style="--hue:#A8844E">
           <span class="bento-tag">いちばん人気</span>
           <h3>タロット</h3>
-          <p>シャッフルも、引くのも、あなたの手。78枚のフルデッキが答えます。</p>
+          <p id="tarot-bento-copy">カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。</p>
           <span class="bento-link">今日の一枚を引く</span>
         </button>
         <button class="bento-card" data-nav="western" style="--hue:#6D5FC9">
@@ -174,6 +174,10 @@
               <button type="button" class="seg-btn" data-wtheme="work">仕事</button>
               <button type="button" class="seg-btn" data-wtheme="love">恋愛</button>
             </div>
+          </label>
+          <label class="field">
+            <span class="field-label">出生地(任意・上昇星座がわかります)</span>
+            <select name="bp" id="western-place"><option value="">不明・海外</option></select>
           </label>
           <label class="field">
             <span class="field-label">出生時刻(任意・精度が上がります)</span>
