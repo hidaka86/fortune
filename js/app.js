@@ -413,9 +413,15 @@ function renderHomeDaily() {
 
 /* ---------- 今日の占い(朝の羅針盤:結論=マインドは最後に) ---------- */
 function mindForToday(verdict, card, daily) {
-  const rng = seededRng(`${todayKey()}|mind|${loadProfile()?.birthdate || ""}`);
-  const words = MIND_WORDS[verdict.rank] || MIND_WORDS["平"];
-  const word = words[Math.floor(rng() * words.length)];
+  // その日いちばん強いテーマ(恋愛/仕事/金運/健康)
+  const top = Object.entries(daily.scores).sort((a, b) => b[1] - a[1])[0];
+  const set = MIND_WORDS[verdict.rank] || MIND_WORDS["平"];
+  // ベース6種+トップテーマの言葉(重み2倍)をプールに
+  const pool = [...set.base];
+  if (top && set[top[0]]) pool.push(set[top[0]], set[top[0]]);
+  // カード・トップテーマまでシードに含める:結果が違えば言葉も変わる
+  const rng = seededRng(`${todayKey()}|mind|${loadProfile()?.birthdate || ""}|${card ? card.n + (card.reversed ? "r" : "") : "x"}|${top ? top[0] : ""}`);
+  const word = pool[Math.floor(rng() * pool.length)];
   const points = [
     { k: "暦から", v: daily.dayStar.day.split("。")[0] + "。" },
     ...(card ? [{ k: "カードから", v: card.advice }] : []),
