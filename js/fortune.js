@@ -507,37 +507,30 @@ function compatibilityReading(p1, p2) {
   return { a, b, zodiac, gogyo, eto, bond, total, band, advice };
 }
 
-/* 相性: あなたから見た相手/相手から見たあなた(五行の向きで読む) */
+/* 相性: あなたから見た相手/相手から見たあなた ----------
+   骨格 = 九星の五行の向き(5関係)、味付け = 日主の通変星(10種)。
+   ラベルは 5×10=50 種、スコアも絆の質でわずかに揺れる */
 function perspectiveCompat(me, other, meName, otherName) {
   const em = me.kyusei.element, eo = other.kyusei.element;
-  if (GOGYO_RELATION[eo]?.boosts === em) return {
-    score: 90, label: "支えてもらえる相手",
-    note: `${otherName}の「${eo}」の気が、${meName}の「${em}」を自然に育ててくれます。そばにいるだけで充電できる関係です。`,
-  };
-  if (GOGYO_RELATION[em]?.boosts === eo) return {
-    score: 80, label: "つい尽くしたくなる相手",
-    note: `${meName}の気が${otherName}を育てる巡り。与える喜びが大きい関係です。自分の充電も忘れずに。`,
-  };
-  if (em === eo) {
-    // 同じ五行でも、視点ごとに星座エレメントで書き分ける
-    const zm = me.zodiac.element, zo = other.zodiac.element;
-    if (zm === zo) return {
-      score: 84, label: "以心伝心の同志",
-      note: `五行も星座の気質も同じ。${meName}にとって${otherName}は、言葉にしなくても通じ合える鏡のような存在です。`,
-    };
-    return {
-      score: 78, label: "似た者同士の好相性",
-      note: `同じ「${em}」の気を持ちつつ、${otherName}は星座では「${zo}」の質。${meName}から見ると、根っこは同じなのに違う景色を見せてくれる相手です。`,
-    };
+  const star = tsuhensei(me.kan, other.kan).name; // 私から見た相手の通変星
+  const finish = (relation, base, note) => ({
+    score: Math.max(50, Math.min(95, base + Math.round((AISHO_BOND[star].score - 76) / 4))),
+    label: PERSPECTIVE_LABELS[relation][star],
+    note: `${note} ${PERSPECTIVE_NUANCE[star]}`,
+  });
+  if (GOGYO_RELATION[eo]?.boosts === em) {
+    return finish("boosted", 90, `${otherName}の「${eo}」の気が、${meName}の「${em}」を自然に育ててくれます。そばにいるだけで充電できる巡りです。`);
   }
-  if (GOGYO_KOKU[eo] === em) return {
-    score: 62, label: "あなたを鍛えてくれる相手",
-    note: `${otherName}の「${eo}」は${meName}の「${em}」に負荷をかける巡り。ぶつかった分だけ、あなたを強くしてくれる存在です。`,
-  };
-  return {
-    score: 68, label: "あなたがリードする相手",
-    note: `${meName}の「${em}」が主導権を握る巡り。引っ張る場面が多い分、相手の歩幅への気配りが絆を深めます。`,
-  };
+  if (GOGYO_RELATION[em]?.boosts === eo) {
+    return finish("giving", 80, `${meName}の気が${otherName}を育てる巡り。与える喜びが大きい関係です。自分の充電も忘れずに。`);
+  }
+  if (em === eo) {
+    return finish("same", 80, `どちらも「${em}」の気を持つ比和の巡り。根っこのリズムが似ていて、一緒にいて疲れないふたりです。`);
+  }
+  if (GOGYO_KOKU[eo] === em) {
+    return finish("taxed", 62, `${otherName}の「${eo}」は${meName}の「${em}」に負荷をかける巡り。ぶつかった分だけ、あなたを強くしてくれる存在です。`);
+  }
+  return finish("leading", 68, `${meName}の「${em}」が主導権を握る巡り。引っ張る場面が多い分、相手の歩幅への気配りが絆を深めます。`);
 }
 
 /* ふたりの取扱説明書: 遊び方・ケンカの火種・ふたりの吉日 */
