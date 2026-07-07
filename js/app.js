@@ -2468,15 +2468,35 @@ function renderInviteBanner() {
 
 /* ---------- 読みもの(占いの手引き) ---------- */
 const GUIDE_ARTICLES = {
-  tarot: { icon: "🂠", title: "タロットとは", lead: "78枚のカードが映す、大きな物語と日常の機微。大アルカナ・小アルカナ・スプレッドのすべて。" },
-  western: { icon: "☉", title: "ホロスコープとは", lead: "生まれた瞬間の空の写真から、いま動いている空まで。10天体と星座の読み方。" },
-  eastern: { icon: "干", title: "四柱推命と九星気学とは", lead: "生年月日は4本の柱でできている。日主・通変星・本命星——東洋の暦の仕組み。" },
-  aisho: { icon: "縁", title: "相性診断のしくみ", lead: "なぜ「あなたから」と「相手から」で答えが違うのか。4つの層の重ね方。" },
-  about: { icon: "◉", title: "MYOURISCOPEの思想", lead: "占いは、決定ではなく観測。このサイトが大切にしていること、統合鑑定のロジック。" },
+  tarot: { img: "images/tarot/tarot_17_star.webp", title: "タロットとは", lead: "引いた1枚で「いまの空気」がわかる。78枚の意味と、迷わない引き方。", mins: 4 },
+  western: { img: "assets/site/icon_western.webp", title: "ホロスコープとは", lead: "生年月日で「自分の設計図」がわかる。星座占いのその先へ。", mins: 4 },
+  eastern: { img: "assets/site/icon_eastern.webp", title: "<span class=\"nw\">四柱推命と</span><span class=\"nw\">九星気学とは</span>", lead: "生年月日だけで「自分の性質と今日の風向き」がわかる。東洋占い、最初の一歩。", mins: 4 },
+  aisho: { img: "assets/site/icon_aisho.webp", title: "相性診断のしくみ", lead: "なぜ「あなたから」と「相手から」で答えが違うのか。点数の中身、ぜんぶ見せます。", mins: 3 },
+  about: { img: "assets/site/icon_integrated.webp", title: "MYOURISCOPEの思想", lead: "占いは、決定ではなく観測。このサイトが大切にしていることと、鑑定のロジック。", mins: 3 },
 };
 
 function guideCardImg(n, cap) {
   return `<figure class="ga-fig"><img src="${tarotImg(n)}" alt="${cap}" loading="lazy" /><figcaption>${cap}</figcaption></figure>`;
+}
+
+/* アスペクトの小さな図解(円+2天体+角度線) */
+function aspectFig(deg, label, color, note) {
+  const rad = (deg - 90) * Math.PI / 180;
+  const x2 = 40 + 30 * Math.cos(rad), y2 = 40 + 30 * Math.sin(rad);
+  const line = deg === 0 ? "" : `<line x1="40" y1="10" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${color}" stroke-width="1.6" />`;
+  const second = deg === 0
+    ? '<circle cx="46" cy="12" r="4.5" fill="#1C2333" />'
+    : `<circle cx="${x2.toFixed(1)}" cy="${y2.toFixed(1)}" r="4.5" fill="#1C2333" />`;
+  return `
+    <figure class="ga-asp">
+      <svg viewBox="0 0 80 80" aria-hidden="true">
+        <circle cx="40" cy="40" r="30" fill="none" stroke="#D7CFC2" stroke-width="1" />
+        ${line}
+        <circle cx="40" cy="10" r="4.5" fill="#A8844E" />
+        ${second}
+      </svg>
+      <figcaption><strong>${label}</strong><br>${note}</figcaption>
+    </figure>`;
 }
 
 function guideArticleHtml(key) {
@@ -2503,63 +2523,80 @@ function guideArticleHtml(key) {
       <h3>正位置と逆位置</h3>
       <p>引いたカードが上向きなら<strong>正位置</strong>、逆さまなら<strong>逆位置</strong>。逆位置は「悪い意味」ではなく、そのカードの力が<em>過剰・不足・内向き</em>になっている状態を示します。たとえば「太陽」の逆位置は、輝きが消えたのではなく「曇りがかかっている」と読みます。</p>
       <h3>スプレッド — 並べ方が問いを決める</h3>
-      <p>カードを何枚・どの配置で引くかを「スプレッド」と呼びます。MYOURISCOPEでは3つを用意しています。</p>
+      <p>カードを何枚・どの配置で引くかを「スプレッド」と呼びます。MYOURISCOPEでは、知りたいことに合わせて選べます。</p>
       <ul class="ga-list">
-        <li><strong>今日の一枚(1枚)</strong> — 今日という日の空気をひとことで。毎日の羅針盤に。</li>
+        <li><strong>今日の一枚</strong> — 今日という日の空気をひとことで。1日1回だけ、トップページから。</li>
+        <li><strong>ワンオラクル(1枚)</strong> — 目の前の迷いをひとつ、カードに即答してもらう引き方。</li>
         <li><strong>3枚引き</strong> — 過去・現在・未来。流れの中のいまを知りたいときに。</li>
         <li><strong>ケルト十字(10枚)</strong> — 根本原因・現状・無意識・周囲・未来の可能性まで、ひとつのテーマを多角的に。100年以上使われてきた、もっとも有名な本格スプレッドです。</li>
       </ul>
+      <p class="ga-mid"><button class="linklike" data-nav="today">→ まずは「今日の一枚」を引いてみる(30秒で終わります)</button></p>
       <h3>このサイトの引き方 — 結果を決めるのは、あなたの手</h3>
-      <p>MYOURISCOPEのタロットは、乱数を機械任せにしません。<strong>シャッフルで指を離した瞬間の時刻、カットで選んだ山、カードの帯から引いた位置</strong>——あなたの手の動きそのものが混ざって1枚が決まります。同じ問いでも、同じ手つきは二度とない。だから、その1枚はあなたのものです。</p>
+      <p>MYOURISCOPEのタロットは、乱数を機械任せにしません。<strong>シャッフルで指を離した瞬間、カットで選んだ山、帯から引いた位置</strong>——あなたの手の動きそのものが混ざって1枚が決まります。同じ問いでも、同じ手つきは二度とない。だから、その1枚はあなたのものです。</p>
       <p class="ga-cta"><button class="btn btn-primary" data-nav="tarot">タロットを引いてみる</button></p>`;
   }
   if (key === "western") {
-    const planets = PLANET_BODIES.map((b) => `<li><strong>${b.glyph}︎ ${b.ja}</strong> — ${b.role}${b.gen ? "(世代のテーマ)" : ""}</li>`).join("");
+    const planets = PLANET_BODIES.map((b) => `<li><strong>${b.glyph}︎ ${b.ja}</strong><small>${b.role}${b.gen ? "(世代のテーマ)" : ""}</small></li>`).join("");
     return `
       <h3>ホロスコープは「生まれた瞬間の空の写真」</h3>
       <p>あなたが生まれたその時刻、太陽・月・惑星が空のどこにいたか——それを一枚の円に描いたものが<strong>出生図(ネイタルチャート)</strong>です。星占いでおなじみの「◯◯座」は、このうち太陽の位置だけを見たもの。実際の空にはあと9つの天体があり、それぞれが人生の別の領域を担当しています。</p>
       <h3>10天体 — それぞれの担当</h3>
-      <ul class="ga-list">${planets}</ul>
+      <ul class="ga-planets">${planets}</ul>
       <h3>12星座と4つのエレメント</h3>
       <p>12星座は4つの気質(エレメント)に分かれます。<strong>火</strong>(牡羊・獅子・射手)は直感と情熱、<strong>地</strong>(牡牛・乙女・山羊)は現実と着実さ、<strong>風</strong>(双子・天秤・水瓶)は知性と言葉、<strong>水</strong>(蟹・蠍・魚)は感情と共感。たとえば「月が水のサイン」なら、素の感情は共感型——という具合に、天体×星座の掛け算で読みます。</p>
       <h3>アスペクト — 天体同士の会話</h3>
-      <p>チャートの中で天体同士が特定の角度を結ぶと、互いに影響し合います。0°(重なり)は強調、120°(トライン)は生まれつきの才能、90°(スクエア)は乗り越えるたび力になる摩擦。出生図のアスペクトは、あなたの中の「よく起きる化学反応」の一覧です。</p>
+      <p>チャートの中で天体同士が特定の角度を結ぶと、互いに影響し合います。出生図のアスペクトは、あなたの中で「よく起きる化学反応」の一覧です。</p>
+      <div class="ga-asps">
+        ${aspectFig(0, "0° 重なり", "#A8844E", "性質を強め合う")}
+        ${aspectFig(120, "120° トライン", "#2E8C7E", "生まれつきの才能")}
+        ${aspectFig(90, "90° スクエア", "#C05C82", "越えるたび力になる")}
+      </div>
+      <p class="ga-mid"><button class="linklike" data-nav="western">→ 自分の10天体とアスペクトを見てみる</button></p>
       <h3>アセンダント — 出生時刻と出生地でわかること</h3>
       <p>生まれた瞬間に東の地平線から昇っていた星座を<strong>アセンダント(上昇星座)</strong>と呼びます。これは「人に与える第一印象」と「人生の入り口」。地平線は場所によって違うため、<em>出生時刻と出生地の両方</em>があってはじめて計算できます。母子手帳に出生時刻が載っていることが多いですよ。</p>
       <h3>動き続ける空 — トランジット</h3>
-      <p>出生図が「生まれ持った設計図」なら、いまの空(トランジット)は「今日の天気」。月は約2.5日でつぎの星座へ移り、木星は約12年、土星は約29.5年で空を一周します。MYOURISCOPEの「今日の空」は今日の天体とあなたの出生図の対話を、「5年周期の流れ」は土星がつくる約7年ごとの章を読んでいます。</p>
+      <p>出生図が「生まれ持った設計図」なら、いまの空(トランジット)は「今日の天気」。月は約2.5日でつぎの星座へ移り、木星は約12年、土星は約29.5年で空を一周します。ホロスコープ鑑定の「今日の空」は、今日の天体とあなたの出生図の対話を毎日読んでいます。</p>
+      <p>そしてゆっくり動く土星は、約7年ごとに人生の節目を刻みます。鑑定結果の<strong>「5年周期で読む流れ」</strong>はこの土星のリズムから"人生のいまの章"を読むもの。転職や引っ越しなど、大きな流れを知りたいときに向いています。</p>
       <p class="ga-cta"><button class="btn btn-primary" data-nav="western">自分の星を調べる</button></p>`;
   }
   if (key === "eastern") {
-    const stars = Object.entries(TSUHENSEI).map(([name, t]) => `<li><strong>${name}</strong> — ${t.gloss}</li>`).join("");
+    const stars = Object.entries(TSUHENSEI).map(([name, t]) => `<li><strong>${name}</strong><small>${t.gloss}</small></li>`).join("");
     return `
       <h3>生年月日は、4本の柱でできている</h3>
-      <p>四柱推命は、生まれた<strong>年・月・日・時</strong>それぞれに干支(十干×十二支)を割り当て、4本の柱として読む東洋占術の王様です。名前の「四柱」はこの4本のこと。なかでも重要なのが<strong>日柱の干=日主(にっしゅ)</strong>で、これがあなた自身を表します。</p>
+      <p>四柱推命は、生まれた<strong>年・月・日・時</strong>それぞれに干支(十干×十二支)を割り当て、4本の柱として読む東洋占術の王様です。この4本の柱を一覧にした"あなたの取扱説明書"を<strong>命式(めいしき)</strong>と呼びます。なかでも重要なのが<strong>日柱の干=日主(にっしゅ)</strong>で、これがあなた自身を表します。</p>
       <h3>十干 — あなたは自然界のなにか</h3>
       <p>日主は10種類。それぞれ自然のものにたとえられます。大樹(甲)・草花(乙)・太陽(丙)・灯火(丁)・山岳(戊)・田畑(己)・鋼鉄(庚)・宝石(辛)・大河(壬)・雨露(癸)。「太陽の人」と「灯火の人」では、同じ火でも輝き方がまるで違う——そんな解像度で人を観る道具です。</p>
       <h3>通変星 — 巡ってくる10種類の風</h3>
       <p>あなたの日主と、その日・その月にめぐる干支の関係を読んだものが<strong>通変星(つうへんせい)</strong>です。同じ日でも、日主が違えば吹く風が違う——これが「今日の気流」の正体です。</p>
-      <ul class="ga-list">${stars}</ul>
+      <p>10種類ありますが、<strong>全部覚える必要はありません。あなたの結果に出た星だけ読めばOK</strong>です。ざっくり4タイプ——<strong>自分を貫く風</strong>(比肩・劫財)、<strong>楽しみと表現の風</strong>(食神・傷官)、<strong>お金とご縁の風</strong>(偏財・正財)、<strong>試練と学びの風</strong>(偏官・正官・偏印・印綬)。</p>
+      <details class="explain"><summary>10種類ぜんぶ見る</summary>
+        <ul class="ga-stars">${stars}</ul>
+      </details>
+      <p class="ga-mid"><button class="linklike" data-nav="eastern">→ 自分の日主と今日の風を見てみる</button></p>
       <h3>日運・月運・年運の重なり</h3>
       <p>日ごとの風(日運)は、月全体の気流(月運)の上に吹き、さらにその下には年の地形(年運)があります。MYOURISCOPEの「今日の結論」は、この重なりに干支の巡り(三合・支合・冲)と月の満ち欠けを加えて、複数の暦の「票」として集計しています。</p>
       <h3>九星気学 — もうひとつの東洋の羅針盤</h3>
       <p>生まれ年から定まる<strong>本命星</strong>(一白水星〜九紫火星の9種)で気質と巡りを読むのが九星気学。9つの星は五行(木火土金水)に対応し、毎月方位盤の上を巡るため「吉方位」が出せるのが特徴です。マイページの方位盤はこの仕組みで動いています。</p>
-      <p class="ga-cta"><button class="btn btn-primary" data-nav="eastern">自分の命式を観る</button></p>`;
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="eastern">生年月日から、自分の命式を出してみる</button></p>`;
   }
   if (key === "aisho") {
     return `
       <h3>相性は、ひとつの物差しでは測れない</h3>
       <p>MYOURISCOPEの相性診断は、独立した4つの手法を重ねて総合スコアを出します。ひとつの占術だけだと「たまたま良い/悪い」が出やすい——複数の物差しで測って、それでも揃うところにふたりの本質が現れる、という設計です。</p>
+      <div class="ga-weightbar" aria-hidden="true">
+        <i style="flex-basis:30%" class="wb1"><b>30%</b></i><i style="flex-basis:25%" class="wb2"><b>25%</b></i><i style="flex-basis:25%" class="wb3"><b>25%</b></i><i style="flex-basis:20%" class="wb4"><b>20%</b></i>
+      </div>
       <ul class="ga-list">
-        <li><strong>星座エレメント(30%)</strong> — 火・地・風・水の気質の噛み合わせ。日々のノリとテンポの相性。</li>
-        <li><strong>九星の五行(25%)</strong> — 木火土金水の相生・相剋。エネルギーがどちらに流れるか。</li>
-        <li><strong>干支の配置(25%)</strong> — 生まれ年の十二支の角度。三合・支合は引き合い、冲は正反対。</li>
-        <li><strong>日主の対話(20%)</strong> — 生まれた「日」の十干同士の通変星。同学年でも生まれ日で変わる、いちばん個人的な層。</li>
+        <li><strong>ノリとテンポの相性(30%)</strong> — 星座のエレメント(火・地・風・水)。日々の会話や遊びの噛み合わせを見ます。</li>
+        <li><strong>エネルギーの流れ(25%)</strong> — 九星の五行。どちらがどちらを元気にする関係かを見ます(専門的には相生・相剋)。</li>
+        <li><strong>生まれ年の巡り(25%)</strong> — 十二支の組み合わせ。自然と引き合う組か、正反対の組か(専門的には三合・支合・冲)。</li>
+        <li><strong>絆の質(20%)</strong> — 生まれた「日」同士の対話。同学年でも生まれ日で変わる、いちばん個人的な層です。</li>
       </ul>
       <h3>なぜ「あなたから」と「相手から」で答えが違うのか</h3>
-      <p>五行の気は<em>向き</em>を持って流れます。水は木を育てますが、木が水を育てるわけではない——だから「あなたにとって相手は充電させてくれる人」なのに「相手にとってあなたは頑張らせてくる人」という非対称が生まれます。この見え方は5つの関係×10の通変星で<strong>50通り</strong>。ふたりで見せ合うと、たいてい会話が始まります。</p>
+      <p>五行の気は<em>向き</em>を持って流れます。水は木を育てますが、木が水を育てるわけではない——だから「あなたにとって相手は充電させてくれる人」なのに「相手にとってあなたは頑張らせてくる人」という非対称が生まれます。この見え方は5つの関係×10の星で<strong>50通り</strong>。ふたりで見せ合うと、たいてい会話が始まります。</p>
+      <p class="ga-mid"><button class="linklike" data-nav="aisho">→ 気になるあの人と、さっそく診断してみる</button></p>
       <h3>ふたりの吉日</h3>
-      <p>向こう30日の暦を実際にめくり、その日の十二支がふたりの生まれ年と「三合」や「支合」を結ぶ日を探しています。占いを「いつ会うか」の実用に落とすための機能です。</p>
+      <p>向こう30日の暦を実際にめくり、その日の十二支がふたりの生まれ年と良い角度を結ぶ日を探しています。占いを「いつ会うか」の実用に落とすための機能です。</p>
       <h3>ケンカの火種</h3>
       <p>4つの層のうち<em>いちばん点が低かった層</em>から、起こりやすいすれ違いと回避策を出しています。良いところだけでなく弱点も言う——それが信用できる相性診断だと考えています。</p>
       <p class="ga-cta"><button class="btn btn-primary" data-nav="aisho">誰かと診断してみる</button></p>`;
@@ -2574,7 +2611,7 @@ function guideArticleHtml(key) {
       <li><strong>1日1回の楽しみを守る</strong> — 今日の一枚は1日1回だけ。何度も引き直せたら、その1枚の意味が薄れてしまうから。</li>
       <li><strong>結果のネタバレをしない</strong> — その日まだ観測していないあなたに、先に答えを見せません。</li>
       <li><strong>根拠を見せる</strong> — スコアにも結論にも、必ず「どう計算したか」を添えます。ブラックボックスの神託より、仕組みごと楽しめる占いを。</li>
-      <li><strong>データは端末の中だけ</strong> — 生年月日も履歴も、あなたの端末のlocalStorageにだけ保存されます。サーバーには何も送りません。</li>
+      <li><strong>データは、あなたの端末の中だけ</strong> — 生年月日も履歴も、お使いの端末(ブラウザ)の中にだけ保存され、私たちのサーバーには一切送られません。</li>
     </ul>
     <h3>統合鑑定のロジック</h3>
     <p>西洋占星術(太陽星座・月星座)、四柱推命(日主)、九星気学(本命星)、タロット——それぞれ別の文明が磨いてきた物差しをひとりに重ねると、一面的でない立体的な輪郭が浮かびます。<strong>運命の称号</strong>はその要約で、日主(10)×太陽星座(12)×本命星(9)=<strong>1080通り</strong>。称号の下には、どの言葉がどの占術から来たかの由来も添えています。</p>
@@ -2585,16 +2622,19 @@ function guideArticleHtml(key) {
 
 function renderGuide(articleKey) {
   const root = document.getElementById("guide-root");
+  const head = document.querySelector("#view-guide .view-head");
+  if (head) head.hidden = !!articleKey; // 記事ページではヒーローの重複を避ける
   if (!articleKey) {
     root.innerHTML = `
       <div class="guide-grid">
         ${Object.entries(GUIDE_ARTICLES).map(([k, a]) => `
           <button class="guide-card" data-guide="${k}">
-            <span class="gc-icon">${a.icon}</span>
-            <span class="gc-body"><strong>${a.title}</strong><small>${a.lead}</small></span>
+            <span class="gc-icon"><img src="${a.img}" alt="" loading="lazy" /></span>
+            <span class="gc-body"><strong>${a.title}</strong><small>${a.lead}</small><em class="gc-meta">読了 約${a.mins}分</em></span>
             <span class="gc-arrow">→</span>
           </button>`).join("")}
-      </div>`;
+      </div>
+      <p class="ga-cta" style="margin-top:30px"><button class="btn btn-primary" data-nav="today">読む前に、まず今日の一枚から</button></p>`;
   } else {
     const a = GUIDE_ARTICLES[articleKey];
     root.innerHTML = `

@@ -1864,3 +1864,44 @@ body.ritual-open { overflow: hidden; }
 
 /* スプレッドが2種になったため縦積みに(どちらも全幅の夜の窓) */
 .spread-picker { grid-template-columns: 1fr; }
+
+/* 読みもの:監修ループ第1回の改善 */
+.guide-article h3::before { content: "✦ "; color: var(--gold); font-size: 12px; vertical-align: 2px; }
+.guide-article h3 { margin-top: 42px; }
+.gc-icon img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.gc-icon { overflow: hidden; padding: 0; }
+.gc-body strong { text-wrap: balance; }
+.gc-meta { font-style: normal; font-size: 11px; color: var(--gold-bright); letter-spacing: .08em; margin-top: 2px; }
+.ga-mid { margin: 18px 0 4px; }
+.ga-mid .linklike { font-size: 15px; font-weight: 700; text-decoration: none; border-bottom: 1px solid rgba(168, 132, 78, 0.5); padding-bottom: 2px; }
+.ga-planets, .ga-stars {
+  list-style: none; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0;
+}
+.ga-planets li, .ga-stars li {
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 12px 14px; border: 1px solid var(--hairline); border-radius: 10px;
+  background: rgba(168, 132, 78, 0.04);
+}
+.ga-planets li strong, .ga-stars li strong { font-family: var(--serif); font-size: 15px; color: var(--indigo); }
+.ga-planets li small, .ga-stars li small { font-size: 12px; line-height: 1.7; color: var(--muted); }
+.ga-stars { padding: 4px 14px 14px; }
+.ga-asps { display: flex; gap: 14px; justify-content: center; margin: 18px 0 6px; flex-wrap: wrap; }
+.ga-asp { margin: 0; text-align: center; flex: 0 1 108px; }
+.ga-asp svg { width: 80px; height: 80px; }
+.ga-asp figcaption { font-size: 11.5px; line-height: 1.6; color: var(--muted); margin-top: 4px; }
+.ga-asp figcaption strong { color: var(--indigo); font-size: 12.5px; }
+.ga-weightbar {
+  display: flex; height: 34px; border-radius: 8px; overflow: hidden;
+  border: 1px solid var(--hairline); margin: 16px 0 14px;
+}
+.ga-weightbar i { display: grid; place-items: center; font-style: normal; }
+.ga-weightbar b { font-family: var(--num); font-size: 12px; font-weight: 700; color: #fff; }
+.ga-weightbar .wb1 { background: #1C2333; }
+.ga-weightbar .wb2 { background: #3A4460; }
+.ga-weightbar .wb3 { background: #8F6C38; }
+.ga-weightbar .wb4 { background: #A8844E; }
+@media (max-width: 560px) {
+  .ga-planets li, .ga-stars li { padding: 10px 11px; }
+  .ga-planets li strong, .ga-stars li strong { font-size: 14px; }
+  .ga-planets li small, .ga-stars li small { font-size: 11.5px; }
+}
