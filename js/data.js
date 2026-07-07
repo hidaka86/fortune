@@ -187,6 +187,29 @@ const RITUAL_SPREADS = {
       { en: "OUTCOME", ja: "ゆきつく先" },
     ],
   },
+  /* --- 開く時刻・月齢で現れる「窓」 --- */
+  night: {
+    purpose: "今夜だけの、ゆっくりした読みを",
+    label: "月の間", desc: "夜にしか開かない部屋。一日を静かに畳んで、明日への灯をひとつ。急がなくていい読みです。",
+    count: 3, gate: "night", /* 一夜一回の制御は once ではなく gate 側(fortuna:windows)で行う */
+    positions: [
+      { en: "RELEASE", ja: "今日、手放していいこと" },
+      { en: "UNDERTOW", ja: "夜にしか言えない本音" },
+      { en: "LANTERN", ja: "明日への灯" },
+    ],
+  },
+  newmoon: {
+    purpose: "新月の夜に、はじまりの種を",
+    label: "新月の窓", desc: "月が姿を消す日だけ開く窓。これから育てはじめることを、一枚に聞きます。",
+    count: 1, gate: "newmoon",
+    positions: [{ en: "SEED", ja: "はじまりの一枚" }],
+  },
+  fullmoon: {
+    purpose: "満月の夜に、手放すものを",
+    label: "満月の窓", desc: "月が満ちきる日だけ開く窓。抱えすぎたものをひとつ、月に返します。",
+    count: 1, gate: "fullmoon",
+    positions: [{ en: "RELEASE", ja: "手放しの一枚" }],
+  },
 };
 
 // テーマごとのスプレッド定義(ポジション名が本格リーディングの要)
