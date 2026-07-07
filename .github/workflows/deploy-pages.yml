@@ -53,3 +53,32 @@ jobs:
         id: deployment_retry
         if: steps.deployment.outcome == 'failure'
         uses: actions/deploy-pages@v4
+
+      # カスタムドメイン設定(Settings→Pages→Custom domain と同じ操作をAPIで実施)
+      - name: Set custom domain
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          current=$(curl -s -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" | python3 -c 'import sys,json;print(json.load(sys.stdin).get("cname") or "")')
+          echo "current cname: '$current'"
+          if [ "$current" != "myouriscope.com" ]; then
+            code=$(curl -s -o /tmp/pages_put.json -w "%{http_code}" -X PUT \
+              -H "Authorization: Bearer $GH_TOKEN" \
+              -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${{ github.repository }}/pages" \
+              -d '{"cname":"myouriscope.com"}')
+            echo "PUT cname -> HTTP $code"; cat /tmp/pages_put.json
+            [ "$code" = "204" ] || [ "$code" = "200" ] || exit 1
+          else
+            echo "custom domain already set"
+          fi
+          # 証明書発行済みならHTTPS強制もオンにする(未発行なら422で来る=後続デプロイで再試行)
+          code=$(curl -s -o /tmp/pages_https.json -w "%{http_code}" -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages" \
+            -d '{"https_enforced":true}')
+          echo "PUT https_enforced -> HTTP $code (422なら証明書待ち・問題なし)"
