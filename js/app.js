@@ -885,7 +885,7 @@ document.addEventListener("click", async (e) => {
 });
 
 /* ---------- シェア画像(1200x630)とXシェア・鑑定履歴 ---------- */
-const SITE_URL = "https://myouscope.com/";
+const SITE_URL = "https://myouriscope.com/";
 const lastShare = {}; // kind -> {eyebrow,title,sub,keywords,score,scoreLabel,x}
 
 function buildInviteUrl(name, title) {
@@ -1081,7 +1081,7 @@ async function makeShareCard(p) {
   ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`, W / 2, 1716);
   ctx.fillStyle = "#9AA0B8";
   ctx.font = `500 28px ${latin}`;
-  ctx.fillText("myouscope.com", W / 2, 1772);
+  ctx.fillText("myouriscope.com", W / 2, 1772);
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }
