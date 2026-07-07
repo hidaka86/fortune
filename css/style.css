@@ -766,40 +766,82 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .ritual-inst strong { color: var(--gold-bright); }
 .ritual-hint { font-size: 13.5px; color: var(--muted); margin-top: 16px; letter-spacing: .06em; }
 
-/* スプレッド選択 */
-.spread-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+/* スプレッド選択:夜の窓 — 目的に響き合うアルカナが仄かに透ける */
+.spread-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px; }
 .spread-opt {
-  text-align: left; border: 1px solid var(--hairline); border-radius: 10px;
-  background: var(--bg); padding: 14px 16px;
-  display: flex; flex-direction: column; gap: 3px;
-  transition: border-color .25s ease, background .25s ease;
+  position: relative; overflow: hidden;
+  text-align: left; border: 1px solid rgba(28, 35, 51, 0.45); border-radius: 12px;
+  background-color: var(--chamber);
+  padding: 20px 18px 16px; min-height: 118px;
+  display: flex; flex-direction: column; gap: 3px; justify-content: flex-end;
+  transition: border-color .3s ease, box-shadow .3s ease, filter .3s ease;
 }
-.spread-opt.active { border-color: var(--gold); background: rgba(168, 132, 78, 0.09); }
+.spread-opt[data-spread="daily"] {
+  background-image:
+    linear-gradient(80deg, rgba(10, 16, 38, 0.96) 40%, rgba(10, 16, 38, 0.78) 62%, rgba(10, 16, 38, 0.3)),
+    url("../images/tarot/tarot_19_sun.webp");
+  background-position: center, right 20%;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
+.spread-opt[data-spread="three"] {
+  background-image:
+    linear-gradient(80deg, rgba(10, 16, 38, 0.96) 40%, rgba(10, 16, 38, 0.78) 62%, rgba(10, 16, 38, 0.3)),
+    url("../images/tarot/tarot_10_wheel_of_fortune.webp");
+  background-position: center, right 24%;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
+.spread-opt[data-spread="celtic"] {
+  background-image:
+    linear-gradient(84deg, rgba(10, 16, 38, 0.97) 44%, rgba(10, 16, 38, 0.84) 68%, rgba(10, 16, 38, 0.32)),
+    url("../images/tarot/tarot_18_moon.webp");
+  background-position: center, right 18%;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
+/* 上端の細い金のヘアライン(窓の桟) */
+.spread-opt::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(217, 192, 138, 0.55), transparent);
+  opacity: .6; transition: opacity .3s ease;
+}
+.spread-opt:hover { border-color: rgba(184, 154, 90, 0.45); filter: brightness(1.06); }
+.spread-opt.active {
+  border-color: rgba(217, 192, 138, 0.75);
+  box-shadow: inset 0 0 0 1px rgba(217, 192, 138, 0.35), 0 10px 28px rgba(10, 16, 38, 0.28);
+  filter: brightness(1.08);
+}
+.spread-opt.active::before { opacity: 1; }
 .so-purpose {
-  font-family: var(--serif); font-size: 16.5px; font-weight: 700;
-  letter-spacing: .03em; color: var(--indigo); line-height: 1.7;
+  font-family: var(--serif); font-size: 17px; font-weight: 700;
+  letter-spacing: .04em; color: var(--chamber-ink); line-height: 1.7;
+  text-shadow: 0 1px 10px rgba(10, 16, 38, 0.8);
 }
-.spread-opt.active .so-purpose { color: var(--gold-bright); }
+.spread-opt.active .so-purpose { color: var(--chamber-gold-bright); }
 .so-meta { display: flex; align-items: center; gap: 8px; margin-top: 7px; flex-wrap: wrap; }
-.so-name { font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; color: var(--muted); }
-.so-count { font-style: normal; font-family: var(--num); font-size: 11px; font-weight: 700; color: var(--gold-bright); }
+.so-name { font-style: normal; font-size: 11.5px; font-weight: 700; letter-spacing: .08em; color: var(--chamber-muted); }
+.so-count { font-style: normal; font-family: var(--num); font-size: 11px; font-weight: 700; color: var(--chamber-gold-bright); }
 .so-pips { display: inline-flex; gap: 2.5px; }
 .so-pips i {
   width: 8px; height: 13px; border-radius: 2px;
-  background: linear-gradient(165deg, #1b2148, #12183a);
-  border: 1px solid rgba(168, 132, 78, 0.55);
+  background: linear-gradient(165deg, #232a58, #141b3f);
+  border: 1px solid rgba(217, 192, 138, 0.55);
 }
-.spread-opt.active .so-pips i { box-shadow: 0 0 5px rgba(168, 132, 78, 0.5); }
-.so-desc { font-size: 12.5px; color: var(--muted); line-height: 1.7; margin-top: 6px; }
-.spread-opt.spread-deep {
-  grid-column: 1 / -1;
-  border-color: rgba(168, 132, 78, 0.5);
-  background: linear-gradient(120deg, rgba(168, 132, 78, 0.10), var(--bg) 70%);
+.spread-opt.active .so-pips i {
+  border-color: rgba(217, 192, 138, 0.9);
+  box-shadow: 0 0 6px rgba(217, 192, 138, 0.55);
 }
+.so-desc {
+  font-size: 12.5px; color: var(--chamber-muted); line-height: 1.75; margin-top: 7px;
+  max-width: 52ch; text-shadow: 0 1px 8px rgba(10, 16, 38, 0.85);
+}
+.spread-opt.spread-deep { grid-column: 1 / -1; min-height: 150px; }
 .so-tag {
   font-family: var(--latin); font-size: 10px; font-weight: 700; letter-spacing: .24em;
-  color: var(--gold-bright); border: 1px solid rgba(168, 132, 78, 0.5);
+  color: var(--chamber-gold-bright); border: 1px solid rgba(217, 192, 138, 0.5);
   border-radius: 999px; padding: 1px 9px; margin-left: 10px; vertical-align: 2px;
+  background: rgba(10, 16, 38, 0.55);
 }
 .genre-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 16px; }
 .genre-label { font-size: 13px; color: var(--muted); letter-spacing: .08em; }
