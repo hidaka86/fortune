@@ -2,6 +2,20 @@
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* ---------- アクセス解析(GA4) ---------- */
+function gaEvent(name, params = {}) {
+  if (typeof window.gtag === "function") window.gtag("event", name, params);
+}
+
+function gaPageView(target) {
+  gaEvent("page_view", {
+    page_title: document.title,
+    page_location: location.href,
+    page_path: target === "home" ? "/" : `/#${target}`,
+    view_name: target,
+  });
+}
+
 /* ---------- ナビゲーション ---------- */
 const views = document.querySelectorAll(".view");
 const navBtns = document.querySelectorAll(".nav-btn");
@@ -17,6 +31,7 @@ function navigate(target, push = true) {
     try { history.pushState(null, "", target === "home" ? location.pathname + location.search : `#${target}`); } catch { /* file://等 */ }
   }
   window.scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" });
+  gaPageView(target);
 }
 
 window.addEventListener("popstate", () => navigate(location.hash.slice(1) || "home", false));
@@ -43,9 +58,14 @@ document.addEventListener("click", (e) => {
   const d = new Date();
   const week = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"][d.getDay()];
   const phase = moonPhaseToday();
+  // 空の都合でひらく窓たち:急がせる理由は、アプリではなく世界観の側に置く
+  const extras = [];
+  if (celestialWindows().length) extras.push(`<button class="status-item status-window" data-nav="tarot">✦ ${phase.name === "新月" ? "新月の窓" : "満月の窓"}が、今夜までひらいています</button>`);
+  if (windCallToday()) extras.push('<button class="status-item status-wind" data-nav="tarot">🌬 今日、カードがざわついています</button>');
+  if (nightWindow().open) extras.push('<button class="status-item status-night" data-nav="tarot">☾ 月の間が、ひらいています</button>');
   document.getElementById("status-bar").innerHTML = `
     <span class="status-item status-quote">${dailyQuote()}</span>
-    <span class="status-item"><span class="moon">${phase.emoji}</span>${phase.name} — ${phase.note}</span>`;
+    <span class="status-item"><span class="moon">${phase.emoji}</span>${phase.name} — ${phase.note}</span>${extras.join("")}`;
 })();
 
 /* ---------- ヒーローの観測盤キャンバス(orbital layering / temporal arcs) ---------- */
@@ -1144,6 +1164,71 @@ function recordHistory(kind, title, text) {
   } catch { /* noop */ }
 }
 
+/* ---------- タロット・ジャーナル(託宣の記録) ----------
+   緩急の設計:
+   ・託宣の言葉は24時間で薄れる(ひとこと書き残すと定着)— 記録を促す小さな緊急性
+   ・ふたつめの意味は12時間後、振り返りの問いは3日後にひらく — 一度の抽選を三度の再訪に
+   すべて端末の中だけ。localStorageに保存。 */
+const JOURNAL_KEY = "fortuna:journal";
+const HOUR = 3600 * 1000;
+const FADE_MS = 24 * HOUR;      // 託宣が薄れるまで
+const SECOND_MS = 12 * HOUR;    // ふたつめの意味がひらくまで
+const REFLECT_MS = 72 * HOUR;   // 振り返りの問いがひらくまで
+
+function loadJournal() {
+  try { return JSON.parse(localStorage.getItem(JOURNAL_KEY)) || []; } catch { return []; }
+}
+function saveJournal(list) {
+  try { localStorage.setItem(JOURNAL_KEY, JSON.stringify(list.slice(0, 60))); } catch { /* noop */ }
+}
+function addJournalEntry(entry) {
+  const list = loadJournal();
+  list.unshift(entry);
+  saveJournal(list);
+  return entry;
+}
+function updateJournalEntry(id, patch) {
+  const list = loadJournal();
+  const it = list.find((x) => x.id === id);
+  if (!it) return;
+  Object.assign(it, patch);
+  saveJournal(list);
+}
+
+function journalState(e) {
+  const age = Date.now() - e.t;
+  return {
+    faded: age > FADE_MS && !e.memo,             // 書き残されなかった託宣は薄れる
+    canMemo: age <= FADE_MS && !e.memo,
+    fadeLeftH: Math.max(0, Math.ceil((FADE_MS - age) / HOUR)),
+    secondOpen: age >= SECOND_MS,
+    secondLeftH: Math.max(0, Math.ceil((SECOND_MS - age) / HOUR)),
+    reflectOpen: age >= REFLECT_MS,
+    reflectLeftD: Math.max(0, Math.ceil((REFLECT_MS - age) / (24 * HOUR))),
+  };
+}
+
+/* ふたつめの意味:12時間寝かせると、先頭の札の「もうひとつの顔」が見えてくる */
+function journalSecondMeaning(e) {
+  const c = cardByN(e.cards[0].n);
+  if (!c) return "";
+  const other = e.cards[0].reversed ? c.up : c.rev;
+  const face = e.cards[0].reversed ? "正位置" : "逆位置";
+  return `ひと晩おくと、札には裏側の顔が見えてきます。「${c.name}」をもし${face}で読むなら — ${other} 引いた瞬間の意味と、この裏の顔。いまのあなたに近いのは、どちらでしょう。`;
+}
+
+/* 振り返りの問い:3日後にひらく。当てる/当てないではなく、自分で意味づけする時間 */
+function journalReflectQuestion(e) {
+  const c = cardByN(e.cards[0].n);
+  const name = c ? c.name : "あの札";
+  const pool = [
+    `あの日の「${name}」。いま振り返ると、なにを指していたと思いますか?`,
+    `「${name}」を引いてから3日。あのカードの言葉で、なにか変わりましたか?`,
+    `3日前のあなたは「${name}」を引きました。いまのあなたなら、あの問いになんと答えますか?`,
+  ];
+  return pool[hashString(String(e.id)) % pool.length];
+}
+
 /* ---------- 統合鑑定 ---------- *//* ---------- 統合鑑定 ---------- */
 document.getElementById("integrated-form").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -1589,12 +1674,17 @@ const ritualOverlay = document.getElementById("ritual-overlay");
 
 function openChamber() {
   ritualOverlay.hidden = false;
+  // 月の間・宙の窓は、いつもの儀式の間よりさらに深い夜に沈む
+  const gate = RITUAL_SPREADS[ritual.spread]?.gate;
+  ritualOverlay.classList.toggle("ritual-night", gate === "night");
+  ritualOverlay.classList.toggle("ritual-lunar", gate === "newmoon" || gate === "fullmoon");
   document.body.classList.add("ritual-open");
 }
 
 function closeChamber() {
   ritualOverlay.hidden = true;
   ritualOverlay.innerHTML = "";
+  ritualOverlay.classList.remove("ritual-night", "ritual-lunar");
   document.body.classList.remove("ritual-open");
 }
 
@@ -1695,7 +1785,7 @@ function revealedCardHtml(c) {
 /* 今日の一枚・クイックドロー:場から一枚取るだけの1工程 */
 function renderQuickDraw() {
   ritual.spread = "daily"; ritual.genre = "total"; ritual.question = "";
-  ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
+  ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0; ritual.deepShuffle = false;
   ritual.returnTo = "today";
   ritual.releaseT = performance.now(); // シード成分1: 場が開かれた時刻
   openChamber();
@@ -1727,13 +1817,118 @@ function renderQuickDraw() {
   });
 }
 
+/* --- 窓(時刻・月齢で開くスプレッド)の1日1回制御 --- */
+const WINDOWS_KEY = "fortuna:windows";
+function windowDrawnKey(spread) {
+  return spread === "night" ? `night:${nightWindow().key}` : `${spread}:${todayKey()}`;
+}
+function isWindowDrawn(spread) {
+  try { return !!(JSON.parse(localStorage.getItem(WINDOWS_KEY)) || {})[windowDrawnKey(spread)]; } catch { return false; }
+}
+function markWindowDrawn(spread) {
+  try {
+    let map = {};
+    try { map = JSON.parse(localStorage.getItem(WINDOWS_KEY)) || {}; } catch { /* noop */ }
+    map[windowDrawnKey(spread)] = 1;
+    // 古いキーは掃除(残すのは直近20個まで)
+    const keys = Object.keys(map);
+    if (keys.length > 20) keys.slice(0, keys.length - 20).forEach((k) => delete map[k]);
+    localStorage.setItem(WINDOWS_KEY, JSON.stringify(map));
+  } catch { /* noop */ }
+}
+
+/* 週のリズム:毎日同じテンポにしない。平日は軽く、週末の夜は深く、日曜は振り返り */
+function tarotTempoLine() {
+  const now = new Date();
+  const dow = now.getDay(), h = now.getHours();
+  const weekendNight = (dow === 5 || dow === 6) && h >= 19;
+  if (weekendNight) return { text: "週末の夜。急ぐことはなにもありません — 時間をとって、深いスプレッドをどうぞ。", push: "celtic" };
+  if (dow === 0) return { text: "日曜日。新しく引くより、今週の記録を読み返すのに良い日です。", push: "journal" };
+  if (h >= 22 || h < 4) return { text: "夜が深くなりました。月の間が、ひらいています。", push: "night" };
+  return { text: "忙しい日は、一枚だけで十分。ワンオラクルが今日の速さに合います。", push: "one" };
+}
+
 /* --- 1. 問いかけ画面 --- */
 function renderAsk() {
   tarotSummary.hidden = true;
+  const nw = nightWindow();
+  const wins = celestialWindows();
+  const wind = windCallToday();
+  const mercRx = (() => { try { return isMercuryRetrograde(); } catch { return false; } })();
+  const tempo = tarotTempoLine();
+
+  /* 宙の窓:新月・満月の日だけ現れる限定の窓。締切は空の都合 */
+  const windowCards = wins.map((w) => {
+    const s = RITUAL_SPREADS[w.spread];
+    const drawn = isWindowDrawn(w.spread);
+    return `
+      <button class="spread-opt spread-window ${drawn ? "spread-locked" : ""}" data-window="${w.spread}" data-spread="${drawn ? "" : w.spread}" ${drawn ? "disabled" : ""}>
+        <span class="so-window-until">${drawn ? "✦ 今夜の窓は観測済み" : `✦ ${w.until}`}</span>
+        <span class="so-purpose">${s.purpose}</span>
+        <span class="so-meta">
+          <em class="so-name">${s.label}</em>
+          <em class="so-count">${s.count}枚</em>
+          <span class="so-tag">TONIGHT</span>
+        </span>
+        <span class="so-desc">${drawn ? "この窓の一枚は、もう引いてあります。記録は下のジャーナルに。次の窓は、次の月齢で。" : s.desc + " " + w.note}</span>
+      </button>`;
+  }).join("");
+
+  /* 月の間:22時にひらく夜の部屋。昼は「まだ閉じている」ことを見せる */
+  const nightSpread = RITUAL_SPREADS.night;
+  const nightDrawn = isWindowDrawn("night");
+  const nightCard = nw.open
+    ? `
+      <button class="spread-opt spread-night ${nightDrawn ? "spread-locked" : ""}" data-spread="${nightDrawn ? "" : "night"}" ${nightDrawn ? "disabled" : ""}>
+        <span class="so-window-until">${nightDrawn ? "☾ 今夜の間はもう観ました" : "☾ いま、ひらいています"}</span>
+        <span class="so-purpose">${nightSpread.purpose}</span>
+        <span class="so-meta">
+          <em class="so-name">${nightSpread.label}</em>
+          <span class="so-pips" aria-hidden="true"><i></i><i></i><i></i></span>
+          <em class="so-count">3枚</em>
+          <span class="so-tag">NIGHT</span>
+        </span>
+        <span class="so-desc">${nightDrawn ? "夜の読みは一夜にひとつだけ。今夜の3枚は、下のジャーナルでいつでも読み返せます。" : nightSpread.desc}</span>
+      </button>`
+    : `
+      <div class="spread-opt spread-night spread-locked" aria-disabled="true">
+        <span class="so-window-until">☾ 今夜 ${nw.opensAt} にひらく</span>
+        <span class="so-purpose">${nightSpread.purpose}</span>
+        <span class="so-meta">
+          <em class="so-name">${nightSpread.label}</em>
+          <em class="so-count">3枚</em>
+          <span class="so-tag">NIGHT</span>
+        </span>
+        <span class="so-desc">夜にしか開かない部屋です。眠る前に、一日を静かに畳みにきてください。</span>
+      </div>`;
+
+  /* 振り返りの問いかけ:7日以上前の記録にそっと声をかける */
+  const oldEntry = loadJournal().find((e) => Date.now() - e.t >= 7 * 24 * HOUR && !e.reflection && e.cards?.length);
+  const reflectCard = oldEntry ? (() => {
+    const c = cardByN(oldEntry.cards[0].n);
+    const days = Math.floor((Date.now() - oldEntry.t) / (24 * HOUR));
+    return `
+      <button class="reflect-call" data-journal-jump="${oldEntry.id}">
+        <img src="${tarotImg(oldEntry.cards[0].n)}" alt="" class="${oldEntry.cards[0].reversed ? "is-rev" : ""}" onerror="this.remove()" />
+        <span class="rc-body">
+          <span class="rc-lead">${days}日前、あなたは「${c ? c.name : "一枚"}」を引きました。</span>
+          <span class="rc-sub">いま思うと、あれは何だったのでしょう。答え合わせは、下のジャーナルで。</span>
+        </span>
+        <span class="rc-arrow">↓</span>
+      </button>`;
+  })() : "";
+
   tarotStage.innerHTML = `
     <div class="ritual-step panel" style="max-width:760px">
+      ${wind ? `
+      <div class="wind-banner" role="status">
+        <span class="wb-mark" aria-hidden="true">🌬</span>
+        <span class="wb-text"><strong>今日、カードがざわついています。</strong>こういう日の読みには、風が一枚、言葉を落としていきます。</span>
+      </div>` : ""}
       <p class="ritual-eyebrow">STEP 1 — QUESTION</p>
       <h3 class="ritual-title">なにを知りたいですか?</h3>
+      <p class="tempo-line">${tempo.text}</p>
+      ${mercRx ? `<p class="merc-note">☿ いま、水星が逆行しています。言葉と約束は二度たしかめて。読み違えたと感じたら、それも読みのうちです。</p>` : ""}
       <div class="genre-row">
         <span class="genre-label">問いのジャンル</span>
         <div class="seg">${TAROT_GENRES.map(([k, l]) => `<button class="seg-btn ${k === ritual.genre ? "active" : ""}" data-genre="${k}">${l}</button>`).join("")}</div>
@@ -1741,11 +1936,13 @@ function renderAsk() {
       <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
         placeholder="問いを言葉に(任意)" value="" />
       <p class="ritual-hint" style="margin:14px 0 12px">知りたいことを選ぶと、そのまま儀式がはじまります</p>
+      ${windowCards ? `<div class="window-picker">${windowCards}</div>` : ""}
       <div class="spread-picker">
-        ${Object.entries(RITUAL_SPREADS).filter(([key]) => key !== "daily").map(([key, s]) => {
+        ${Object.entries(RITUAL_SPREADS).filter(([key, s]) => key !== "daily" && !s.gate).map(([key, s]) => {
           const pips = Array.from({ length: s.count }, () => "<i></i>").join("");
           return `
-          <button class="spread-opt ${s.deep ? "spread-deep" : ""}" data-spread="${key}">
+          <button class="spread-opt ${s.deep ? "spread-deep" : ""} ${tempo.push === key ? "spread-suggest" : ""}" data-spread="${key}">
+            ${tempo.push === key ? '<span class="so-suggest">きょうの誘い</span>' : ""}
             <span class="so-purpose">${s.purpose}</span>
             <span class="so-meta">
               <em class="so-name">${s.label}</em>
@@ -1756,18 +1953,22 @@ function renderAsk() {
             ${s.deep ? `<span class="so-desc">${s.desc}</span>` : ""}
           </button>`;
         }).join("")}
+        ${nightCard}
       </div>
       <p class="form-note">78枚のフルデッキで占います。問いはこの端末にのみ保存されます。今日の一枚は<button class="linklike" data-nav="today">「今日の占い」</button>からどうぞ。</p>
-    </div>`;
+    </div>
+    ${reflectCard}
+    <div id="tarot-journal"></div>`;
 
   /* カードをタップ = 選択して、そのまま儀式へ(1工程) */
-  tarotStage.querySelectorAll(".spread-opt").forEach((b) => {
+  tarotStage.querySelectorAll(".spread-opt[data-spread]").forEach((b) => {
     b.addEventListener("click", () => {
+      if (!b.dataset.spread || b.disabled) return;
       ritual.spread = b.dataset.spread;
       tarotStage.querySelectorAll(".spread-opt").forEach((x) => x.classList.toggle("active", x === b));
       ritual.question = document.getElementById("tarot-question").value.trim();
       try { localStorage.setItem(QUESTION_KEY, ritual.question); } catch { /* noop */ }
-      ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0;
+      ritual.positions = []; ritual.cards = []; ritual.cutIdx = 0; ritual.deepShuffle = false;
       vibrate(15);
       setTimeout(() => { openChamber(); renderShuffle(); }, 200); // 選択の発光を見せてから扉を開く
     });
@@ -1776,6 +1977,124 @@ function renderAsk() {
     b.addEventListener("click", () => {
       ritual.genre = b.dataset.genre;
       tarotStage.querySelectorAll("[data-genre]").forEach((x) => x.classList.toggle("active", x === b));
+    });
+  });
+  tarotStage.querySelector("[data-journal-jump]")?.addEventListener("click", (e) => {
+    const id = Number(e.currentTarget.dataset.journalJump);
+    renderTarotJournal(id);
+    document.getElementById("tarot-journal")?.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "start" });
+  });
+  renderTarotJournal();
+}
+
+/* --- 託宣の記録(ジャーナル):一度の抽選を、三度の再訪に --- */
+function journalEntryHtml(e, open) {
+  const st = journalState(e);
+  const conf = RITUAL_SPREADS[e.spread];
+  const label = conf ? conf.label : "タロット";
+  const when = new Date(e.t);
+  const dateLabel = `${when.getMonth() + 1}/${when.getDate()} ${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+  const thumbs = e.cards.slice(0, 4).map((c) =>
+    `<img class="jc-thumb ${c.reversed ? "is-rev" : ""}" src="${tarotImg(c.n)}" alt="" loading="lazy" onerror="this.remove()" />`).join("")
+    + (e.cards.length > 4 ? `<span class="jc-more">+${e.cards.length - 4}</span>` : "");
+  const names = e.cards.map((c) => { const b = cardByN(c.n); return b ? `${b.name}(${c.reversed ? "逆" : "正"})` : ""; }).filter(Boolean).join("、");
+
+  // 状態チップ:いま、この記録になにが起きているか
+  const chips = [];
+  if (st.canMemo) chips.push(`<span class="j-chip j-chip-fade">🕯 あと${st.fadeLeftH}時間で薄れます</span>`);
+  if (st.faded) chips.push('<span class="j-chip j-chip-faded">薄れた託宣</span>');
+  if (e.memo) chips.push('<span class="j-chip j-chip-kept">✎ 書き残し済み</span>');
+  if (st.secondOpen && !st.reflectOpen) chips.push('<span class="j-chip j-chip-open">✦ ふたつめの意味がひらきました</span>');
+  if (!st.secondOpen) chips.push(`<span class="j-chip">ふたつめの意味まで あと${st.secondLeftH}時間</span>`);
+  if (st.reflectOpen && !e.reflection) chips.push('<span class="j-chip j-chip-open">❋ 振り返りの問いがひらきました</span>');
+
+  // 本文(薄れているかどうかで見せ方が変わる)
+  const body = st.faded
+    ? `
+      <div class="j-fadedbox">
+        <p class="j-fadedline">託宣の言葉は、風に薄れました。残っているのは札の名前だけ — <strong>${names}</strong></p>
+        <p class="j-fadedsub">読みたての言葉は24時間だけのもの。つぎの読みでは、ひとこと書き残してみてください。</p>
+      </div>`
+    : `
+      ${e.q ? `<p class="j-q">問い:「${esc(e.q)}」</p>` : ""}
+      <p class="j-word">「${esc(e.word || label + "の読み")}」</p>
+      ${e.reason ? `<p class="j-reason">${esc(e.reason)}</p>` : ""}
+      ${e.memo
+        ? `<p class="j-memo-view"><span class="j-memo-k">あなたの書き残し</span>${esc(e.memo)}</p>`
+        : st.canMemo
+          ? `
+        <div class="j-memo-row">
+          <input type="text" class="j-memo-input" maxlength="80" placeholder="ひとこと書き残すと、この託宣は薄れません" />
+          <button class="btn btn-ghost j-memo-save" data-jmemo="${e.id}">書き残す</button>
+        </div>` : ""}`;
+
+  // 熟成レイヤー
+  const second = st.secondOpen
+    ? `<div class="j-layer j-layer-open"><p class="j-layer-k">✦ ふたつめの意味<small>12時間、寝かせた読み</small></p><p>${journalSecondMeaning(e)}</p></div>`
+    : `<div class="j-layer j-layer-locked"><p class="j-layer-k">✦ ふたつめの意味<small>あと${st.secondLeftH}時間でひらきます</small></p><p class="j-locked-line">札は引いた瞬間がすべてではありません。すこし寝かせると、裏側の顔が見えてきます。</p></div>`;
+  const reflect = st.reflectOpen
+    ? e.reflection
+      ? `<div class="j-layer j-layer-open"><p class="j-layer-k">❋ あなたの振り返り</p><p>${esc(e.reflection)}</p></div>`
+      : `
+        <div class="j-layer j-layer-open">
+          <p class="j-layer-k">❋ 振り返りの問い<small>3日、経ちました</small></p>
+          <p>${journalReflectQuestion(e)}</p>
+          <div class="j-memo-row">
+            <input type="text" class="j-reflect-input" maxlength="120" placeholder="いま思うことを、ひとこと" />
+            <button class="btn btn-ghost j-reflect-save" data-jreflect="${e.id}">記す</button>
+          </div>
+        </div>`
+    : `<div class="j-layer j-layer-locked"><p class="j-layer-k">❋ 振り返りの問い<small>あと${st.reflectLeftD}日でひらきます</small></p><p class="j-locked-line">当たった・外れたの答え合わせではなく、自分で意味をつける時間です。</p></div>`;
+
+  return `
+    <details class="j-item ${st.faded ? "j-item-faded" : ""}" data-jid="${e.id}" ${open ? "open" : ""}>
+      <summary>
+        <span class="j-date">${dateLabel}</span>
+        <span class="j-spread">${label}</span>
+        <span class="j-thumbs">${thumbs}</span>
+        <span class="j-chips">${chips.join("")}</span>
+      </summary>
+      <div class="j-body">
+        ${body}
+        ${second}
+        ${reflect}
+      </div>
+    </details>`;
+}
+
+function renderTarotJournal(openId) {
+  const root = document.getElementById("tarot-journal");
+  if (!root) return;
+  const list = loadJournal();
+  if (!list.length) { root.innerHTML = ""; return; }
+  root.innerHTML = `
+    <div class="panel j-panel">
+      ${cardH4("READING JOURNAL", "託宣の記録")}
+      <p class="j-note">読みの言葉は24時間で薄れます。書き残したぶんだけが、あなたの記録として残ります。12時間後・3日後には、それぞれ続きがひらきます。</p>
+      <div class="j-list">${list.slice(0, 12).map((e) => journalEntryHtml(e, e.id === openId)).join("")}</div>
+    </div>`;
+  root.querySelectorAll(".j-memo-save").forEach((b) => {
+    b.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const id = Number(b.dataset.jmemo);
+      const input = b.closest(".j-memo-row")?.querySelector(".j-memo-input");
+      const v = input?.value.trim();
+      if (!v) { input?.focus(); return; }
+      updateJournalEntry(id, { memo: v, memoT: Date.now() });
+      vibrate(12);
+      renderTarotJournal(id);
+    });
+  });
+  root.querySelectorAll(".j-reflect-save").forEach((b) => {
+    b.addEventListener("click", (ev) => {
+      ev.preventDefault();
+      const id = Number(b.dataset.jreflect);
+      const input = b.closest(".j-memo-row")?.querySelector(".j-reflect-input");
+      const v = input?.value.trim();
+      if (!v) { input?.focus(); return; }
+      updateJournalEntry(id, { reflection: v, reflectionT: Date.now() });
+      vibrate(12);
+      renderTarotJournal(id);
     });
   });
 }
@@ -1975,15 +2294,38 @@ function renderShuffleStack() {
       <div class="shuffle-stack" id="shuffle-stack">
         ${Array.from({ length: 7 }, (_, i) => tbackHtml("sc", `style="--i:${i}"`)).join("")}
       </div>
-      <p class="ritual-hint" id="shuffle-hint">束に触れると、速く混ざります</p>
+      <p class="breath-guide" id="breath-guide" aria-hidden="true"></p>
+      <p class="ritual-hint" id="shuffle-hint">呼吸をあわせるほど、深く混ざります</p>
       ${shuffleModeSwitchHtml("stack")}
     </div>`);
   bindShuffleModeSwitch();
 
   const stack = document.getElementById("shuffle-stack");
   const hint = document.getElementById("shuffle-hint");
+  const breath = document.getElementById("breath-guide");
   let pressed = false, done = false;
   let holdT0 = 0, lastMove = null, vel = 0, raf = 0;
+
+  /* 呼吸ガイド:押している間「吸って→とめて→吐いて」を刻む。
+     ワンタップの占いにはない「手間」が、リーディングの重みになる */
+  const BREATH_STEPS = [["吸って ……", 3600], ["とめて …", 1600], ["吐いて ……", 4200]];
+  let breathTimer = 0, breathIdx = 0, breathCycles = 0;
+  const breathTick = () => {
+    if (!pressed || done) return;
+    const [text, ms] = BREATH_STEPS[breathIdx % 3];
+    breath.textContent = text;
+    breath.classList.remove("breath-in");
+    void breath.offsetWidth;
+    breath.classList.add("breath-in");
+    if (breathIdx > 0 && breathIdx % 3 === 0) {
+      breathCycles += 1;
+      ritual.deepShuffle = true; // ひと呼吸ぶん、深く混ざった
+      hint.textContent = breathCycles === 1 ? "……深く混ざってきました" : "とても深く混ざっています。いつ離しても大丈夫";
+      vibrate(6);
+    }
+    breathIdx += 1;
+    breathTimer = setTimeout(breathTick, ms);
+  };
 
   /* 混ざる速さはユーザーの手が決める:
      長押しの経過でゆっくり加速し、指でこする速さで即座に反応する */
@@ -2004,6 +2346,8 @@ function renderShuffleStack() {
     holdT0 = performance.now();
     lastMove = null; vel = 0;
     hint.textContent = "……こするとよく混ざります";
+    breathIdx = 0;
+    breathTick();
     tick();
   };
   const move = (e) => {
@@ -2019,10 +2363,12 @@ function renderShuffleStack() {
     if (!pressed || done) return;
     done = true;
     cancelAnimationFrame(raf);
+    clearTimeout(breathTimer);
+    breath.textContent = "";
     ritual.releaseT = performance.now(); // シード成分1: 指を離した時刻
     vibrate(20);
     stack.classList.add("stopped");
-    hint.textContent = "止まりました";
+    hint.textContent = breathCycles >= 1 ? "止まりました — 深く混ざったデッキです" : "止まりました";
     setTimeout(() => (short ? renderDraw() : renderCut()), 420);
   };
   stack.addEventListener("pointerdown", down);
@@ -2285,6 +2631,21 @@ function tarotConclusion() {
     word = outcome.reversed ? "結末はまだ書き換えられる — 鍵は「課題」の一枚" : "ゆきつく先は、良い流れ";
     reason = `10枚の結末の位置に「${outcome.name}」の${ori(outcome)}。向き合う課題は「${challenge.name}」が示しています。${first(genreMeaning(outcome))}`;
     action = outcome.advice;
+  } else if (ritual.spread === "night") {
+    const [rel, , lamp] = c;
+    word = lamp.reversed ? "今夜は結論を出さない — それがいちばんの手当て" : "今日はここまでで上出来。明日の灯は、もう点いています";
+    reason = `手放していいことの位置に「${rel.name}」の${ori(rel)}。明日への灯には「${lamp.name}」。${first(genreMeaning(lamp))}`;
+    action = lamp.advice;
+  } else if (ritual.spread === "newmoon") {
+    const k = c[0];
+    word = k.reversed ? "種はまだ土の中 — 焦らず、静かに準備を" : "この新月に蒔く種は、これ";
+    reason = `はじまりの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    action = k.advice;
+  } else if (ritual.spread === "fullmoon") {
+    const k = c[0];
+    word = k.reversed ? "手放すのは物ではなく、こだわりの方" : "満月に返すのは、これ";
+    reason = `手放しの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    action = k.advice;
   } else {
     return null;
   }
@@ -2399,6 +2760,45 @@ function showTarotSummary(restored) {
   if (!restored) {
     recordHistory(`タロット(${conf.label})`, cardsLabel.join(" / "),
       ritual.cards.map((c, i) => `${conf.positions[i].ja}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${genreMeaning(c)}`).join(" "));
+    // 託宣の記録に綴じる(24時間で薄れ、12時間・3日後に続きがひらく)
+    addJournalEntry({
+      id: Date.now(),
+      t: Date.now(),
+      spread: ritual.spread,
+      genre: ritual.genre,
+      q: ritual.question || "",
+      cards: ritual.cards.map((c) => ({ n: c.n, reversed: c.reversed })),
+      word: conc ? conc.word : "",
+      reason: conc ? conc.reason : "",
+      memo: "", reflection: "",
+    });
+    // 月の間・宙の窓は一夜(一日)にひとつだけ
+    if (conf.gate) markWindowDrawn(ritual.spread);
+  }
+
+  /* 風のざわめき:ざわつく日の読みには、風が一枚言葉を落としていく。
+     シードは日付+出た札 — 同じ読みなら何度開いても同じ一枚(スロット化させない) */
+  let windHtml = "";
+  if (windCallToday()) {
+    const sig = ritual.cards.map((c) => c.n + (c.reversed ? "r" : "")).join(".");
+    const rng = seededRng(`${todayKey()}|windcard|${sig}`);
+    const rest = FULL_DECK.filter((t) => !ritual.cards.some((c) => c.n === t.n));
+    const bonus = { ...rest[Math.floor(rng() * rest.length)], reversed: rng() < 0.5 };
+    windHtml = `
+      <div class="result-card span-all wind-card">
+        ${cardH4("THE WIND'S WORD", "ざわめきの一枚")}
+        <div class="tp-body">
+          <img class="tp-thumb ${bonus.reversed ? "is-rev" : ""}" src="${tarotImg(bonus.n)}" alt="${bonus.name}" loading="lazy" onerror="this.remove()" />
+          <div class="tp-head">
+            <p class="tp-name">${bonus.name}</p>
+            <p class="tp-ori-line"><span class="tc-ori ${bonus.reversed ? "rev" : "up"}">${bonus.reversed ? "逆位置" : "正位置"}</span></p>
+          </div>
+          <div class="tp-detail">
+            <p>今日はカードがざわつく日。あなたが引いた札のそばに、風がもう一枚落としていきました。<strong>${bonus.reversed ? bonus.rev : bonus.up}</strong></p>
+            <p class="tc-advice">風のひとこと — <strong>${bonus.advice}</strong></p>
+          </div>
+        </div>
+      </div>`;
   }
 
   const items = ritual.cards.map((c, i) => {
@@ -2450,12 +2850,19 @@ function showTarotSummary(restored) {
       ${ritual.question ? `<p class="tarot-q">あなたの問い:「${esc(ritual.question)}」</p>` : ""}
       <h3 class="result-title">${ritual.spread === "daily" ? "今日のあなたへの一枚" : "カードの答え"}</h3>
       <p class="result-lead" style="margin-inline:auto">正位置は素直に巡る力。逆位置は、内にこもる力。</p>
+      ${ritual.deepShuffle ? '<p class="deep-shuffle-mark">☽ 呼吸とともに、深く混ぜられたデッキから</p>' : ""}
       ${shareRowHtml("tarot")}
     </div>
     <div class="result-grid">
       ${tarotConclusionHtml()}
       ${items}
       ${deckReadingHtml()}
+      ${windHtml}
+      ${!restored && !conf.once ? `
+      <div class="result-card span-all j-pointer">
+        <p>この読みは<strong>「託宣の記録」</strong>に綴じました。言葉は<strong>24時間で薄れます</strong> — ひとこと書き残したものだけが残ります。12時間後には「ふたつめの意味」が、3日後には「振り返りの問い」がひらきます。</p>
+        <div class="result-actions" style="margin-top:12px"><button class="btn btn-ghost" id="goto-journal">いま、書き残しておく</button></div>
+      </div>` : ""}
       ${dailyNote}
     </div>
     <div class="crosslinks">
@@ -2469,6 +2876,12 @@ function showTarotSummary(restored) {
   document.getElementById("tarot-again")?.addEventListener("click", () => {
     renderAsk();
     tarotStage.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth" });
+  });
+  document.getElementById("goto-journal")?.addEventListener("click", () => {
+    const latest = loadJournal()[0];
+    renderAsk();
+    if (latest) renderTarotJournal(latest.id);
+    document.getElementById("tarot-journal")?.scrollIntoView({ behavior: REDUCED_MOTION ? "auto" : "smooth", block: "start" });
   });
 }
 
@@ -2611,7 +3024,7 @@ function addToCollection(title, owner) {
 }
 
 /* ---------- 引き継ぎコード(機種変更・ドメイン移行対応) ---------- */
-const BACKUP_KEYS = ["fortuna:profile", "fortuna:visits", "fortuna:collection", "fortuna:history", "fortuna:dailycard"];
+const BACKUP_KEYS = ["fortuna:profile", "fortuna:visits", "fortuna:collection", "fortuna:history", "fortuna:dailycard", "fortuna:journal", "fortuna:windows"];
 
 function exportBackupCode() {
   const data = {};
@@ -2792,11 +3205,10 @@ function guideArticleHtml(key) {
     <h3>MYOURISCOPE — 妙なる理(ことわり)を観る場所</h3>
     <p>名前は「妙理(みょうり)」と「scope(観測器)」から。言葉にしがたい、ものごとの奥にあるかすかな理を、望遠鏡を覗くように静かに観る——そんな場所でありたいと思っています。</p>
     <h3>占いは、決定ではなく観測</h3>
-    <p>占いはあなたの未来を決めるものではありません。空の配置や暦の巡りという「いまの風向き」を観測して、今日をどう歩くかの参考にする——それだけのものです。だからこのサイトは、断定しません。脅しません。買わせません。かわりに、毎朝そっと背中を押します。</p>
+    <p>占いはあなたの未来を決めるものではありません。空の配置や暦の巡りという「いまの風向き」を観測して、今日をどう歩くかの参考にする——それだけのものです。追い風の日はのびのびと、向かい風の日はあわてずに。この場所が、あなたの毎日にそんな小さな目印を灯せたらと思っています。</p>
     <h3>大切にしていること</h3>
     <ul class="ga-list">
       <li><strong>1日1回の楽しみを守る</strong> — 今日の一枚は1日1回だけ。何度も引き直せたら、その1枚の意味が薄れてしまうから。</li>
-      <li><strong>結果のネタバレをしない</strong> — その日まだ観測していないあなたに、先に答えを見せません。</li>
       <li><strong>根拠を見せる</strong> — スコアにも結論にも、必ず「どう計算したか」を添えます。ブラックボックスの神託より、仕組みごと楽しめる占いを。</li>
       <li><strong>データは、あなたの端末の中だけ</strong> — 生年月日も履歴も、お使いの端末(ブラウザ)の中にだけ保存され、私たちのサーバーには一切送られません。</li>
     </ul>
@@ -2856,3 +3268,4 @@ renderHomeDaily();
 renderInviteBanner();
 updateStreak();
 if (location.hash.length > 1) navigate(location.hash.slice(1), false);
+else gaPageView("home");

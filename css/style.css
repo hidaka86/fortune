@@ -1948,3 +1948,217 @@ body.ritual-open { overflow: hidden; }
   border-color: rgba(217, 192, 138, 0.7);
   background: rgba(217, 192, 138, 0.08);
 }
+
+/* ============================================================
+   緩急の仕掛け — のんびりと、急ぎと
+   (週のリズム / 風のざわめき / 宙の窓 / 月の間 / 呼吸 / 託宣の記録)
+   ============================================================ */
+
+/* --- 週のリズム・水星逆行の小さな声 --- */
+.tempo-line {
+  font-family: var(--serif); font-size: 14px; color: var(--muted);
+  letter-spacing: .05em; line-height: 1.9; margin: -8px 0 18px;
+}
+.merc-note {
+  font-size: 12.5px; color: #7A6A8F; letter-spacing: .04em; line-height: 1.8;
+  border: 1px solid rgba(122, 106, 143, 0.3); border-radius: 8px;
+  padding: 9px 13px; margin: 0 0 16px; background: rgba(122, 106, 143, 0.06);
+}
+
+/* --- 風のざわめき(稀な日の合図) --- */
+.wind-banner {
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  border: 1px solid rgba(168, 132, 78, 0.5); border-radius: 10px;
+  padding: 12px 15px; margin-bottom: 20px;
+  background: linear-gradient(100deg, rgba(168, 132, 78, 0.1), rgba(168, 132, 78, 0.02) 60%);
+  position: relative; overflow: hidden;
+}
+.wind-banner::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(217, 192, 138, 0.16) 50%, transparent 70%);
+  transform: translateX(-100%);
+  animation: windSweep 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes windSweep { 0%, 55% { transform: translateX(-100%); } 90%, 100% { transform: translateX(100%); } }
+.wb-mark { font-size: 20px; }
+.wb-text { font-size: 13.5px; line-height: 1.8; color: var(--ink); letter-spacing: .03em; }
+.wb-text strong { color: var(--gold-bright); }
+
+/* ホームのステータスバーの窓ヒント */
+.status-window, .status-wind, .status-night { cursor: pointer; }
+.status-window { color: var(--gold-bright); border-color: rgba(168, 132, 78, 0.5); }
+.status-night { color: #5A628C; }
+
+/* --- 宙の窓(新月・満月)と月の間のスプレッドカード --- */
+.window-picker { display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 12px; }
+.spread-window {
+  min-height: 140px;
+  background-image:
+    linear-gradient(80deg, rgba(10, 16, 38, 0.97) 42%, rgba(10, 16, 38, 0.8) 64%, rgba(10, 16, 38, 0.34)),
+    url("../images/tarot/tarot_00_fool.webp");
+  background-position: center, right 22%;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+  border-color: rgba(217, 192, 138, 0.55);
+  box-shadow: 0 0 22px rgba(217, 192, 138, 0.14);
+}
+.spread-window[data-window="fullmoon"] {
+  background-image:
+    linear-gradient(80deg, rgba(10, 16, 38, 0.97) 42%, rgba(10, 16, 38, 0.8) 64%, rgba(10, 16, 38, 0.34)),
+    url("../images/tarot/tarot_20_judgement.webp");
+}
+.so-window-until {
+  font-family: var(--serif); font-size: 12px; font-weight: 700;
+  letter-spacing: .14em; color: var(--chamber-gold-bright);
+  margin-bottom: auto; padding-bottom: 12px;
+  text-shadow: 0 1px 8px rgba(10, 16, 38, 0.9);
+}
+.spread-night {
+  grid-column: 1 / -1; min-height: 140px;
+  background-image:
+    linear-gradient(80deg, rgba(6, 9, 24, 0.97) 42%, rgba(6, 9, 24, 0.82) 64%, rgba(6, 9, 24, 0.4)),
+    url("../images/tarot/tarot_02_high_priestess.webp");
+  background-position: center, right 20%;
+  background-size: cover, cover;
+  background-repeat: no-repeat;
+}
+.spread-opt.spread-locked {
+  cursor: default; filter: saturate(0.35) brightness(0.82);
+  border-color: rgba(154, 160, 184, 0.3);
+}
+.spread-opt.spread-locked::after { content: none; }
+.spread-opt.spread-locked:hover { filter: saturate(0.35) brightness(0.82); border-color: rgba(154, 160, 184, 0.3); }
+.spread-opt.spread-locked .so-window-until { color: var(--chamber-muted); }
+/* きょうの誘い(週のリズムのおすすめ) */
+.spread-suggest { border-color: rgba(217, 192, 138, 0.6); }
+.so-suggest {
+  position: absolute; top: 10px; left: 14px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .18em;
+  color: var(--chamber-gold-bright);
+  border: 1px solid rgba(217, 192, 138, 0.5); border-radius: 999px;
+  padding: 2px 10px; background: rgba(10, 16, 38, 0.6);
+}
+
+/* --- 儀式の間:月の間・宙の窓はさらに深い夜へ --- */
+.ritual-overlay.ritual-night { background: linear-gradient(180deg, #05081A 0%, #0A0F2A 55%, #05081A 100%); }
+.ritual-overlay.ritual-lunar { background: radial-gradient(120% 100% at 50% 0%, #10173A 0%, #070B20 62%, #05081A 100%); }
+
+/* --- 呼吸ガイド(重ねて混ぜる) --- */
+.breath-guide {
+  min-height: 30px; margin-top: 18px;
+  font-family: var(--serif); font-size: 17px; letter-spacing: .3em;
+  color: var(--chamber-gold-bright);
+}
+.breath-guide.breath-in { animation: breathIn 3.6s ease both; }
+@keyframes breathIn {
+  0% { opacity: 0; transform: scale(0.96); }
+  30% { opacity: 1; transform: scale(1.03); }
+  100% { opacity: .75; transform: scale(1); }
+}
+.deep-shuffle-mark {
+  font-family: var(--serif); font-size: 12.5px; letter-spacing: .12em;
+  color: var(--gold-bright); margin-top: 10px;
+}
+
+/* --- ざわめきの一枚(風の落とし物) --- */
+.wind-card {
+  border-color: rgba(168, 132, 78, 0.6);
+  background-image: linear-gradient(120deg, rgba(217, 192, 138, 0.08), transparent 45%);
+  position: relative; overflow: hidden;
+}
+.wind-card::before {
+  content: "🌬"; position: absolute; right: 14px; top: 10px; font-size: 18px; opacity: .5;
+}
+
+/* --- 振り返りの呼びかけ --- */
+.reflect-call {
+  display: flex; align-items: center; gap: 14px; width: 100%;
+  max-width: 760px; margin: 18px auto 0; text-align: left;
+  border: 1px solid var(--hairline); border-radius: 12px;
+  background: var(--panel, #FDFBF6); padding: 14px 16px;
+  transition: border-color .25s ease, box-shadow .25s ease;
+}
+.reflect-call:hover { border-color: rgba(168, 132, 78, 0.55); box-shadow: 0 8px 22px rgba(28, 35, 51, 0.08); }
+.reflect-call img { width: 44px; border-radius: 5px; box-shadow: 0 4px 12px rgba(28, 35, 51, 0.25); }
+.reflect-call img.is-rev { transform: rotate(180deg); }
+.rc-body { display: flex; flex-direction: column; gap: 3px; }
+.rc-lead { font-family: var(--serif); font-weight: 700; font-size: 14.5px; color: var(--indigo); letter-spacing: .03em; }
+.rc-sub { font-size: 12.5px; color: var(--muted); line-height: 1.7; }
+.rc-arrow { margin-left: auto; font-family: var(--latin); color: var(--gold-bright); font-size: 17px; }
+
+/* --- 託宣の記録(ジャーナル) --- */
+.j-panel { max-width: 760px; margin: 22px auto 0; }
+.j-note { font-size: 12.5px; color: var(--muted); line-height: 1.9; letter-spacing: .03em; margin-bottom: 14px; }
+.j-list { display: flex; flex-direction: column; gap: 8px; }
+.j-item {
+  border: 1px solid var(--hairline); border-radius: 10px;
+  background: rgba(253, 251, 246, 0.7);
+}
+.j-item[open] { border-color: rgba(168, 132, 78, 0.45); }
+.j-item summary {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  list-style: none; cursor: pointer; padding: 11px 14px;
+}
+.j-item summary::-webkit-details-marker { display: none; }
+.j-date { font-family: var(--num); font-size: 12px; font-weight: 700; color: var(--muted); }
+.j-spread { font-size: 12.5px; font-weight: 700; color: var(--indigo); letter-spacing: .04em; }
+.j-thumbs { display: inline-flex; align-items: center; gap: 3px; }
+.jc-thumb { width: 20px; border-radius: 2.5px; box-shadow: 0 2px 6px rgba(28, 35, 51, 0.3); }
+.jc-thumb.is-rev { transform: rotate(180deg); }
+.jc-more { font-family: var(--num); font-size: 10.5px; color: var(--muted); }
+.j-chips { display: inline-flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.j-chip {
+  font-size: 10.5px; letter-spacing: .05em; color: var(--muted);
+  border: 1px solid var(--hairline); border-radius: 999px; padding: 2px 9px;
+  background: rgba(255, 255, 255, 0.6);
+}
+.j-chip-fade { color: #A2632F; border-color: rgba(162, 99, 47, 0.4); }
+.j-chip-open { color: var(--gold-bright); border-color: rgba(168, 132, 78, 0.5); }
+.j-chip-kept { color: #2E8C7E; border-color: rgba(46, 140, 126, 0.4); }
+.j-chip-faded { color: #9AA0B8; }
+.j-body { padding: 4px 16px 16px; text-align: left; }
+.j-q { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+.j-word { font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--indigo); letter-spacing: .03em; margin-bottom: 6px; }
+.j-reason { font-size: 13.5px; line-height: 1.9; color: var(--ink); }
+.j-memo-row { display: flex; gap: 8px; margin-top: 12px; }
+.j-memo-input, .j-reflect-input {
+  flex: 1; min-width: 0; background: var(--bg); border: 1px solid var(--hairline);
+  border-radius: 6px; padding: 9px 12px; color: var(--ink); font-size: 14px;
+  font-family: inherit; outline: none;
+}
+.j-memo-input:focus, .j-reflect-input:focus { border-color: var(--gold); }
+.j-memo-view { font-size: 13.5px; line-height: 1.8; margin-top: 12px; color: var(--ink); }
+.j-memo-k {
+  display: block; font-size: 10.5px; font-weight: 700; letter-spacing: .14em;
+  color: var(--gold-bright); margin-bottom: 3px;
+}
+.j-item-faded summary { opacity: .8; }
+.j-fadedbox {
+  border: 1px dashed rgba(154, 160, 184, 0.5); border-radius: 8px;
+  padding: 13px 15px; background: rgba(154, 160, 184, 0.06);
+}
+.j-fadedline { font-size: 13.5px; line-height: 1.9; color: var(--muted); }
+.j-fadedline strong { color: var(--indigo); }
+.j-fadedsub { font-size: 12px; color: var(--muted); margin-top: 6px; opacity: .8; }
+.j-layer { border-top: 1px solid var(--hairline); margin-top: 14px; padding-top: 12px; }
+.j-layer p { font-size: 13.5px; line-height: 1.9; }
+.j-layer-k {
+  font-family: var(--serif); font-size: 13px; font-weight: 700;
+  color: var(--gold-bright); letter-spacing: .06em; margin-bottom: 5px;
+}
+.j-layer-k small { font-weight: 500; color: var(--muted); margin-left: 8px; letter-spacing: .04em; }
+.j-layer-locked { opacity: .62; }
+.j-locked-line { color: var(--muted); font-size: 12.5px !important; }
+.j-pointer p { font-size: 13.5px; line-height: 1.9; }
+.j-pointer strong { color: var(--gold-bright); }
+
+@media (max-width: 560px) {
+  .j-chips { margin-left: 0; width: 100%; }
+  .j-memo-row { flex-direction: column; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wind-banner::after { animation: none; }
+  .breath-guide.breath-in { animation: none; opacity: .8; }
+}
