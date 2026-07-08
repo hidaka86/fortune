@@ -2,6 +2,20 @@
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+/* ---------- アクセス解析(GA4) ---------- */
+function gaEvent(name, params = {}) {
+  if (typeof window.gtag === "function") window.gtag("event", name, params);
+}
+
+function gaPageView(target) {
+  gaEvent("page_view", {
+    page_title: document.title,
+    page_location: location.href,
+    page_path: target === "home" ? "/" : `/#${target}`,
+    view_name: target,
+  });
+}
+
 /* ---------- ナビゲーション ---------- */
 const views = document.querySelectorAll(".view");
 const navBtns = document.querySelectorAll(".nav-btn");
@@ -17,6 +31,7 @@ function navigate(target, push = true) {
     try { history.pushState(null, "", target === "home" ? location.pathname + location.search : `#${target}`); } catch { /* file://等 */ }
   }
   window.scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" });
+  gaPageView(target);
 }
 
 window.addEventListener("popstate", () => navigate(location.hash.slice(1) || "home", false));
@@ -3253,3 +3268,4 @@ renderHomeDaily();
 renderInviteBanner();
 updateStreak();
 if (location.hash.length > 1) navigate(location.hash.slice(1), false);
+else gaPageView("home");
