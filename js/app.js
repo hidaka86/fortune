@@ -139,7 +139,7 @@ function metersHtml(scores) {
     <div class="meter">
       <span class="meter-label">${labels[k]}</span>
       <div class="meter-track"><div class="meter-fill ${band(v)}" data-w="${v * 20}"></div></div>
-      <span class="meter-value ${band(v)}">${v}.0</span>
+      <span class="meter-value ${band(v)}">${v.toFixed(1)}</span>
     </div>`).join("")}</div>`;
 }
 
@@ -438,9 +438,10 @@ function mindForToday(verdict, card, daily) {
   // その日いちばん強いテーマ(恋愛/仕事/金運/健康)
   const top = Object.entries(daily.scores).sort((a, b) => b[1] - a[1])[0];
   const set = MIND_WORDS[verdict.rank] || MIND_WORDS["平"];
-  // ベース6種+トップテーマの言葉(重み2倍)をプールに
+  // ベース10種+トップテーマの言葉3種(重み2倍)をプールに
   const pool = [...set.base];
-  if (top && set[top[0]]) pool.push(set[top[0]], set[top[0]]);
+  const themed = top && set[top[0]];
+  if (themed) for (const w of themed) pool.push(w, w);
   // カード・トップテーマまでシードに含める:結果が違えば言葉も変わる
   const rng = seededRng(`${todayKey()}|mind|${loadProfile()?.birthdate || ""}|${card ? card.n + (card.reversed ? "r" : "") : "x"}|${top ? top[0] : ""}`);
   const word = pool[Math.floor(rng() * pool.length)];
@@ -516,6 +517,15 @@ function renderToday() {
   const mind = mindForToday(verdict, card, daily);
   const who = p.name ? `${esc(p.name)}さん` : "あなた";
 
+  // 風の予報:今週の中での今日の位置づけ+明日のぼかし予告(数字は明かさない)
+  const outlook = weekOutlook(p.birthdate);
+  const hint = tomorrowHint(p.birthdate);
+  const outlookLine = outlook.peakIsToday
+    ? "今日は、この一週間でいちばん風の強い日。逃す手はありません。"
+    : outlook.rankToday <= 3
+      ? `今日は今週${outlook.rankToday}番目の追い風。次のピークは${outlook.peakLabel}です。`
+      : `今週のピークは${outlook.peakLabel}。今日はそこへ向けて整える日です。`;
+
   lastShare.today = {
     cards: [{ n: dc.n, reversed: dc.reversed }],
     eyebrow: `TODAY — ${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`,
@@ -551,6 +561,7 @@ function renderToday() {
         <span class="chip">「${daily.dayStar.name}」の日</span>
         <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
       </div>
+      <p class="sub" style="margin-top:12px">${outlookLine}</p>
     </div>
     <div class="result-grid">
       ${cardBlock}
@@ -568,6 +579,7 @@ function renderToday() {
         ${cardH4("TODAY'S MIND", "きょうのマインド")}
         <p class="mind-word">「${mind.word}」</p>
         ${mind.points.map((pt) => `<p class="mind-point"><span class="mp-k">${pt.k}</span>${pt.v}</p>`).join("")}
+        <p class="mind-point"><span class="mp-k">明日の気配</span>${hint.text}</p>
         <p class="mind-sendoff">— いってらっしゃい。良い一日を。</p>
       </div>
     </div>

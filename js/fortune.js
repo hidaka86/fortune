@@ -24,8 +24,7 @@ function seededRng(str) {
   return mulberry32(hashString(str));
 }
 
-function todayKey() {
-  const d = new Date();
+function todayKey(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
@@ -73,29 +72,38 @@ function getKyusei(y, m, d) {
 
 /* ---------- 今日の運勢スコア ----------
    乱数ではなく命理で組み立てる:
-   基礎3点 + 日運の通変星(日主×今日の日干) + 月運の通変星(半分の重み)
-   + 月相の補正 + わずかな日替わりゆらぎ。理由も一緒に返す。 */
-function dailyFortune(birthdate) {
-  const rng = seededRng(`${birthdate}::${todayKey()}`);
+   通変星の気流(日運+月運)+ 月相の補正 + 総合判定の票 + 日替わりのゆらぎ。
+   平均は65前後に置きつつ、30台の日も90台の日もちゃんと巡ってくる分布にする。 */
+function dailyFortune(birthdate, baseDate = new Date()) {
+  const dateKey = todayKey(baseDate);
+  const rng = seededRng(`${birthdate}::${dateKey}`);
   const pick = (arr) => arr[Math.floor(rng() * arr.length)];
 
-  const flow = kiFlow(birthdate);
+  const flow = kiFlow(birthdate, baseDate);
   const dayW = flow.day.star.weights;
   const monthW = flow.month.star.weights;
 
-  const phase = moonPhaseToday();
+  const phase = moonPhaseToday(baseDate);
   const moonAdj = {
     "新月": { work: 0.4 }, "三日月": { work: 0.3 }, "上弦の月": { work: 0.4, love: 0.2 },
     "十三夜の月": { money: 0.3 }, "満月": { love: 0.5 }, "居待月": { health: 0.3 },
     "下弦の月": { health: 0.4 }, "有明月": { health: 0.3, love: 0.2 },
   }[phase.name] || {};
 
+  // テーマ別は連続値で持ち、表示は0.5刻み(3と4ばかりのメーターにしない)
+  const raw = {};
   const scores = {};
   for (const k of ["love", "work", "money", "health"]) {
-    let v = 3 + (dayW[k] || 0) + (monthW[k] || 0) * 0.5 + (moonAdj[k] || 0) + (rng() * 2 - 1) * 0.7;
-    scores[k] = Math.max(1, Math.min(5, Math.round(v)));
+    raw[k] = 3 + (dayW[k] || 0) + (monthW[k] || 0) * 0.5 + (moonAdj[k] || 0) + (rng() * 2 - 1) * 0.9;
+    scores[k] = Math.max(1, Math.min(5, Math.round(raw[k] * 2) / 2));
   }
+  const energy = (raw.love + raw.work + raw.money + raw.health) / 4;
   const total = Math.round((scores.love + scores.work + scores.money + scores.health) / 4 * 10) / 10;
+
+  // 総合スコア: 気流の平均(丸める前)を増幅 + 結論の票 + 日替わりのゆらぎ(三角分布)
+  const votes = dailyVerdict(birthdate, baseDate).total;
+  const swing = (rng() + rng() - 1) * 14;
+  const score100 = Math.max(8, Math.min(100, Math.round(52 + (energy - 3) * 16 + votes * 4.5 + swing)));
 
   return {
     scores,
@@ -106,7 +114,7 @@ function dailyFortune(birthdate) {
     monthStar: flow.month.star,
     dayKanshi: flow.day.pillar.kan + flow.day.pillar.shi,
     reason: `今日は${flow.day.pillar.kan}${flow.day.pillar.shi}の日 — あなたの日主「${flow.myKan}」から見て「${flow.day.star.name}」にあたる日です。${flow.day.star.day}`,
-    score100: Math.max(1, Math.min(100, Math.round(total * 20))),
+    score100,
     action: pick(LUCKY_ACTIONS),
     luckyColor: pick(LUCKY_COLORS),
     luckyItem: pick(LUCKY_ITEMS),
@@ -115,11 +123,44 @@ function dailyFortune(birthdate) {
   };
 }
 
-/* 日替わりでバリエーションが変わるスコア別コメント */
-function pickScoreComment(theme, level) {
-  const variants = SCORE_COMMENT[theme]?.[Math.min(4, Math.max(0, level - 1))];
+/* 日替わり×人替わりでバリエーションが変わるスコア別コメント */
+function pickScoreComment(theme, level, seedExtra = "") {
+  const variants = SCORE_COMMENT[theme]?.[Math.min(4, Math.max(0, Math.round(level) - 1))];
   if (!variants) return "";
-  return variants[hashString(todayKey() + theme) % variants.length];
+  return variants[hashString(todayKey() + theme + seedExtra) % variants.length];
+}
+
+/* ---------- 風の予報:今週の中での今日の位置づけ ----------
+   7日間のスコアを並べて、今日が何番目の風かを返す(結果の文脈が毎日変わる) */
+function weekOutlook(birthdate, baseDate = new Date()) {
+  const WD = ["日", "月", "火", "水", "木", "金", "土"];
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const t = new Date(baseDate);
+    t.setDate(t.getDate() + i);
+    days.push({ date: t, score: dailyFortune(birthdate, t).score100 });
+  }
+  const sorted = [...days].sort((a, b) => b.score - a.score);
+  const rankToday = sorted.indexOf(days[0]) + 1;
+  const peak = sorted[0];
+  return {
+    rankToday,
+    peakIsToday: peak === days[0],
+    peakLabel: `${peak.date.getMonth() + 1}/${peak.date.getDate()}(${WD[peak.date.getDay()]})`,
+    scores: days.map((x) => x.score),
+  };
+}
+
+/* 明日の気配:数字は明かさず、風向きの変化だけをそっと予告する(ネタバレ防止) */
+function tomorrowHint(birthdate, baseDate = new Date()) {
+  const today = dailyFortune(birthdate, baseDate).score100;
+  const tm = new Date(baseDate);
+  tm.setDate(tm.getDate() + 1);
+  const tomorrow = dailyFortune(birthdate, tm).score100;
+  const dir = tomorrow - today >= 8 ? "up" : tomorrow - today <= -8 ? "down" : "flat";
+  const pool = TOMORROW_HINTS[dir];
+  const text = pool[hashString(todayKey(baseDate) + "|hint|" + birthdate) % pool.length];
+  return { dir, text };
 }
 
 /* ---------- タロット ---------- */
@@ -355,17 +396,18 @@ function fortuneTitle(birthdate) {
    複数の手法論の「票」を合算して、今日がどういう日かを一言で結論づける */
 const SANGO_GROUPS = [["申", "子", "辰"], ["巳", "酉", "丑"], ["寅", "午", "戌"], ["亥", "卯", "未"]];
 
-function dailyVerdict(birthdate) {
+function dailyVerdict(birthdate, baseDate = new Date()) {
   const [by, bm, bd] = birthdate.split("-").map(Number);
-  const flow = kiFlow(birthdate);
-  const phase = moonPhaseToday();
+  const flow = kiFlow(birthdate, baseDate);
+  const phase = moonPhaseToday(baseDate);
   const factors = [];
   const starPower = (star) => Object.values(star.weights).reduce((a, b) => a + b, 0);
 
   // 1. 四柱推命・日運(星の意味+その日どう過ごすかまで解説)
+  // 気流の総和を平均(約1.1)を中心に票へ変換。劫財・傷官の日はきちんと向かい風になる
   const ds = flow.day.star;
   const dp = starPower(ds);
-  const dScore = dp >= 1.2 ? 2 : dp >= 0.5 ? 1 : dp >= 0 ? 0 : -1;
+  const dScore = dp >= 1.8 ? 2 : dp >= 1.0 ? 1 : dp >= 0.6 ? 0 : dp >= 0.3 ? -1 : -2;
   factors.push({
     method: "四柱推命・日運", label: `「${ds.name}」の日`,
     score: dScore,
@@ -375,7 +417,7 @@ function dailyVerdict(birthdate) {
   // 2. 四柱推命・月運(月全体に流れる気流の解説)
   const ms = flow.month.star;
   const mp = starPower(ms);
-  const mScore = mp >= 1.2 ? 1 : mp >= 0 ? 0 : -1;
+  const mScore = mp >= 1.8 ? 1 : mp >= 0.6 ? 0 : -1;
   const monthDetail = ms.month.includes("— ") ? ms.month.split("— ")[1] : ms.month;
   factors.push({
     method: "四柱推命・月運", label: `「${ms.name}」の月`,
@@ -385,7 +427,7 @@ function dailyVerdict(birthdate) {
 
   // 3. 干支の巡り(今日の日支 × 生まれ年支)
   const myBranch = getEto(by, bm, bd).name;
-  const now = new Date();
+  const now = baseDate;
   const todayBranch = dayPillar(now.getFullYear(), now.getMonth() + 1, now.getDate()).shi;
   const diff = ((JUNISHI.indexOf(todayBranch) - JUNISHI.indexOf(myBranch)) % 12 + 12) % 12;
   const isSango = SANGO_GROUPS.some((g) => g.includes(myBranch) && g.includes(todayBranch)) && myBranch !== todayBranch;
@@ -409,19 +451,23 @@ function dailyVerdict(birthdate) {
   });
 
   const total = factors.reduce((a, f) => a + f.score, 0);
-  const [rank, word, advice] =
-    total >= 4 ? ["大吉", "攻めの日", "複数の暦が同時に追い風を示す、めったにない日。大一番・告白・提案はこの日に。"] :
-    total >= 2 ? ["吉", "前進の日", "流れは味方しています。準備してきたことを一歩、形にしましょう。"] :
-    total >= 0 ? ["平", "平常の日", "特別な追い風も向かい風もない日。ルーティンを丁寧に積むのが最善手です。"] :
-    total >= -2 ? ["静", "整えの日", "攻めるより整える日。振り返り・片付け・仕込みが、明日からの追い風になります。"] :
-    ["休", "充電の日", "複数の暦が休息を勧めています。今日は自分を甘やかしてOK。休むのも戦略です。"];
+  const rank =
+    total >= 5 ? "大吉" :
+    total >= 2 ? "吉" :
+    total >= 0 ? "平" :
+    total >= -2 ? "静" : "休";
+
+  // 同じランクでも日と人で言い回しが変わる(結論の言葉のバリエーション)
+  const voice = VERDICT_VOICE[rank];
+  const vRng = seededRng(`${todayKey(baseDate)}|verdict|${birthdate}`);
+  const word = voice.words[Math.floor(vRng() * voice.words.length)];
+  const advice = voice.advices[Math.floor(vRng() * voice.advices.length)];
 
   return { factors, total, rank, word, advice };
 }
 
 /* ---------- 月相(今日の月) ---------- */
-function moonPhaseToday() {
-  const now = new Date();
+function moonPhaseToday(now = new Date()) {
   const jd = toJDN(now.getFullYear(), now.getMonth() + 1, now.getDate()) - 0.375;
   const age = (((jd - 2451550.1) % 29.530588853) + 29.530588853) % 29.530588853;
   const idx = Math.floor((age / 29.530588853) * 8 + 0.5) % 8;
@@ -661,7 +707,7 @@ function integratedReading({ name, birthdate, theme }) {
       : `西洋の「${zodiac.element}」と東洋の「${kyusei.element}」、異なる気質を併せ持つバランス型です。`;
 
   const themeScore = theme === "total" ? Math.round(daily.total) : daily.scores[theme];
-  const themeComment = pickScoreComment(theme, themeScore);
+  const themeComment = pickScoreComment(theme, themeScore, birthdate);
 
   return { name, birthdateStr: birthdate, zodiac, eto, jikkan, kyusei, pillars, moon, daily, card, theme, themeScore, themeComment, elementNote };
 }
