@@ -417,6 +417,9 @@ function renderHomeDaily() {
   const daily = dailyFortune(p.birthdate);
   const verdict = dailyVerdict(p.birthdate);
   const base = cardByN(dc.n);
+  // CTAの文言は日替わり(毎日同じボタンにしない)
+  const ctaWords = ["今日の流れを、くわしく観る", "観測記録の全文をひらく", "羅針盤のつづきを観る", "今日の空模様を、もう一度"];
+  const ctaWord = ctaWords[Math.floor(seededRng(`${todayKey()}|cta|${p.birthdate}`)() * ctaWords.length)];
   heroContentEl.innerHTML = `
     <p class="hero-eyebrow">Today's Compass — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
     <h1 class="hero-title hero-title-member"><span class="nw">今日は<em>「${verdict.word}」</em>。</span></h1>
@@ -428,22 +431,35 @@ function renderHomeDaily() {
     <p class="hero-action">今日の一手 — <strong>${daily.action}</strong></p>
     ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
     <div class="hero-cta" style="margin-top:22px">
-      <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の結果をみる</button>
+      <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>${ctaWord}</button>
     </div>`;
   heroContentEl.querySelectorAll("[data-count]").forEach(countUp);
 }
 
 /* ---------- 今日の占い(朝の羅針盤:結論=マインドは最後に) ---------- */
+const MIND_HISTORY_KEY = "ms_mind_history";
+
 function mindForToday(verdict, card, daily) {
   // その日いちばん強いテーマ(恋愛/仕事/金運/健康)
   const top = Object.entries(daily.scores).sort((a, b) => b[1] - a[1])[0];
   const set = MIND_WORDS[verdict.rank] || MIND_WORDS["平"];
-  // ベース6種+トップテーマの言葉(重み2倍)をプールに
-  const pool = [...set.base];
-  if (top && set[top[0]]) pool.push(set[top[0]], set[top[0]]);
-  // カード・トップテーマまでシードに含める:結果が違えば言葉も変わる
-  const rng = seededRng(`${todayKey()}|mind|${loadProfile()?.birthdate || ""}|${card ? card.n + (card.reversed ? "r" : "") : "x"}|${top ? top[0] : ""}`);
-  const word = pool[Math.floor(rng() * pool.length)];
+  // ベース+トップテーマの言葉をプールに
+  const pool = [...set.base, ...((top && set[top[0]]) || [])];
+  // 「また同じこと言ってる」を防ぐ:直近に見せた言葉は候補から外す。
+  // 同じ日のあいだは同じ言葉(リロードしても変わらない)。
+  let hist;
+  try { hist = JSON.parse(localStorage.getItem(MIND_HISTORY_KEY)) || {}; } catch { hist = {}; }
+  const recent = Array.isArray(hist.recent) ? hist.recent : [];
+  let word = hist.date === todayKey() ? hist.word : null;
+  if (!word) {
+    const fresh = pool.filter((w) => !recent.includes(w));
+    const candidates = fresh.length ? fresh : pool;
+    // カード・トップテーマまでシードに含める:結果が違えば言葉も変わる
+    const rng = seededRng(`${todayKey()}|mind|${loadProfile()?.birthdate || ""}|${card ? card.n + (card.reversed ? "r" : "") : "x"}|${top ? top[0] : ""}`);
+    word = candidates[Math.floor(rng() * candidates.length)];
+    const nextRecent = [...recent.filter((w) => w !== word), word].slice(-10);
+    try { localStorage.setItem(MIND_HISTORY_KEY, JSON.stringify({ date: todayKey(), word, recent: nextRecent })); } catch { /* noop */ }
+  }
   const points = [
     { k: "暦から", v: daily.dayStar.day.split("。")[0] + "。" },
     ...(card ? [{ k: "カードから", v: card.advice }] : []),
