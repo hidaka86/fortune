@@ -617,6 +617,46 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
   font-family: var(--serif); font-size: 17.5px; font-weight: 600; letter-spacing: .04em;
   color: var(--indigo);
 }
+.lucky-line {
+  margin-top: 18px; padding-top: 16px;
+  border-top: 1px dashed var(--hairline);
+  font-size: 15px; line-height: 2; color: var(--muted);
+}
+.lucky-line strong { color: var(--gold-bright); font-weight: 600; }
+
+/* 今日の運気:円形スコアゲージ */
+.score-ring { position: relative; width: 150px; margin: 20px auto 8px; }
+.score-ring svg { display: block; width: 100%; height: auto; transform: rotate(-90deg); }
+.sr-track { fill: none; stroke: rgba(28, 35, 51, 0.08); stroke-width: 9; }
+.sr-fill {
+  fill: none; stroke: url(#srGold); stroke-width: 9; stroke-linecap: round;
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.sr-center {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.sr-num {
+  font-family: var(--num-display); font-size: 46px; font-weight: 600; line-height: 1;
+  color: var(--ink);
+}
+.sr-num small { font-family: var(--num); font-size: 14px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+.sr-label { font-size: 10.5px; letter-spacing: .22em; color: var(--gold-bright); margin-top: 6px; }
+
+/* 気流のひとこと(追い風/いたわり) */
+.ki-notes { margin-top: 18px; border-top: 1px solid var(--hairline); }
+.ki-note {
+  display: flex; gap: 12px; align-items: baseline;
+  padding: 13px 2px; border-bottom: 1px solid var(--hairline);
+  font-size: 15px; line-height: 1.9;
+}
+.kn-tag {
+  flex: 0 0 auto; font-size: 12px; letter-spacing: .06em;
+  padding: 3px 11px; border-radius: 99px; white-space: nowrap;
+}
+.kn-tag.hi { color: var(--gold-deep); background: var(--gold-wash); border: 1px solid rgba(168, 132, 78, 0.35); }
+.kn-tag.lo { color: var(--muted); background: var(--faint); border: 1px solid var(--hairline); }
+.meter.is-top .meter-label { color: var(--gold-bright); font-weight: 700; }
 
 /* ---------- 回遊導線 ---------- */
 .crosslinks {

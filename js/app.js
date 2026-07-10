@@ -132,15 +132,73 @@ function starsHtml(score) {
   return `<span class="stars">${html}</span>`;
 }
 
-function metersHtml(scores) {
-  const labels = { love: "恋愛運", work: "仕事運", money: "金運", health: "健康運" };
+const THEME_LABELS = { love: "恋愛運", work: "仕事運", money: "金運", health: "健康運" };
+
+function metersHtml(scores, markTop = false) {
   const band = (v) => (v >= 4 ? "hi" : v >= 3 ? "mid" : "lo");
+  const topKey = markTop ? Object.entries(scores).sort((a, b) => b[1] - a[1])[0][0] : null;
   return `<div class="meter-list">${Object.entries(scores).map(([k, v]) => `
-    <div class="meter">
-      <span class="meter-label">${labels[k]}</span>
+    <div class="meter ${k === topKey ? "is-top" : ""}">
+      <span class="meter-label">${THEME_LABELS[k]}</span>
       <div class="meter-track"><div class="meter-fill ${band(v)}" data-w="${v * 20}"></div></div>
       <span class="meter-value ${band(v)}">${v}.0</span>
     </div>`).join("")}</div>`;
+}
+
+/* 気流のひとこと:いちばん強い運への乗り方と、低めの運のいたわり方 */
+function kiNotesHtml(scores) {
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const [topK, topV] = sorted[0];
+  const [lowK, lowV] = sorted[sorted.length - 1];
+  const notes = [`<p class="ki-note"><span class="kn-tag hi">▲ ${THEME_LABELS[topK]}</span><span>${pickScoreComment(topK, topV)}</span></p>`];
+  if (lowK !== topK && lowV < topV) {
+    notes.push(`<p class="ki-note"><span class="kn-tag lo">− ${THEME_LABELS[lowK]}</span><span>${pickScoreComment(lowK, lowV)}</span></p>`);
+  }
+  return `<div class="ki-notes">${notes.join("")}</div>`;
+}
+
+/* 今日の空模様:結論ランク×強い運×低い運から、その日だけのリード文を組む */
+function skyLineForToday(verdict, scores) {
+  const sorted = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+  const [topK, topV] = sorted[0];
+  const [lowK, lowV] = sorted[sorted.length - 1];
+  const sky = {
+    "大吉": "空は快晴。めったにない追い風が吹いています",
+    "吉": "晴れ間の多い、歩きやすい空です",
+    "平": "おだやかな凪。じっくり歩ける空です",
+    "静": "うす曇り。急がなくていい空です",
+    "休": "雨やどりの空。今日はゆっくりで大丈夫",
+  }[verdict.rank] || "おだやかな空です";
+  let line = `${sky}。`;
+  line += topV >= 4
+    ? `とくに${THEME_LABELS[topK]}が、よく晴れています。`
+    : `風がいちばん通っているのは、${THEME_LABELS[topK]}です。`;
+  if (lowV <= 2 && lowK !== topK) line += `${THEME_LABELS[lowK]}だけは、ゆっくりめに。`;
+  return line;
+}
+
+/* 今日の運気:円形スコアゲージ */
+function scoreRingHtml(score) {
+  const r = 56;
+  const c = Math.round(2 * Math.PI * r * 10) / 10;
+  const offset = Math.round(c * (1 - score / 100) * 10) / 10;
+  return `
+    <div class="score-ring" role="img" aria-label="今日の運気 ${score}/100">
+      <svg viewBox="0 0 144 144" aria-hidden="true">
+        <defs>
+          <linearGradient id="srGold" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#C9A869" />
+            <stop offset="1" stop-color="#8F6C38" />
+          </linearGradient>
+        </defs>
+        <circle class="sr-track" cx="72" cy="72" r="${r}" />
+        <circle class="sr-fill" cx="72" cy="72" r="${r}" stroke-dasharray="${c}" stroke-dashoffset="${c}" data-ring="${offset}" />
+      </svg>
+      <div class="sr-center">
+        <span class="sr-num"><span data-count="${score}">0</span><small>/100</small></span>
+        <span class="sr-label">今日の運気</span>
+      </div>
+    </div>`;
 }
 
 function luckyHtml(daily) {
@@ -149,7 +207,8 @@ function luckyHtml(daily) {
     <div class="lucky-item"><span class="k">ITEM</span><span class="v">${daily.luckyItem}</span></div>
     <div class="lucky-item"><span class="k">PLACE</span><span class="v">${daily.luckyPlace}</span></div>
     <div class="lucky-item"><span class="k">NUMBER</span><span class="v">${daily.luckyNumber}</span></div>
-  </div>`;
+  </div>
+  <p class="lucky-line">「<strong>${daily.luckyColor}</strong>」を今日のどこかにひとつ。<strong>${daily.luckyItem}</strong>をお守りに、<strong>${daily.luckyPlace}</strong>に立ち寄れたら、なお良し。「<strong>${daily.luckyNumber}</strong>」の数字を見かけたら、それは追い風のサインです。</p>`;
 }
 
 function cardH4(en, ja) {
@@ -268,6 +327,9 @@ function showResult(el, html) {
   requestAnimationFrame(() => {
     el.querySelectorAll(".meter-fill").forEach((m) => {
       requestAnimationFrame(() => { m.style.width = `${m.dataset.w}%`; });
+    });
+    el.querySelectorAll(".sr-fill").forEach((m) => {
+      requestAnimationFrame(() => { m.style.strokeDashoffset = m.dataset.ring; });
     });
     el.querySelectorAll("[data-count]").forEach(countUp);
   });
@@ -468,6 +530,23 @@ function mindForToday(verdict, card, daily) {
   return { word, points };
 }
 
+/* マインドの結び:毎日ちがう見送りの言葉 */
+const MIND_SENDOFFS = [
+  "— いってらっしゃい、{who}。良い一日を。",
+  "— 今日のあなたは、もう整っています。いってらっしゃい。",
+  "— 夜になったら、答え合わせをしに戻ってきてくださいね。",
+  "— 深呼吸ひとつぶんの余裕を、ポケットに入れて。",
+  "— 出発の前に、空を一度だけ見上げてみてください。",
+  "— この言葉は、今日の{who}だけのものです。",
+  "— 大丈夫。今日も、ちゃんといい日にできます。",
+  "— {who}に、ちょうどいい風が吹きますように。",
+];
+
+function mindSendoff(who) {
+  const rng = seededRng(`${todayKey()}|sendoff|${loadProfile()?.birthdate || ""}`);
+  return MIND_SENDOFFS[Math.floor(rng() * MIND_SENDOFFS.length)].replaceAll("{who}", who);
+}
+
 function renderToday() {
   const root = document.getElementById("today-root");
   const p = loadProfile();
@@ -560,10 +639,10 @@ function renderToday() {
   showResult(root, `
     <div class="result-hero" style="text-align:center">
       <p class="result-eyebrow">TODAY'S OBSERVATION — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}︎ ${phase.name}</p>
-      <h3 class="result-title">今日は「${verdict.word}」。</h3>
-      <p class="result-lead" style="margin-inline:auto">${who}の暦とカードから、今日を観測。</p>
+      <h3 class="result-title"><span class="nw">${who}の今日は、</span><span class="nw">「${verdict.word}」。</span></h3>
+      <p class="result-lead" style="margin-inline:auto">${skyLineForToday(verdict, daily.scores)}</p>
+      ${scoreRingHtml(daily.score100)}
       <div class="chip-row" style="justify-content:center">
-        <span class="chip">今日の運気 <strong>${daily.score100}</strong> /100</span>
         <span class="chip">「${daily.dayStar.name}」の日</span>
         <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
       </div>
@@ -573,7 +652,8 @@ function renderToday() {
       ${verdictHtml(verdict)}
       <div class="result-card span-all">
         ${cardH4("TODAY'S KI", "今日の気流")}
-        ${metersHtml(daily.scores)}
+        ${metersHtml(daily.scores, true)}
+        ${kiNotesHtml(daily.scores)}
         <div style="margin-top:20px">${todayLogicHtml(daily)}</div>
       </div>
       <div class="result-card span-all">
@@ -584,7 +664,7 @@ function renderToday() {
         ${cardH4("TODAY'S MIND", "きょうのマインド")}
         <p class="mind-word">「${mind.word}」</p>
         ${mind.points.map((pt) => `<p class="mind-point"><span class="mp-k">${pt.k}</span>${pt.v}</p>`).join("")}
-        <p class="mind-sendoff">— いってらっしゃい。良い一日を。</p>
+        <p class="mind-sendoff">${mindSendoff(who)}</p>
       </div>
     </div>
     <div class="share-block">
