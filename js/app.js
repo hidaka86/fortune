@@ -2,14 +2,22 @@
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/* ---------- アクセス解析(GA4) ---------- */
+/* ---------- アクセス解析(GA4) ----------
+   イベント設計は docs/ANALYTICS.md 参照。個人情報(生年月日・名前・自由入力)は送らない。
+   page_title を画面ごとに変えるのは、GA4標準の pageTitle ディメンションだけで
+   画面別分析ができるようにするため(カスタムディメンション登録なしで集計可能)。 */
+const VIEW_LABELS = {
+  home: "ホーム", today: "今日の占い", tarot: "タロット", western: "ホロスコープ",
+  eastern: "四柱推命", aisho: "相性診断", guide: "読みもの", integrated: "統合鑑定", mypage: "マイページ",
+};
+
 function gaEvent(name, params = {}) {
   if (typeof window.gtag === "function") window.gtag("event", name, params);
 }
 
 function gaPageView(target) {
   gaEvent("page_view", {
-    page_title: document.title,
+    page_title: `MYOURISCOPE — ${VIEW_LABELS[target] || target}`,
     page_location: location.href,
     page_path: target === "home" ? "/" : `/#${target}`,
     view_name: target,
@@ -484,6 +492,7 @@ function renderToday() {
       e.preventDefault();
       const fd = new FormData(e.target);
       if (!fd.get("birthdate")) return;
+      gaEvent("register", { via: "today" });
       saveProfile({ name: fd.get("name")?.trim(), birthdate: fd.get("birthdate"), theme: "total" });
       prefillForms(loadProfile());
       renderHomeDaily();
@@ -506,6 +515,13 @@ function renderToday() {
   try { obsSeen = localStorage.getItem(OBS_TODAY_KEY) === todayKey(); } catch { /* noop */ }
   if (!obsSeen) {
     try { localStorage.setItem(OBS_TODAY_KEY, todayKey()); } catch { /* noop */ }
+    // 今日はじめての観測完了(1日1回)— 継続の核となるファネルの底
+    const dvT = dailyVerdict(p.birthdate);
+    const dfT = dailyFortune(p.birthdate);
+    gaEvent("today_observed", {
+      rank: dvT.rank, score: dfT.score100,
+      streak: (updateStreak() || {}).streak || 1,
+    });
     observeThen("today", () => renderToday());
     return;
   }
@@ -680,6 +696,7 @@ function renderMypage() {
       e.preventDefault();
       const fd = new FormData(e.target);
       if (!fd.get("birthdate")) return;
+      gaEvent("register", { via: "mypage" });
       saveProfile({ name: fd.get("name")?.trim(), birthdate: fd.get("birthdate"), theme: "total" });
       prefillForms(loadProfile());
       renderHomeDaily();
@@ -919,6 +936,7 @@ document.addEventListener("click", async (e) => {
   if (!btn) return;
   try {
     await navigator.clipboard.writeText(btn.dataset.copy);
+    gaEvent("share_copy", {});
     const orig = btn.textContent;
     btn.textContent = "コピーしました ✓";
     setTimeout(() => { btn.textContent = orig; }, 1600);
@@ -1250,6 +1268,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
     birthdate: fd.get("birthdate"),
     theme: fd.get("theme"),
   });
+  gaEvent("reading", { kind: "integrated", theme: r.theme });
 
   saveProfile({ name: r.name, birthdate: fd.get("birthdate"), theme: r.theme });
   prefillForms(loadProfile());
@@ -1409,6 +1428,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   const hasTime = fd.get("bh") !== "" && fd.get("bh") !== null;
   const birthHour = hasTime ? Number(fd.get("bh")) + Number(fd.get("bm") || 0) / 60 : 12;
   const horo = horoscope(y, m, d, birthHour, hasTime);
+  gaEvent("reading", { kind: "western", theme: westernTheme, has_time: hasTime ? 1 : 0 });
   const horoMoonSign = horo.planets.find((p) => p.key === "moon").sign;
   const flow = horoscopeFlow(y, m, d, westernTheme);
   const themeReading = horoscopeTheme(horo, westernTheme);
@@ -1568,6 +1588,7 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
   const eto = getEto(y, m, d);
   const kyusei = getKyusei(y, m, d);
   const pillars = fourPillars(y, m, d);
+  gaEvent("reading", { kind: "eastern" });
   const daily = dailyFortune(birthdate);
   const flow = kiFlow(birthdate);
   const week = weekFlow(birthdate);
@@ -1750,6 +1771,7 @@ function loadDailyCard() {
 }
 function saveDailyCard(c) {
   try { localStorage.setItem(DAILY_CARD_KEY, JSON.stringify({ date: todayKey(), n: c.n, reversed: c.reversed })); } catch { /* noop */ }
+  gaEvent("daily_card_drawn", { card: cardByN(c.n)?.name || String(c.n), reversed: c.reversed ? 1 : 0 });
 }
 
 const TAROT_GENRES = [["total", "総合"], ["love", "恋愛"], ["work", "仕事"], ["money", "金運"]];
@@ -2093,6 +2115,7 @@ function renderTarotJournal(openId) {
       const v = input?.value.trim();
       if (!v) { input?.focus(); return; }
       updateJournalEntry(id, { memo: v, memoT: Date.now() });
+      gaEvent("journal_memo", {});
       vibrate(12);
       renderTarotJournal(id);
     });
@@ -2105,6 +2128,7 @@ function renderTarotJournal(openId) {
       const v = input?.value.trim();
       if (!v) { input?.focus(); return; }
       updateJournalEntry(id, { reflection: v, reflectionT: Date.now() });
+      gaEvent("journal_reflection", {});
       vibrate(12);
       renderTarotJournal(id);
     });
@@ -2770,6 +2794,10 @@ function showTarotSummary(restored) {
     x: `【MYOURISCOPE タロット・${conf.label}】${conc ? `「${conc.word}」— ` : ""}${cardsLabel.slice(0, 3).join("、")}${cardsLabel.length > 3 ? ` ほか${cardsLabel.length - 3}枚` : ""} ✦`,
   };
   if (!restored) {
+    gaEvent("tarot_reading", {
+      spread: ritual.spread, genre: ritual.genre, cards: ritual.cards.length,
+      deep_shuffle: ritual.deepShuffle ? 1 : 0, wind_day: windCallToday() ? 1 : 0,
+    });
     recordHistory(`タロット(${conf.label})`, cardsLabel.join(" / "),
       ritual.cards.map((c, i) => `${conf.positions[i].ja}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${genreMeaning(c)}`).join(" "));
     // 託宣の記録に綴じる(24時間で薄れ、12時間・3日後に続きがひらく)
@@ -2907,6 +2935,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     { name: fd.get("name1")?.trim(), birthdate: fd.get("birthdate1") },
     { name: fd.get("name2")?.trim(), birthdate: fd.get("birthdate2") },
   );
+  gaEvent("reading", { kind: "aisho", score: r.total });
   const nameA = r.a.name ? esc(r.a.name) : "あなた";
   const nameB = r.b.name ? esc(r.b.name) : "お相手";
   const keyword = aishoKeyword(r);

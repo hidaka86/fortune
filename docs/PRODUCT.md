@@ -3,7 +3,7 @@
 > 妙理(みょうり)= 言葉にしがたい、ものごとの奥にある理 × scope(観測器)。
 > 本番: https://myouriscope.com/ (GitHub Pages / 純粋な静的サイト・サーバーなし)
 
-最終更新: 2026-07-09
+最終更新: 2026-07-10
 
 ---
 
@@ -166,7 +166,14 @@
 | `fortuna:bp` | 出生地(都道府県index) |
 | 引き継ぎ | マイページの引き継ぎコード(export/import) |
 
-## 12. 開発運用メモ
+## 12. アナリティクス(GA4)
+
+- 測定ID `G-PQC4DKWZ78`。**イベント設計・APIセットアップ・週次自律改善ループの運用ルールは `docs/ANALYTICS.md`**。
+- 個人情報(生年月日・名前・自由入力)は送信しない。行動種別と結果分類(rank/spread等)のみ。
+- コア指標: 観測率(today_observed ÷ アクティブユーザー)と DAU/WAU。
+- `scripts/ga-report.mjs`(依存ゼロ)でData APIからレポート取得(要 `GA4_PROPERTY_ID` / `GA4_SA_KEY`)。
+
+## 13. 開発運用メモ
 
 - **監修ループ**: スクリーンショット一式→視点の異なるレビューエージェント(初心者目線/ビジュアル/コピー)→指摘反映→再検証、を繰り返す。
 - **検証**: Playwright(`/opt/pw-browsers`)でE2E。フォームの生年月日は `bd-select` の各selectに値を入れて `change`(**bubbles: true 必須**)。
