@@ -1343,7 +1343,7 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
     <div class="result-grid">
       <div class="result-card span-all">
         ${cardH4("WEST × EAST", "西の星 × 東の暦の重ね読み")}
-        <p>西洋の星はあなたを<strong style="color:var(--gold-bright)">${r.zodiac.name}(${r.zodiac.element}のサイン)</strong>、東洋の暦は<strong style="color:var(--gold-bright)">「${r.pillars.nikkan.symbol}」(${r.pillars.nikkan.yinyang}の${r.pillars.nikkan.element})</strong>と観ています。${ELEMENT_STYLE[r.zodiac.element]}外向きのエンジンに、${r.pillars.nikkan.symbol}の器 — この掛け合わせは1080通りの中であなたの称号だけのもの。どちらか一方ではなく、両方を使い分けられるのがあなたの強みです。</p>
+        <p>西洋の星はあなたを<strong style="color:var(--gold-bright)">${r.zodiac.name}(${r.zodiac.element}のサイン)</strong>、東洋の暦は<strong style="color:var(--gold-bright)">「${r.pillars.nikkan.symbol}」(${r.pillars.nikkan.yinyang}の${r.pillars.nikkan.element})</strong>と観ています。つまり、外に向かうときは「${ELEMENT_STYLE[r.zodiac.element]}」タイプで、内側の土台は「${r.pillars.nikkan.symbol}」— この組み合わせが、1080通りの中からあなたの称号を決めています。どちらか一方ではなく、両方を使い分けられるのがあなたの強みです。</p>
       </div>
       <div class="result-card">
         ${cardH4("SUN & MOON", "星がしめす二つの顔")}
@@ -1899,7 +1899,7 @@ function tarotTempoLine() {
   if (weekendNight) return { text: "週末の夜。急ぐことはなにもありません — 時間をとって、深いスプレッドをどうぞ。", push: "celtic" };
   if (dow === 0) return { text: "日曜日。新しく引くより、今週の記録を読み返すのに良い日です。", push: "journal" };
   if (h >= 22 || h < 4) return { text: "夜が深くなりました。月の間が、ひらいています。", push: "night" };
-  return { text: "忙しい日は、一枚だけで十分。ワンオラクルが今日の速さに合います。", push: "one" };
+  return { text: "忙しい日は、一枚だけで十分。ワンオラクルがちょうどいいテンポです。", push: "one" };
 }
 
 /* --- 1. 問いかけ画面 --- */
@@ -1924,7 +1924,7 @@ function renderAsk() {
           <em class="so-count">${s.count}枚</em>
           <span class="so-tag">TONIGHT</span>
         </span>
-        <span class="so-desc">${drawn ? "この窓の一枚は、もう引いてあります。記録は下のジャーナルに。次の窓は、次の月齢で。" : s.desc + " " + w.note}</span>
+        <span class="so-desc">${drawn ? "この窓の一枚は、もう引いてあります。記録は下のジャーナルに。次の窓は、また次の新月・満月の夜に。" : s.desc + " " + w.note}</span>
       </button>`;
   }).join("");
 
@@ -1953,7 +1953,7 @@ function renderAsk() {
           <em class="so-count">3枚</em>
           <span class="so-tag">NIGHT</span>
         </span>
-        <span class="so-desc">夜にしか開かない部屋です。眠る前に、一日を静かに畳みにきてください。</span>
+        <span class="so-desc">夜にしか開かない部屋です。眠る前に、今日一日を静かに振り返りにきてください。</span>
       </div>`;
 
   /* 振り返りの問いかけ:7日以上前の記録にそっと声をかける */
@@ -1977,12 +1977,12 @@ function renderAsk() {
       ${wind ? `
       <div class="wind-banner" role="status">
         <span class="wb-mark" aria-hidden="true">🌬</span>
-        <span class="wb-text"><strong>今日、カードがざわついています。</strong>こういう日の読みには、風が一枚、言葉を落としていきます。</span>
+        <span class="wb-text"><strong>今日、カードがざわついています。</strong>こういう日に占うと、結果におまけの一枚「ざわめきの一枚」が添えられます。</span>
       </div>` : ""}
       <p class="ritual-eyebrow">STEP 1 — QUESTION</p>
       <h3 class="ritual-title">なにを知りたいですか?</h3>
       <p class="tempo-line">${tempo.text}</p>
-      ${mercRx ? `<p class="merc-note">☿ いま、水星が逆行しています。言葉と約束は二度たしかめて。読み違えたと感じたら、それも読みのうちです。</p>` : ""}
+      ${mercRx ? `<p class="merc-note">☿ いま、水星が逆行しています。連絡の行き違いや勘違いが起きやすい時期といわれます。言葉と約束は、いつもより丁寧に確かめて。</p>` : ""}
       <div class="genre-row">
         <span class="genre-label">問いのジャンル</span>
         <div class="seg">${TAROT_GENRES.map(([k, l]) => `<button class="seg-btn ${k === ritual.genre ? "active" : ""}" data-genre="${k}">${l}</button>`).join("")}</div>
@@ -2066,7 +2066,7 @@ function journalEntryHtml(e, open) {
   const body = st.faded
     ? `
       <div class="j-fadedbox">
-        <p class="j-fadedline">託宣の言葉は、風に薄れました。残っているのは札の名前だけ — <strong>${names}</strong></p>
+        <p class="j-fadedline">託宣の言葉は、時が経って薄れました。残っているのは札の名前だけ — <strong>${names}</strong></p>
         <p class="j-fadedsub">読みたての言葉は24時間だけのもの。つぎの読みでは、ひとこと書き残してみてください。</p>
       </div>`
     : `
@@ -2768,7 +2768,7 @@ function deckReadingHtml() {
     if (n >= 2) combos.push(`「${Number(r)}」の札が${n}枚 — 数字の${Number(r)}が示すのは「${NUM_MEANING[r]}」。スートを越えて、このテーマが強調されています。`);
   }
   const has = (n) => cs.some((x) => x.n === n);
-  if ((has(13) || has(16)) && (has(17) || has(19))) combos.push("「死神/塔」と「星/太陽」の共演 — 一度手放して、より良く開ける配置。終わりの札は悪い知らせではありません。");
+  if ((has(13) || has(16)) && (has(17) || has(19))) combos.push("「死神/塔」と「星/太陽」の共演 — 一度手放したあとに、より良い流れがひらける配置。終わりの札は悪い知らせではありません。");
   if (has(6) && has(15)) combos.push("「恋人」と「悪魔」の共演 — 強い引力の暗示。心地よさと執着の線引きが、今回の隠れたテーマです。");
   if (has(0) && has(21)) combos.push("「愚者」と「世界」の共演 — ひとつの章の完成と、次の旅の始まりが同時に来ています。");
   if (has(18) && has(19)) combos.push("「月」と「太陽」の共演 — 不安の霧はやがて晴れる並び。夜の後に朝が約束されています。");
@@ -2863,7 +2863,7 @@ function showTarotSummary(restored) {
             <p class="tp-ori-line"><span class="tc-ori ${bonus.reversed ? "rev" : "up"}">${bonus.reversed ? "逆位置" : "正位置"}</span></p>
           </div>
           <div class="tp-detail">
-            <p>今日はカードがざわつく日。あなたが引いた札のそばに、風がもう一枚落としていきました。<strong>${bonus.reversed ? bonus.rev : bonus.up}</strong></p>
+            <p>今日はカードがざわつく特別な日。あなたが引いた札に、おまけの一枚が添えられました。<strong>${bonus.reversed ? bonus.rev : bonus.up}</strong></p>
             <p class="tc-advice">風のひとこと — <strong>${bonus.advice}</strong></p>
           </div>
         </div>
@@ -2903,7 +2903,7 @@ function showTarotSummary(restored) {
     "今日の一枚はこれで決まり。おかわりは明日の朝、デッキが混ざり直ってからどうぞ。今日のところは、この札と仲良くやってください — <strong>また明日。</strong>",
   ];
   const RESTORED_NOTES = [
-    "今日の一枚は、もう引いてあります。何度ひらいても同じ札が出るのが占いというものです。往生際よくいきましょう — <strong>新しい一枚は、また明日。</strong>",
+    "今日の一枚は、もう引いてあります。何度ひらいても同じ札が出るのが占いというものです。いさぎよくいきましょう — <strong>新しい一枚は、また明日。</strong>",
     "はい、本日のぶんはこちらでした。2枚目はありません。星も「1日1枚まで」と決めているようです — <strong>続きはまた明日。</strong>",
   ];
   const notePool = restored ? RESTORED_NOTES : NEW_NOTES;
@@ -2918,7 +2918,7 @@ function showTarotSummary(restored) {
       <p class="result-eyebrow">TAROT — ${conf.label} ・ ${genreLabel}</p>
       ${ritual.question ? `<p class="tarot-q">あなたの問い:「${esc(ritual.question)}」</p>` : ""}
       <h3 class="result-title">${ritual.spread === "daily" ? "今日のあなたへの一枚" : "カードの答え"}</h3>
-      <p class="result-lead" style="margin-inline:auto">正位置は素直に巡る力。逆位置は、内にこもる力。</p>
+      <p class="result-lead" style="margin-inline:auto">正位置はカードの力が素直に出ている状態。逆位置は、その力が内にこもっている状態です。</p>
       ${ritual.deepShuffle ? '<p class="deep-shuffle-mark">☽ 呼吸とともに、深く混ぜられたデッキから</p>' : ""}
       ${shareRowHtml("tarot")}
     </div>
@@ -3046,7 +3046,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     </div>
     <div class="result-card span-all" style="margin-bottom:18px">
       ${cardH4("HOW IT WORKS", "総合スコアの計算式")}
-      <p class="sub" style="margin-bottom:10px">上の「見え方」は九星の五行だけで見た二人の景色。総合スコアは星座・五行・干支・日主の四つの手法を合算するため、見え方と点が違うことがあります。</p>
+      <p class="sub" style="margin-bottom:10px">上の「見え方」は九星の五行を中心に読んだもの。総合スコアは星座・五行・干支・日主の四つの手法を合算して出すため、「見え方」の点数と総合スコアが違うことがあります。</p>
       ${logicFlowHtml([
         { tag: "星座エレメント", main: String(r.zodiac.score), sub: "× 30%" },
         "+",
