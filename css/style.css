@@ -520,6 +520,10 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
   content: ""; position: absolute; top: 0; left: 40px; right: 40px; height: 1px;
   background: linear-gradient(90deg, transparent, var(--gold), transparent);
 }
+.result-hero::after {
+  content: ""; position: absolute; bottom: 0; left: 90px; right: 90px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(168, 132, 78, 0.55), transparent);
+}
 .result-symbol {
   position: absolute; top: 50%; right: -10px; transform: translateY(-50%);
   font-family: var(--serif); font-size: 190px; line-height: 1;
@@ -582,7 +586,14 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .meter-list { display: flex; flex-direction: column; gap: 14px; }
 .meter { display: grid; grid-template-columns: 66px 1fr 40px; gap: 12px; align-items: center; }
 .meter-label { font-size: 15px; font-weight: 500; color: var(--muted); letter-spacing: .06em; }
-.meter-track { height: 9px; border-radius: 99px; background: rgba(28, 35, 51, 0.09); overflow: hidden; }
+.meter-track { position: relative; height: 9px; border-radius: 99px; background: rgba(28, 35, 51, 0.09); overflow: hidden; }
+/* 5段階の目盛り:0.5刻みのメーターが読み取れるように */
+.meter-track::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background: repeating-linear-gradient(to right,
+    transparent, transparent calc(20% - 1px),
+    rgba(243, 238, 229, 0.85) calc(20% - 1px), rgba(243, 238, 229, 0.85) 20%);
+}
 .meter-fill {
   height: 100%; border-radius: 99px;
   background: linear-gradient(90deg, var(--gold-deep), var(--gold));
@@ -605,6 +616,40 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
   color: var(--gold-bright); font-variant-numeric: lining-nums;
 }
 .total-score .denom { color: var(--muted); font-size: 14px; }
+
+/* 今日の占い:スコアの主役表示(印章+大きな数字) */
+.today-score {
+  display: flex; align-items: center; justify-content: center; gap: 20px;
+  margin-top: 20px;
+}
+.today-score .ts-main { display: inline-flex; align-items: baseline; }
+.today-score .ts-num {
+  font-family: var(--num-display); font-size: clamp(54px, 9vw, 68px); font-weight: 600;
+  color: var(--gold-bright); line-height: 1; font-variant-numeric: lining-nums;
+  letter-spacing: .02em;
+}
+.today-score .ts-denom { color: var(--muted); font-size: 15px; margin-left: 2px; }
+.ts-rank {
+  flex: 0 0 auto;
+  width: 62px; height: 62px; border-radius: 50%;
+  display: grid; place-items: center;
+  font-family: var(--serif); font-size: 23px; font-weight: 900; letter-spacing: .02em;
+  color: var(--gold-bright);
+  border: 1.5px solid rgba(168, 132, 78, 0.6);
+  box-shadow: 0 6px 18px rgba(168, 132, 78, 0.2), inset 0 0 14px rgba(168, 132, 78, 0.08);
+  animation: rankIn .8s cubic-bezier(.2, .9, .3, 1.3) backwards;
+}
+/* 静・休の日は、金の高揚ではなく月白の静けさで */
+.ts-rank[data-rank="静"], .ts-rank[data-rank="休"] {
+  color: var(--muted); border-color: rgba(93, 98, 112, 0.4);
+  box-shadow: 0 6px 16px rgba(28, 35, 51, 0.1), inset 0 0 12px rgba(28, 35, 51, 0.04);
+}
+.ts-label {
+  margin-top: 8px;
+  font-size: 11.5px; letter-spacing: .3em; color: var(--muted);
+  text-transform: uppercase; text-indent: .3em;
+}
+.outlook-line { margin-top: 14px; }
 .stars { color: var(--gold); letter-spacing: 4px; font-size: 15px; }
 .stars .off { color: rgba(28, 35, 51, 0.16); }
 
@@ -617,6 +662,7 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
   font-family: var(--serif); font-size: 17.5px; font-weight: 600; letter-spacing: .04em;
   color: var(--indigo);
 }
+.lucky-note { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--hairline); }
 
 /* ---------- 回遊導線 ---------- */
 .crosslinks {
@@ -746,6 +792,10 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 }
 .tp-ori-line { margin-top: 6px; }
 .tp-detail { grid-column: 1 / -1; min-width: 0; }
+/* 一枚もの(今日の一枚など):絵札の隣に言葉を寄り添わせ、余白を空けない */
+.tp-body.tp-single { align-items: start; }
+.tp-body.tp-single .tp-thumb { grid-row: 1 / 3; }
+.tp-body.tp-single .tp-detail { grid-column: 2; }
 
 /* 会員FVの今日の一枚チップ */
 .chip-card { display: inline-flex; align-items: center; gap: 8px; }
@@ -1229,8 +1279,14 @@ body.ritual-open { overflow: hidden; }
   border-radius: 999px; padding: 1px 10px; margin-right: 10px; vertical-align: 2px;
 }
 .mind-sendoff {
-  margin-top: 16px; text-align: center; font-family: var(--serif);
+  position: relative;
+  margin-top: 16px; padding-top: 16px; text-align: center; font-family: var(--serif);
   color: var(--gold-bright); letter-spacing: .16em; font-size: 15px;
+}
+.mind-sendoff::before {
+  content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+  width: 140px; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(217, 192, 138, 0.75), transparent);
 }
 .draw-cta { text-align: center; border-style: dashed; border-color: rgba(168, 132, 78, 0.5); }
 
@@ -1370,7 +1426,7 @@ body.ritual-open { overflow: hidden; }
 .verdict-advice { color: var(--muted); font-size: 15.5px; margin-top: 6px; line-height: 1.9; }
 .vf-list { border-top: 1px solid var(--hairline); }
 .vf-row { display: flex; gap: 14px; padding: 12px 2px; border-bottom: 1px solid var(--hairline); align-items: baseline; }
-.vf-vote { flex: 0 0 20px; text-align: center; font-size: 14px; }
+.vf-vote { flex: 0 0 28px; text-align: center; font-size: 13px; letter-spacing: -1px; }
 .vf-vote.up { color: var(--gold-bright); }
 .vf-vote.down { color: var(--rose); }
 .vf-vote.flat { color: var(--muted); }
@@ -1785,6 +1841,13 @@ body.ritual-open { overflow: hidden; }
 /* 結論のレア度(大吉・休の日だけ現れる一行) */
 .verdict-rare { margin-top: 8px; font-size: 13.5px; letter-spacing: .05em; color: var(--gold-bright); }
 .verdict-card .verdict-rare { color: var(--chamber-gold-bright); }
+
+/* 静・休の日の印章は、金の高揚ではなく月白の静けさで(夜のカード上) */
+.verdict-card .verdict-rank[data-rank="静"],
+.verdict-card .verdict-rank[data-rank="休"] {
+  color: #C9CEE0; border-color: rgba(201, 206, 224, 0.5);
+  box-shadow: 0 0 22px rgba(201, 206, 224, 0.16), inset 0 0 16px rgba(201, 206, 224, 0.08);
+}
 
 /* 称号の由来(3つの言葉の分解図) */
 .shogo-origin {

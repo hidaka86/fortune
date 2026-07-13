@@ -442,6 +442,19 @@ function renderHomeDaily() {
 }
 
 /* ---------- 今日の占い(朝の羅針盤:結論=マインドは最後に) ---------- */
+/* リード文:日×人替わりで言い回しを変える */
+function todayLeadLine(who, birthdate) {
+  const lead = TODAY_LEADS[hashString(`${todayKey()}|lead|${birthdate}`) % TODAY_LEADS.length];
+  return lead.replace("{who}", who);
+}
+
+/* 結びの言葉:観測した時間帯に合わせて送り出す(朝の「いってらっしゃい」を夜に言わない) */
+function sendoffLine() {
+  const h = new Date().getHours();
+  const pool = SENDOFF_LINES[h >= 5 && h < 11 ? "morning" : h >= 11 && h < 17 ? "daytime" : h >= 17 && h < 22 ? "evening" : "night"];
+  return pool[hashString(`${todayKey()}|sendoff`) % pool.length];
+}
+
 function mindForToday(verdict, card, daily) {
   // その日いちばん強いテーマ(恋愛/仕事/金運/健康)
   const top = Object.entries(daily.scores).sort((a, b) => b[1] - a[1])[0];
@@ -555,7 +568,7 @@ function renderToday() {
   const cardBlock = `
     <div class="result-card span-all">
       ${cardH4("TODAY'S CARD", "今日の一枚")}
-      <div class="tp-body">
+      <div class="tp-body tp-single">
         <img class="tp-thumb ${card.reversed ? "is-rev" : ""}" src="${tarotImg(card.n)}" alt="${card.name}" loading="lazy" onerror="this.remove()" />
         <div class="tp-head">
           <p class="tp-name">${card.name}</p>
@@ -570,14 +583,18 @@ function renderToday() {
   showResult(root, `
     <div class="result-hero" style="text-align:center">
       <p class="result-eyebrow">TODAY'S OBSERVATION — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}︎ ${phase.name}</p>
-      <h3 class="result-title">今日は「${verdict.word}」。</h3>
-      <p class="result-lead" style="margin-inline:auto">${who}の暦とカードから、今日を観測。</p>
+      <h3 class="result-title"><span class="nw">今日は</span><span class="nw">「${verdict.word}」。</span></h3>
+      <p class="result-lead" style="margin-inline:auto">${todayLeadLine(who, p.birthdate)}</p>
+      <div class="today-score">
+        <span class="ts-rank" data-rank="${verdict.rank}">${verdict.rank}</span>
+        <span class="ts-main"><span class="ts-num" data-count="${daily.score100}">0</span><span class="ts-denom"> /100</span></span>
+      </div>
+      <p class="ts-label">今日の運気</p>
       <div class="chip-row" style="justify-content:center">
-        <span class="chip">今日の運気 <strong>${daily.score100}</strong> /100</span>
         <span class="chip">「${daily.dayStar.name}」の日</span>
         <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
       </div>
-      <p class="sub" style="margin-top:12px">${outlookLine}</p>
+      <p class="sub outlook-line">${outlookLine}</p>
     </div>
     <div class="result-grid">
       ${cardBlock}
@@ -590,13 +607,14 @@ function renderToday() {
       <div class="result-card span-all">
         ${cardH4("LUCKY GUIDE", "今日の開運キー")}
         ${luckyHtml(daily)}
+        <p class="sub lucky-note">身につける・手に取る・立ち寄る — どれかひとつ叶えば、それで十分です。</p>
       </div>
       <div class="result-card span-all mind-card">
         ${cardH4("TODAY'S MIND", "きょうのマインド")}
         <p class="mind-word">「${mind.word}」</p>
         ${mind.points.map((pt) => `<p class="mind-point"><span class="mp-k">${pt.k}</span>${pt.v}</p>`).join("")}
         <p class="mind-point"><span class="mp-k">明日の気配</span>${hint.text}</p>
-        <p class="mind-sendoff">— いってらっしゃい。良い一日を。</p>
+        <p class="mind-sendoff">${sendoffLine()}</p>
       </div>
     </div>
     <div class="share-block">
@@ -614,9 +632,11 @@ function renderToday() {
 
 /* ---------- 今日の結論(総合判定) ---------- */
 function verdictHtml(v) {
+  // 票は強さごと見せる:±2票は▲▲/▼▼(「根拠を見せる」の徹底)
+  const voteMark = (s) => (s > 0 ? "▲".repeat(Math.min(2, s)) : s < 0 ? "▼".repeat(Math.min(2, -s)) : "―");
   const rows = v.factors.map((f) => `
     <div class="vf-row">
-      <span class="vf-vote ${f.score > 0 ? "up" : f.score < 0 ? "down" : "flat"}">${f.score > 0 ? "▲" : f.score < 0 ? "▼" : "―"}</span>
+      <span class="vf-vote ${f.score > 0 ? "up" : f.score < 0 ? "down" : "flat"}">${voteMark(f.score)}</span>
       <span class="vf-body"><span class="vf-method">${f.method}</span><strong>${f.label}</strong> — ${f.note}</span>
     </div>`).join("");
   const rare = v.rank === "大吉"
@@ -628,7 +648,7 @@ function verdictHtml(v) {
     <div class="result-card span-all verdict-card">
       ${cardH4("VERDICT", "今日の結論")}
       <div class="verdict-main">
-        <span class="verdict-rank">${v.rank}</span>
+        <span class="verdict-rank" data-rank="${v.rank}">${v.rank}</span>
         <div class="verdict-text">
           <p class="verdict-word">今日は「${v.word}」</p>
           <p class="verdict-advice">${v.advice}</p>
@@ -2627,22 +2647,31 @@ function choiceVerdictHtml() {
     </div>`;
 }
 
-/* 結論:「タロットの結果がこうだから、こうです」(カード+シェア画像で共用) */
+/* 結論:「タロットの結果がこうだから、こうです」(カード+シェア画像で共用)
+   見出しの言葉は TAROT_CONCLUSION_VOICE から、日付×出た札のシードで選ぶ。
+   同じ読みは何度開いても同じ言葉(ジャーナル・復元表示と食い違わない) */
 function tarotConclusion() {
   const c = ritual.cards;
   if (!c.length) return null;
   const ori = (k) => (k.reversed ? "逆位置" : "正位置");
   const first = (t) => t.split("。")[0] + "。";
+  const voice = (spread, reversed) => {
+    const pool = TAROT_CONCLUSION_VOICE[spread]?.[reversed ? "rev" : "up"];
+    if (!pool) return null;
+    const sig = c.map((k) => k.n + (k.reversed ? "r" : "")).join(".");
+    const rng = seededRng(`${todayKey()}|tconc|${spread}|${sig}`);
+    return pool[Math.floor(rng() * pool.length)];
+  };
   let word, reason, action;
 
   if (ritual.spread === "daily") {
     const k = c[0];
-    word = k.reversed ? "今日は「攻める」より「整える」日" : "今日は、迷わず進んでいい日";
+    word = voice("daily", k.reversed);
     reason = `今日の一枚は「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
     action = k.advice;
   } else if (ritual.spread === "one") {
     const k = c[0];
-    word = k.reversed ? "いったん立ち止まるが正解 — 角度を変えれば通ります" : "その件、動いて大丈夫";
+    word = voice("one", k.reversed);
     reason = `答えの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
     action = k.advice;
   } else if (ritual.spread === "yesno") {
@@ -2652,7 +2681,7 @@ function tarotConclusion() {
     action = k.advice;
   } else if (ritual.spread === "three") {
     const [pa, pr, fu] = c;
-    word = fu.reversed ? "焦らず、足元を整えてから進む流れ" : "このまま進めば、流れは開けていく";
+    word = voice("three", fu.reversed);
     reason = `過去「${pa.name}」→ 現在「${pr.name}」ときて、未来の位置に「${fu.name}」の${ori(fu)}。${first(genreMeaning(fu))}`;
     action = fu.advice;
   } else if (ritual.spread === "choice") {
@@ -2664,22 +2693,22 @@ function tarotConclusion() {
     action = adv.advice;
   } else if (ritual.spread === "celtic") {
     const challenge = c[1], outcome = c[9];
-    word = outcome.reversed ? "結末はまだ書き換えられる — 鍵は「課題」の一枚" : "ゆきつく先は、良い流れ";
+    word = voice("celtic", outcome.reversed);
     reason = `10枚の結末の位置に「${outcome.name}」の${ori(outcome)}。向き合う課題は「${challenge.name}」が示しています。${first(genreMeaning(outcome))}`;
     action = outcome.advice;
   } else if (ritual.spread === "night") {
     const [rel, , lamp] = c;
-    word = lamp.reversed ? "今夜は結論を出さない — それがいちばんの手当て" : "今日はここまでで上出来。明日の灯は、もう点いています";
+    word = voice("night", lamp.reversed);
     reason = `手放していいことの位置に「${rel.name}」の${ori(rel)}。明日への灯には「${lamp.name}」。${first(genreMeaning(lamp))}`;
     action = lamp.advice;
   } else if (ritual.spread === "newmoon") {
     const k = c[0];
-    word = k.reversed ? "種はまだ土の中 — 焦らず、静かに準備を" : "この新月に蒔く種は、これ";
+    word = voice("newmoon", k.reversed);
     reason = `はじまりの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
     action = k.advice;
   } else if (ritual.spread === "fullmoon") {
     const k = c[0];
-    word = k.reversed ? "手放すのは物ではなく、こだわりの方" : "満月に返すのは、これ";
+    word = voice("fullmoon", k.reversed);
     reason = `手放しの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
     action = k.advice;
   } else {
