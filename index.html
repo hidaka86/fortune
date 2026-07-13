@@ -38,6 +38,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="MYOURISCOPE" />
+  <script type="application/ld+json">
+  {"@context":"https://schema.org","@type":"WebSite","name":"MYOURISCOPE","alternateName":"ミョウリスコープ","url":"https://myouriscope.com/","description":"西洋占星術・四柱推命・九星気学・タロット・相性診断。複数の占術を統合し、今日の流れを静かに観測する占いサイト。","inLanguage":"ja"}
+  </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Cormorant+Garamond:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet" />
@@ -45,6 +48,7 @@
 </head>
 <body>
   <div class="bg-wash" aria-hidden="true"></div>
+  <noscript><p class="noscript-note">MYOURISCOPEの占いは、ブラウザのJavaScriptで動いています。JavaScriptを有効にしてからご覧ください。</p></noscript>
 
   <header class="header">
     <div class="header-inner">
@@ -313,6 +317,9 @@
     </div>
     <p class="footer-note">占い結果はエンターテインメントとしてお楽しみください。 © 2026 MYOURISCOPE</p>
   </footer>
+
+  <!-- ページ上部へ戻る(長い結果ページ用) -->
+  <button class="to-top" id="to-top" aria-label="ページの上へ戻る" hidden>↑</button>
 
   <!-- 儀式の間(タロット用フルスクリーンオーバーレイ) -->
   <div id="ritual-overlay" class="ritual-overlay" hidden></div>

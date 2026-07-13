@@ -1780,6 +1780,17 @@ const tarotImg = (n) => {
 
 const vibrate = (ms) => { try { navigator.vibrate?.(ms); } catch { /* 非対応 */ } };
 
+/* 扇のカード(role=button)をキーボードでも引けるように(Enter / Space) */
+function bindDrawKeyboard(strip) {
+  strip.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    const el = e.target.closest(".draw-card");
+    if (!el) return;
+    e.preventDefault();
+    el.click();
+  });
+}
+
 const DAILY_CARD_KEY = "fortuna:dailycard";
 const QUESTION_KEY = "fortuna:question";
 
@@ -1853,6 +1864,7 @@ function renderQuickDraw() {
     </div>`);
   const strip = document.getElementById("draw-strip");
   strip.scrollLeft = Math.max(0, (strip.scrollWidth - strip.clientWidth) / 2); // 真ん中から
+  bindDrawKeyboard(strip);
   strip.addEventListener("click", (e) => {
     const el = e.target.closest(".draw-card");
     if (!el || ritual.cards.length) return;
@@ -1991,6 +2003,15 @@ function renderAsk() {
         placeholder="問いを言葉に(任意)" value="" />
       <p class="ritual-hint" style="margin:14px 0 12px">知りたいことを選ぶと、そのまま儀式がはじまります</p>
       ${windowCards ? `<div class="window-picker">${windowCards}</div>` : ""}
+      ${(() => {
+        /* 宙の窓の予告:閉じている窓は「次にひらく日」をそっと知らせる */
+        const nx = nextCelestialDates();
+        const fmtD = (t) => `${t.getMonth() + 1}/${t.getDate()}`;
+        const parts = [];
+        if (!wins.some((w) => w.spread === "newmoon") && nx.newmoon) parts.push(`新月の窓は ${fmtD(nx.newmoon)}`);
+        if (!wins.some((w) => w.spread === "fullmoon") && nx.fullmoon) parts.push(`満月の窓は ${fmtD(nx.fullmoon)}`);
+        return parts.length ? `<p class="sky-forecast">☽ つぎの宙の窓 — ${parts.join(" ・ ")} にひらきます</p>` : "";
+      })()}
       <div class="spread-picker">
         ${Object.entries(RITUAL_SPREADS).filter(([key, s]) => key !== "daily" && !s.gate).map(([key, s]) => {
           const pips = Array.from({ length: s.count }, () => "<i></i>").join("");
@@ -2475,6 +2496,7 @@ function renderDraw() {
     </div>`);
 
   const strip = document.getElementById("draw-strip");
+  bindDrawKeyboard(strip);
   strip.addEventListener("click", (e) => {
     const el = e.target.closest(".draw-card");
     if (!el || el.classList.contains("taken")) return;
@@ -3138,6 +3160,7 @@ function renderInviteBanner() {
 
 /* ---------- 読みもの(占いの手引き) ---------- */
 const GUIDE_ARTICLES = {
+  today: { img: "images/tarot/tarot_19_sun.webp", title: "今日の占いのしくみ", lead: "「大吉」は年に数回だけ。毎朝の結論とスコアが、どう決まっているのか。", mins: 3 },
   tarot: { img: "images/tarot/tarot_17_star.webp", title: "タロットとは", lead: "引いた1枚で「いまの空気」がわかる。78枚の意味と、迷わない引き方。", mins: 4 },
   western: { img: "assets/site/icon_western.webp", title: "ホロスコープとは", lead: "生年月日で「自分の設計図」がわかる。星座占いのその先へ。", mins: 4 },
   eastern: { img: "assets/site/icon_eastern.webp", title: "<span class=\"nw\">四柱推命と</span><span class=\"nw\">九星気学とは</span>", lead: "生年月日だけで「自分の性質と今日の風向き」がわかる。東洋占い、最初の一歩。", mins: 4 },
@@ -3170,6 +3193,22 @@ function aspectFig(deg, label, color, note) {
 }
 
 function guideArticleHtml(key) {
+  if (key === "today") {
+    return `
+      <h3>毎朝、4つの暦が「票」を入れています</h3>
+      <p>「今日の結論」(大吉・吉・平・静・休)は、ひとつの占いだけで決めていません。<strong>四柱推命の日運</strong>・<strong>四柱推命の月運</strong>・<strong>干支の巡り</strong>(生まれ年の十二支 × 今日の十二支)・<strong>月の満ち欠け</strong>——成り立ちの違う4つの暦それぞれに今日を採点してもらい、「票」として集計しています。結果画面に並ぶ ▲ ▼ は、その票の内訳です。</p>
+      <p>すべての暦が同じ方向を向く日は、それだけ強い日。だから「大吉」は、複数の暦が同時に追い風を示した、ちゃんと珍しい日です。</p>
+      <p class="ga-mid"><button class="linklike" data-nav="today">→ 自分の今日の票を見てみる</button></p>
+      <h3>「大吉」は年に数回しか出ません</h3>
+      <p>出やすさの目安は——<strong>大吉 約3% / 吉 約38% / 平 約35% / 静 約19% / 休 約5%</strong>。大吉は年に十日前後、「休」も年に二十日弱しか巡ってきません。毎日「今日は最高!」と言う占いは、なにも言っていないのと同じ。MYOURISCOPEは平らな日は平らと言い、休むべき日は堂々と「休め」と言います。そのかわり、大吉の日は本気で背中を押します。</p>
+      <h3>スコア(100点満点)の中身</h3>
+      <p>今日の運気スコアは、あなたの日主(生まれた日の十干)から見た<strong>今日の気流(通変星)</strong>を土台に、上の<strong>結論の票</strong>と<strong>日替わりのゆらぎ</strong>を重ねて計算しています。中央値は65前後。40を切る日も85を超える日も、それぞれ年に数%ずつちゃんと巡ってきます。続けて観測していると、自分の「風の周期」が見えてくるはずです。</p>
+      <h3>なぜ1日1回、引き直しなしなのか</h3>
+      <p>今日の一枚は、1日に1回しか引けません。引き直しができると、良い札が出るまで引いてしまい、その一枚の意味が消えてしまうからです。同じ理由で、明日の運勢の数字も先には見せません(「明日の気配」で風向きだけをそっと予告します)。今日の分は、今日味わう——それがこの占いのリズムです。</p>
+      <h3>データは、あなたの端末の中だけ</h3>
+      <p>入力した生年月日も観測の履歴も、お使いの端末(ブラウザ)の中にだけ保存されます。サーバーには送られません。</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="today">今日の占いをみる</button></p>`;
+  }
   if (key === "tarot") {
     const suits = Object.entries(MINOR_SUITS).map(([k, s]) => `
       <figure class="ga-fig"><img src="images/tarot/tarot_${k}_ace.webp" alt="${s.ja}のエース" loading="lazy" />
@@ -3330,6 +3369,19 @@ function renderGuide(articleKey) {
     "シャッフルするその指先が、運命の1枚を選びます。答えは、もう78枚の中に。",
   ];
   el.textContent = copies[Math.floor(Math.random() * copies.length)];
+})();
+
+/* ---------- ページ上部へ戻る(結果ページが長いため) ---------- */
+(function initToTop() {
+  const btn = document.getElementById("to-top");
+  if (!btn) return;
+  let visible = false;
+  const onScroll = () => {
+    const v = window.scrollY > 900 && !document.body.classList.contains("ritual-open");
+    if (v !== visible) { visible = v; btn.hidden = !v; }
+  };
+  window.addEventListener("scroll", onScroll, { passive: true });
+  btn.addEventListener("click", () => window.scrollTo({ top: 0, behavior: REDUCED_MOTION ? "auto" : "smooth" }));
 })();
 
 /* ---------- 初期化 ---------- */

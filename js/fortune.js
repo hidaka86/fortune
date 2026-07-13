@@ -506,6 +506,23 @@ function celestialWindows() {
   return wins;
 }
 
+/* 次に「新月の窓」「満月の窓」がひらく日(向こう40日を走査)。
+   いま開いている窓の続きの日は飛ばし、次の"新しい"月齢だけを予告する */
+function nextCelestialDates(now = new Date()) {
+  const cur = moonPhaseToday(now).name;
+  const out = {};
+  const fresh = { "新月": cur !== "新月", "満月": cur !== "満月" };
+  for (let k = 1; k <= 40 && (!out.newmoon || !out.fullmoon); k++) {
+    const t = new Date(now.getFullYear(), now.getMonth(), now.getDate() + k);
+    const name = moonPhaseToday(t).name;
+    if (name !== "新月") fresh["新月"] = true;
+    if (name !== "満月") fresh["満月"] = true;
+    if (name === "新月" && fresh["新月"] && !out.newmoon) out.newmoon = t;
+    if (name === "満月" && fresh["満月"] && !out.fullmoon) out.fullmoon = t;
+  }
+  return out;
+}
+
 /* 水星逆行(みかけの逆行)。今日と明日の黄経を比べて判定 */
 function isMercuryRetrograde() {
   const now = new Date();

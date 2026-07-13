@@ -664,6 +664,27 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 }
 .lucky-note { margin-top: 14px; padding-top: 12px; border-top: 1px dashed var(--hairline); }
 
+/* ---------- ページ上部へ戻る ---------- */
+.to-top {
+  position: fixed; right: 18px; bottom: 18px; z-index: 40;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid rgba(168, 132, 78, 0.5);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--gold-bright); font-family: var(--latin); font-size: 18px; line-height: 1;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(6px);
+  animation: viewIn .3s ease;
+  transition: border-color .25s ease, transform .25s ease;
+}
+.to-top:hover { border-color: var(--gold); transform: translateY(-2px); }
+
+/* ---------- noscript ---------- */
+.noscript-note {
+  max-width: 640px; margin: 40px auto; padding: 18px 22px; text-align: center;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  background: var(--surface); color: var(--muted); font-size: 15px;
+}
+
 /* ---------- 回遊導線 ---------- */
 .crosslinks {
   margin-top: 26px; padding: 22px 26px;
@@ -1289,6 +1310,12 @@ body.ritual-open { overflow: hidden; }
   background: linear-gradient(90deg, transparent, rgba(217, 192, 138, 0.75), transparent);
 }
 .draw-cta { text-align: center; border-style: dashed; border-color: rgba(168, 132, 78, 0.5); }
+
+/* 宙の窓の予告(閉じている窓が次にひらく日) */
+.sky-forecast {
+  margin: 4px 0 12px; text-align: center;
+  font-size: 13px; letter-spacing: .08em; color: var(--muted);
+}
 
 /* 結果 */
 .tarot-q {
