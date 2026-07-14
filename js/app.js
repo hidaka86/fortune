@@ -2043,7 +2043,7 @@ function closeChamber() {
 
 function chamberScreen(html) {
   ritualOverlay.innerHTML = `
-    <button class="ritual-close" id="ritual-close" aria-label="儀式を中断する">×</button>
+    <button class="ritual-close" id="ritual-close" aria-label="${L("儀式を中断する", "Leave the ritual")}">×</button>
     <div class="ritual-screen">${html}</div>`;
   document.getElementById("ritual-close").addEventListener("click", () => {
     const fromToday = ritual.returnTo === "today";
@@ -2093,7 +2093,7 @@ function saveDailyCard(c) {
   try { localStorage.setItem(DAILY_CARD_KEY, JSON.stringify({ date: todayKey(), n: c.n, reversed: c.reversed })); } catch { /* noop */ }
 }
 
-const TAROT_GENRES = [["total", "総合"], ["love", "恋愛"], ["work", "仕事"], ["money", "金運"]];
+const TAROT_GENRES = [["total", L("総合", "Overall")], ["love", L("恋愛", "Love")], ["work", L("仕事", "Work")], ["money", L("金運", "Money")]];
 
 const ritual = { spread: "daily", genre: "total", question: "", releaseT: 0, cutIdx: 0, positions: [], cards: [] };
 
@@ -2123,14 +2123,14 @@ function slotsHtml(revealUpTo = -1) {
 function revealedCardHtml(c) {
   return `
     <div class="tarot-reveal ${c.reversed ? "is-rev" : ""}">
-      <img class="tarot-art" src="${tarotImg(c.n)}" alt="${c.name}" loading="lazy"
+      <img class="tarot-art" src="${tarotImg(c.n)}" alt="${cardName(c)}" loading="lazy"
         onerror="this.parentElement.classList.add('no-art')" />
       <div class="tface">
         <span class="no">${cardNo(c)}</span>
         <span class="sym">${cardIcon(c)}</span>
-        <span class="nm">${c.name}</span>
-        <span class="en">${c.en}</span>
-        <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span>
+        <span class="nm">${cardName(c)}</span>
+        ${I18N.en ? "" : `<span class="en">${c.en}</span>`}
+        <span class="ori ${c.reversed ? "rev" : "up"}">${c.reversed ? L("逆位置", "Reversed") : L("正位置", "Upright")}</span>
       </div>
     </div>`;
 }
@@ -2145,7 +2145,7 @@ function renderQuickDraw() {
   chamberScreen(`
     <div class="ritual-step">
       <p class="ritual-eyebrow emerge">TODAY'S CARD</p>
-      <p class="ritual-inst emerge" style="--ed:.15s">呼ばれた気がする一枚を、<strong>そのまま引いて</strong>ください</p>
+      <p class="ritual-inst emerge" style="--ed:.15s">${L("呼ばれた気がする一枚を、<strong>そのまま引いて</strong>ください", "Reach for the one card that seems to call you — <strong>and simply draw it</strong>")}</p>
       <div class="draw-strip" id="draw-strip">
         ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--k:${k % 7}"`)).join("")}
       </div>
@@ -2195,10 +2195,10 @@ function tarotTempoLine() {
   const now = new Date();
   const dow = now.getDay(), h = now.getHours();
   const weekendNight = (dow === 5 || dow === 6) && h >= 19;
-  if (weekendNight) return { text: "週末の夜。急ぐことはなにもありません — 時間をとって、深いスプレッドをどうぞ。", push: "celtic" };
-  if (dow === 0) return { text: "日曜日。新しく引くより、今週の記録を読み返すのに良い日です。", push: "journal" };
-  if (h >= 22 || h < 4) return { text: "夜が深くなりました。月の間が、ひらいています。", push: "night" };
-  return { text: "忙しい日は、一枚だけで十分。ワンオラクルが今日の速さに合います。", push: "one" };
+  if (weekendNight) return { text: L("週末の夜。急ぐことはなにもありません — 時間をとって、深いスプレッドをどうぞ。", "A weekend night. There is nothing to hurry — take your time with one of the deeper spreads."), push: "celtic" };
+  if (dow === 0) return { text: L("日曜日。新しく引くより、今週の記録を読み返すのに良い日です。", "Sunday. A good day for rereading this week's journal, rather than drawing anew."), push: "journal" };
+  if (h >= 22 || h < 4) return { text: L("夜が深くなりました。月の間が、ひらいています。", "The night has deepened. The Moon Chamber is open."), push: "night" };
+  return { text: L("忙しい日は、一枚だけで十分。ワンオラクルが今日の速さに合います。", "On a busy day, one card is enough. The One Oracle suits today's pace."), push: "one" };
 }
 
 /* --- 1. 問いかけ画面 --- */
@@ -2216,14 +2216,14 @@ function renderAsk() {
     const drawn = isWindowDrawn(w.spread);
     return `
       <button class="spread-opt spread-window ${drawn ? "spread-locked" : ""}" data-window="${w.spread}" data-spread="${drawn ? "" : w.spread}" ${drawn ? "disabled" : ""}>
-        <span class="so-window-until">${drawn ? "✦ 今夜の窓は観測済み" : `✦ ${w.until}`}</span>
+        <span class="so-window-until">${drawn ? L("✦ 今夜の窓は観測済み", "✦ Tonight's window has been observed") : `✦ ${w.until}`}</span>
         <span class="so-purpose">${s.purpose}</span>
         <span class="so-meta">
           <em class="so-name">${s.label}</em>
-          <em class="so-count">${s.count}枚</em>
+          <em class="so-count">${L(`${s.count}枚`, `${s.count} card${s.count === 1 ? "" : "s"}`)}</em>
           <span class="so-tag">TONIGHT</span>
         </span>
-        <span class="so-desc">${drawn ? "この窓の一枚は、もう引いてあります。記録は下のジャーナルに。次の窓は、次の月齢で。" : s.desc + " " + w.note}</span>
+        <span class="so-desc">${drawn ? L("この窓の一枚は、もう引いてあります。記録は下のジャーナルに。次の窓は、次の月齢で。", "Tonight's card from this window is already drawn. Its record is in the journal below. The next window opens with the next phase of the moon.") : s.desc + " " + w.note}</span>
       </button>`;
   }).join("");
 
@@ -2233,26 +2233,26 @@ function renderAsk() {
   const nightCard = nw.open
     ? `
       <button class="spread-opt spread-night ${nightDrawn ? "spread-locked" : ""}" data-spread="${nightDrawn ? "" : "night"}" ${nightDrawn ? "disabled" : ""}>
-        <span class="so-window-until">${nightDrawn ? "☾ 今夜の間はもう観ました" : "☾ いま、ひらいています"}</span>
+        <span class="so-window-until">${nightDrawn ? L("☾ 今夜の間はもう観ました", "☾ Tonight's chamber has been visited") : L("☾ いま、ひらいています", "☾ Open now")}</span>
         <span class="so-purpose">${nightSpread.purpose}</span>
         <span class="so-meta">
           <em class="so-name">${nightSpread.label}</em>
           <span class="so-pips" aria-hidden="true"><i></i><i></i><i></i></span>
-          <em class="so-count">3枚</em>
+          <em class="so-count">${L("3枚", "3 cards")}</em>
           <span class="so-tag">NIGHT</span>
         </span>
-        <span class="so-desc">${nightDrawn ? "夜の読みは一夜にひとつだけ。今夜の3枚は、下のジャーナルでいつでも読み返せます。" : nightSpread.desc}</span>
+        <span class="so-desc">${nightDrawn ? L("夜の読みは一夜にひとつだけ。今夜の3枚は、下のジャーナルでいつでも読み返せます。", "One night, one reading. Tonight's three cards wait in the journal below, whenever you want to reread them.") : nightSpread.desc}</span>
       </button>`
     : `
       <div class="spread-opt spread-night spread-locked" aria-disabled="true">
-        <span class="so-window-until">☾ 今夜 ${nw.opensAt} にひらく</span>
+        <span class="so-window-until">${L(`☾ 今夜 ${nw.opensAt} にひらく`, `☾ Opens tonight at ${nw.opensAt}`)}</span>
         <span class="so-purpose">${nightSpread.purpose}</span>
         <span class="so-meta">
           <em class="so-name">${nightSpread.label}</em>
-          <em class="so-count">3枚</em>
+          <em class="so-count">${L("3枚", "3 cards")}</em>
           <span class="so-tag">NIGHT</span>
         </span>
-        <span class="so-desc">夜にしか開かない部屋です。眠る前に、一日を静かに畳みにきてください。</span>
+        <span class="so-desc">${L("夜にしか開かない部屋です。眠る前に、一日を静かに畳みにきてください。", "A room that opens only at night. Come before sleep, and quietly fold the day closed.")}</span>
       </div>`;
 
   /* 振り返りの問いかけ:7日以上前の記録にそっと声をかける */
@@ -2264,8 +2264,8 @@ function renderAsk() {
       <button class="reflect-call" data-journal-jump="${oldEntry.id}">
         <img src="${tarotImg(oldEntry.cards[0].n)}" alt="" class="${oldEntry.cards[0].reversed ? "is-rev" : ""}" onerror="this.remove()" />
         <span class="rc-body">
-          <span class="rc-lead">${days}日前、あなたは「${c ? c.name : "一枚"}」を引きました。</span>
-          <span class="rc-sub">いま思うと、あれは何だったのでしょう。答え合わせは、下のジャーナルで。</span>
+          <span class="rc-lead">${L(`${days}日前、あなたは「${c ? c.name : "一枚"}」を引きました。`, `${days} day${days === 1 ? "" : "s"} ago, you drew ${c ? `“${cardName(c)}”` : "a card"}.`)}</span>
+          <span class="rc-sub">${L("いま思うと、あれは何だったのでしょう。答え合わせは、下のジャーナルで。", "Looking back now — what was it pointing to? The journal below is where you find out.")}</span>
         </span>
         <span class="rc-arrow">↓</span>
       </button>`;
@@ -2276,31 +2276,31 @@ function renderAsk() {
       ${wind ? `
       <div class="wind-banner" role="status">
         <span class="wb-mark" aria-hidden="true">🌬</span>
-        <span class="wb-text"><strong>今日、カードがざわついています。</strong>こういう日の読みには、風が一枚、言葉を落としていきます。</span>
+        <span class="wb-text">${L("<strong>今日、カードがざわついています。</strong>こういう日の読みには、風が一枚、言葉を落としていきます。", "<strong>The cards are stirring today.</strong> On days like this, the wind drops one extra card — and a word — into your reading.")}</span>
       </div>` : ""}
       <p class="ritual-eyebrow">STEP 1 — QUESTION</p>
-      <h3 class="ritual-title">なにを知りたいですか?</h3>
+      <h3 class="ritual-title">${L("なにを知りたいですか?", "What would you like to know?")}</h3>
       <p class="tempo-line">${tempo.text}</p>
-      ${mercRx ? `<p class="merc-note">☿ いま、水星が逆行しています。言葉と約束は二度たしかめて。読み違えたと感じたら、それも読みのうちです。</p>` : ""}
+      ${mercRx ? `<p class="merc-note">${L("☿ いま、水星が逆行しています。言葉と約束は二度たしかめて。読み違えたと感じたら、それも読みのうちです。", "☿ Mercury is in retrograde. Check words and promises twice. And if a reading feels misread — that, too, is part of the reading.")}</p>` : ""}
       <div class="genre-row">
-        <span class="genre-label">問いのジャンル</span>
+        <span class="genre-label">${L("問いのジャンル", "Kind of question")}</span>
         <div class="seg">${TAROT_GENRES.map(([k, l]) => `<button class="seg-btn ${k === ritual.genre ? "active" : ""}" data-genre="${k}">${l}</button>`).join("")}</div>
       </div>
       <input type="text" id="tarot-question" class="ritual-question" maxlength="60"
-        placeholder="問いを言葉に(任意)" value="" />
-      <p class="ritual-hint" style="margin:14px 0 12px">知りたいことを選ぶと、そのまま儀式がはじまります</p>
+        placeholder="${L("問いを言葉に(任意)", "Put your question into words (optional)")}" value="" />
+      <p class="ritual-hint" style="margin:14px 0 12px">${L("知りたいことを選ぶと、そのまま儀式がはじまります", "Choose what you want to ask, and the ritual begins")}</p>
       ${windowCards ? `<div class="window-picker">${windowCards}</div>` : ""}
       <div class="spread-picker">
         ${Object.entries(RITUAL_SPREADS).filter(([key, s]) => key !== "daily" && !s.gate).map(([key, s]) => {
           const pips = Array.from({ length: s.count }, () => "<i></i>").join("");
           return `
           <button class="spread-opt ${s.deep ? "spread-deep" : ""} ${tempo.push === key ? "spread-suggest" : ""}" data-spread="${key}">
-            ${tempo.push === key ? '<span class="so-suggest">きょうの誘い</span>' : ""}
+            ${tempo.push === key ? `<span class="so-suggest">${L("きょうの誘い", "Today's invitation")}</span>` : ""}
             <span class="so-purpose">${s.purpose}</span>
             <span class="so-meta">
               <em class="so-name">${s.label}</em>
               <span class="so-pips" aria-hidden="true">${pips}</span>
-              <em class="so-count">${s.count}枚</em>
+              <em class="so-count">${L(`${s.count}枚`, `${s.count} card${s.count === 1 ? "" : "s"}`)}</em>
               ${s.deep ? '<span class="so-tag">DEEP</span>' : ""}
             </span>
             ${s.deep ? `<span class="so-desc">${s.desc}</span>` : ""}
@@ -2308,7 +2308,7 @@ function renderAsk() {
         }).join("")}
         ${nightCard}
       </div>
-      <p class="form-note">78枚のフルデッキで占います。問いはこの端末にのみ保存されます。今日の一枚は<button class="linklike" data-nav="today">「今日の占い」</button>からどうぞ。</p>
+      <p class="form-note">${L(`78枚のフルデッキで占います。問いはこの端末にのみ保存されます。今日の一枚は<button class="linklike" data-nav="today">「今日の占い」</button>からどうぞ。`, `Readings use the full 78-card deck. Your question is stored on this device only. For today's card, visit <button class="linklike" data-nav="today">“Today's Reading.”</button>`)}</p>
     </div>
     ${reflectCard}
     <div id="tarot-journal"></div>`;
@@ -2344,60 +2344,60 @@ function renderAsk() {
 function journalEntryHtml(e, open) {
   const st = journalState(e);
   const conf = RITUAL_SPREADS[e.spread];
-  const label = conf ? conf.label : "タロット";
+  const label = conf ? conf.label : L("タロット", "Tarot");
   const when = new Date(e.t);
-  const dateLabel = `${when.getMonth() + 1}/${when.getDate()} ${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
+  const dateLabel = `${fmtMD(when.getMonth() + 1, when.getDate())} ${String(when.getHours()).padStart(2, "0")}:${String(when.getMinutes()).padStart(2, "0")}`;
   const thumbs = e.cards.slice(0, 4).map((c) =>
     `<img class="jc-thumb ${c.reversed ? "is-rev" : ""}" src="${tarotImg(c.n)}" alt="" loading="lazy" onerror="this.remove()" />`).join("")
     + (e.cards.length > 4 ? `<span class="jc-more">+${e.cards.length - 4}</span>` : "");
-  const names = e.cards.map((c) => { const b = cardByN(c.n); return b ? `${b.name}(${c.reversed ? "逆" : "正"})` : ""; }).filter(Boolean).join("、");
+  const names = e.cards.map((c) => { const b = cardByN(c.n); return b ? L(`${b.name}(${c.reversed ? "逆" : "正"})`, `${cardName(b)} (${c.reversed ? "rev" : "up"})`) : ""; }).filter(Boolean).join(L("、", ", "));
 
   // 状態チップ:いま、この記録になにが起きているか
   const chips = [];
-  if (st.canMemo) chips.push(`<span class="j-chip j-chip-fade">🕯 あと${st.fadeLeftH}時間で薄れます</span>`);
-  if (st.faded) chips.push('<span class="j-chip j-chip-faded">薄れた託宣</span>');
-  if (e.memo) chips.push('<span class="j-chip j-chip-kept">✎ 書き残し済み</span>');
-  if (st.secondOpen && !st.reflectOpen) chips.push('<span class="j-chip j-chip-open">✦ ふたつめの意味がひらきました</span>');
-  if (!st.secondOpen) chips.push(`<span class="j-chip">ふたつめの意味まで あと${st.secondLeftH}時間</span>`);
-  if (st.reflectOpen && !e.reflection) chips.push('<span class="j-chip j-chip-open">❋ 振り返りの問いがひらきました</span>');
+  if (st.canMemo) chips.push(`<span class="j-chip j-chip-fade">${L(`🕯 あと${st.fadeLeftH}時間で薄れます`, `🕯 Fades in ${st.fadeLeftH}h`)}</span>`);
+  if (st.faded) chips.push(`<span class="j-chip j-chip-faded">${L("薄れた託宣", "A faded oracle")}</span>`);
+  if (e.memo) chips.push(`<span class="j-chip j-chip-kept">${L("✎ 書き残し済み", "✎ Noted")}</span>`);
+  if (st.secondOpen && !st.reflectOpen) chips.push(`<span class="j-chip j-chip-open">${L("✦ ふたつめの意味がひらきました", "✦ The second meaning has opened")}</span>`);
+  if (!st.secondOpen) chips.push(`<span class="j-chip">${L(`ふたつめの意味まで あと${st.secondLeftH}時間`, `Second meaning in ${st.secondLeftH}h`)}</span>`);
+  if (st.reflectOpen && !e.reflection) chips.push(`<span class="j-chip j-chip-open">${L("❋ 振り返りの問いがひらきました", "❋ The reflection question has opened")}</span>`);
 
   // 本文(薄れているかどうかで見せ方が変わる)
   const body = st.faded
     ? `
       <div class="j-fadedbox">
-        <p class="j-fadedline">託宣の言葉は、風に薄れました。残っているのは札の名前だけ — <strong>${names}</strong></p>
-        <p class="j-fadedsub">読みたての言葉は24時間だけのもの。つぎの読みでは、ひとこと書き残してみてください。</p>
+        <p class="j-fadedline">${L(`託宣の言葉は、風に薄れました。残っているのは札の名前だけ — <strong>${names}</strong>`, `The oracle's words have faded on the wind. Only the cards' names remain — <strong>${names}</strong>`)}</p>
+        <p class="j-fadedsub">${L("読みたての言葉は24時間だけのもの。つぎの読みでは、ひとこと書き残してみてください。", "A fresh reading's words last only 24 hours. Next time, try leaving a line of your own.")}</p>
       </div>`
     : `
-      ${e.q ? `<p class="j-q">問い:「${esc(e.q)}」</p>` : ""}
-      <p class="j-word">「${esc(e.word || label + "の読み")}」</p>
+      ${e.q ? `<p class="j-q">${L(`問い:「${esc(e.q)}」`, `Question: “${esc(e.q)}”`)}</p>` : ""}
+      <p class="j-word">${L(`「${esc(e.word || label + "の読み")}」`, `“${esc(e.word || label + " reading")}”`)}</p>
       ${e.reason ? `<p class="j-reason">${esc(e.reason)}</p>` : ""}
       ${e.memo
-        ? `<p class="j-memo-view"><span class="j-memo-k">あなたの書き残し</span>${esc(e.memo)}</p>`
+        ? `<p class="j-memo-view"><span class="j-memo-k">${L("あなたの書き残し", "Your note")}</span>${esc(e.memo)}</p>`
         : st.canMemo
           ? `
         <div class="j-memo-row">
-          <input type="text" class="j-memo-input" maxlength="80" placeholder="ひとこと書き残すと、この託宣は薄れません" />
-          <button class="btn btn-ghost j-memo-save" data-jmemo="${e.id}">書き残す</button>
+          <input type="text" class="j-memo-input" maxlength="80" placeholder="${L("ひとこと書き残すと、この託宣は薄れません", "Leave one line, and this oracle will not fade")}" />
+          <button class="btn btn-ghost j-memo-save" data-jmemo="${e.id}">${L("書き残す", "Keep it")}</button>
         </div>` : ""}`;
 
   // 熟成レイヤー
   const second = st.secondOpen
-    ? `<div class="j-layer j-layer-open"><p class="j-layer-k">✦ ふたつめの意味<small>12時間、寝かせた読み</small></p><p>${journalSecondMeaning(e)}</p></div>`
-    : `<div class="j-layer j-layer-locked"><p class="j-layer-k">✦ ふたつめの意味<small>あと${st.secondLeftH}時間でひらきます</small></p><p class="j-locked-line">札は引いた瞬間がすべてではありません。すこし寝かせると、裏側の顔が見えてきます。</p></div>`;
+    ? `<div class="j-layer j-layer-open"><p class="j-layer-k">${L("✦ ふたつめの意味<small>12時間、寝かせた読み</small>", "✦ The second meaning<small>a reading rested for 12 hours</small>")}</p><p>${journalSecondMeaning(e)}</p></div>`
+    : `<div class="j-layer j-layer-locked"><p class="j-layer-k">${L(`✦ ふたつめの意味<small>あと${st.secondLeftH}時間でひらきます</small>`, `✦ The second meaning<small>opens in ${st.secondLeftH} hour${st.secondLeftH === 1 ? "" : "s"}</small>`)}</p><p class="j-locked-line">${L("札は引いた瞬間がすべてではありません。すこし寝かせると、裏側の顔が見えてきます。", "The moment of the draw is not all a card has to say. Left to rest a while, its other face begins to show.")}</p></div>`;
   const reflect = st.reflectOpen
     ? e.reflection
-      ? `<div class="j-layer j-layer-open"><p class="j-layer-k">❋ あなたの振り返り</p><p>${esc(e.reflection)}</p></div>`
+      ? `<div class="j-layer j-layer-open"><p class="j-layer-k">${L("❋ あなたの振り返り", "❋ Your reflection")}</p><p>${esc(e.reflection)}</p></div>`
       : `
         <div class="j-layer j-layer-open">
-          <p class="j-layer-k">❋ 振り返りの問い<small>3日、経ちました</small></p>
+          <p class="j-layer-k">${L("❋ 振り返りの問い<small>3日、経ちました</small>", "❋ The reflection question<small>three days have passed</small>")}</p>
           <p>${journalReflectQuestion(e)}</p>
           <div class="j-memo-row">
-            <input type="text" class="j-reflect-input" maxlength="120" placeholder="いま思うことを、ひとこと" />
-            <button class="btn btn-ghost j-reflect-save" data-jreflect="${e.id}">記す</button>
+            <input type="text" class="j-reflect-input" maxlength="120" placeholder="${L("いま思うことを、ひとこと", "One line on how it looks now")}" />
+            <button class="btn btn-ghost j-reflect-save" data-jreflect="${e.id}">${L("記す", "Write it")}</button>
           </div>
         </div>`
-    : `<div class="j-layer j-layer-locked"><p class="j-layer-k">❋ 振り返りの問い<small>あと${st.reflectLeftD}日でひらきます</small></p><p class="j-locked-line">当たった・外れたの答え合わせではなく、自分で意味をつける時間です。</p></div>`;
+    : `<div class="j-layer j-layer-locked"><p class="j-layer-k">${L(`❋ 振り返りの問い<small>あと${st.reflectLeftD}日でひらきます</small>`, `❋ The reflection question<small>opens in ${st.reflectLeftD} day${st.reflectLeftD === 1 ? "" : "s"}</small>`)}</p><p class="j-locked-line">${L("当たった・外れたの答え合わせではなく、自分で意味をつける時間です。", "Not a scoring of hits and misses — time to give the reading a meaning of your own.")}</p></div>`;
 
   return `
     <details class="j-item ${st.faded ? "j-item-faded" : ""}" data-jid="${e.id}" ${open ? "open" : ""}>
@@ -2422,8 +2422,8 @@ function renderTarotJournal(openId) {
   if (!list.length) { root.innerHTML = ""; return; }
   root.innerHTML = `
     <div class="panel j-panel">
-      ${cardH4("READING JOURNAL", "託宣の記録")}
-      <p class="j-note">読みの言葉は24時間で薄れます。書き残したぶんだけが、あなたの記録として残ります。12時間後・3日後には、それぞれ続きがひらきます。</p>
+      ${cardH4("READING JOURNAL", L("託宣の記録", "Reading Journal"))}
+      <p class="j-note">${L("読みの言葉は24時間で薄れます。書き残したぶんだけが、あなたの記録として残ります。12時間後・3日後には、それぞれ続きがひらきます。", "A reading's words fade after 24 hours; only what you write down stays as your record. After 12 hours, and again after 3 days, more of each reading opens.")}</p>
       <div class="j-list">${list.slice(0, 12).map((e) => journalEntryHtml(e, e.id === openId)).join("")}</div>
     </div>`;
   root.querySelectorAll(".j-memo-save").forEach((b) => {
@@ -2460,8 +2460,8 @@ const SHUF_MODE_KEY = "fortuna:shufmode";
 function shuffleModeSwitchHtml(cur) {
   return `
     <div class="shuf-modes emerge" style="--ed:.5s">
-      <button class="shuf-mode ${cur === "field" ? "active" : ""}" data-shufmode="field">散らして選ぶ</button>
-      <button class="shuf-mode ${cur === "stack" ? "active" : ""}" data-shufmode="stack">重ねて混ぜる</button>
+      <button class="shuf-mode ${cur === "field" ? "active" : ""}" data-shufmode="field">${L("散らして選ぶ", "Scatter & pick")}</button>
+      <button class="shuf-mode ${cur === "stack" ? "active" : ""}" data-shufmode="stack">${L("重ねて混ぜる", "Stack & shuffle")}</button>
     </div>`;
 }
 
@@ -2488,8 +2488,8 @@ function renderShuffleField() {
   chamberScreen(`
     <div class="ritual-step field-step">
       <p class="ritual-eyebrow emerge">SHUFFLE & DRAW</p>
-      <p class="ritual-inst emerge" style="--ed:.15s" id="field-inst">指で<strong>かき混ぜて</strong>、ピンときた${conf.count > 1 ? `<strong>${conf.count}枚</strong>` : "<strong>一枚</strong>"}に触れてください</p>
-      <div class="card-field" id="card-field" aria-label="散らばったカード"></div>
+      <p class="ritual-inst emerge" style="--ed:.15s" id="field-inst">${L(`指で<strong>かき混ぜて</strong>、ピンときた${conf.count > 1 ? `<strong>${conf.count}枚</strong>` : "<strong>一枚</strong>"}に触れてください`, `<strong>Stir the cards</strong> with your finger, and touch the ${conf.count > 1 ? `<strong>${conf.count} cards</strong>` : "<strong>one card</strong>"} that seem to call you`)}</p>
+      <div class="card-field" id="card-field" aria-label="${L("散らばったカード", "Scattered cards")}"></div>
       ${shuffleModeSwitchHtml("field")}
     </div>`);
   bindShuffleModeSwitch();
@@ -2627,10 +2627,10 @@ function renderShuffleField() {
     c.el.style.transform = `translate(${(W / 2 - 26 - (RITUAL_SPREADS[ritual.spread].count - 1) * 30 + idx * 60).toFixed(1)}px, 6px) rotate(0deg) scale(1.14)`;
     const left = RITUAL_SPREADS[ritual.spread].count - ritual.cards.length;
     if (left > 0) {
-      inst.innerHTML = `いいですね。あと<strong>${left}枚</strong>、ピンときた札に触れてください`;
+      inst.innerHTML = L(`いいですね。あと<strong>${left}枚</strong>、ピンときた札に触れてください`, `Good. <strong>${left} to go</strong> — reach for whichever card calls you`);
     } else {
       finished = true;
-      inst.textContent = "そろいました";
+      inst.textContent = L("そろいました", "All drawn");
       field.classList.add("field-done");
       setTimeout(renderReveal, 750);
     }
@@ -2643,12 +2643,12 @@ function renderShuffleStack() {
   chamberScreen(`
     <div class="ritual-step">
       <p class="ritual-eyebrow emerge">STEP 2 — SHUFFLE</p>
-      <p class="ritual-inst emerge" style="--ed:.2s"><strong>長押し</strong>でシャッフル。いいところで、指を離して</p>
+      <p class="ritual-inst emerge" style="--ed:.2s">${L("<strong>長押し</strong>でシャッフル。いいところで、指を離して", "<strong>Press and hold</strong> to shuffle. When it feels right, let go")}</p>
       <div class="shuffle-stack" id="shuffle-stack">
         ${Array.from({ length: 7 }, (_, i) => tbackHtml("sc", `style="--i:${i}"`)).join("")}
       </div>
       <p class="breath-guide" id="breath-guide" aria-hidden="true"></p>
-      <p class="ritual-hint" id="shuffle-hint">呼吸をあわせるほど、深く混ざります</p>
+      <p class="ritual-hint" id="shuffle-hint">${L("呼吸をあわせるほど、深く混ざります", "The more your breath keeps time, the deeper the shuffle")}</p>
       ${shuffleModeSwitchHtml("stack")}
     </div>`);
   bindShuffleModeSwitch();
@@ -2661,7 +2661,7 @@ function renderShuffleStack() {
 
   /* 呼吸ガイド:押している間「吸って→とめて→吐いて」を刻む。
      ワンタップの占いにはない「手間」が、リーディングの重みになる */
-  const BREATH_STEPS = [["吸って ……", 3600], ["とめて …", 1600], ["吐いて ……", 4200]];
+  const BREATH_STEPS = [[L("吸って ……", "Breathe in ……"), 3600], [L("とめて …", "Hold …"), 1600], [L("吐いて ……", "Breathe out ……"), 4200]];
   let breathTimer = 0, breathIdx = 0, breathCycles = 0;
   const breathTick = () => {
     if (!pressed || done) return;
@@ -2673,7 +2673,7 @@ function renderShuffleStack() {
     if (breathIdx > 0 && breathIdx % 3 === 0) {
       breathCycles += 1;
       ritual.deepShuffle = true; // ひと呼吸ぶん、深く混ざった
-      hint.textContent = breathCycles === 1 ? "……深く混ざってきました" : "とても深く混ざっています。いつ離しても大丈夫";
+      hint.textContent = breathCycles === 1 ? L("……深く混ざってきました", "…… the deck is mixing deeply now") : L("とても深く混ざっています。いつ離しても大丈夫", "Deeply shuffled. Let go whenever you like");
       vibrate(6);
     }
     breathIdx += 1;
@@ -2698,7 +2698,7 @@ function renderShuffleStack() {
     pressed = true;
     holdT0 = performance.now();
     lastMove = null; vel = 0;
-    hint.textContent = "……こするとよく混ざります";
+    hint.textContent = L("……こするとよく混ざります", "…… rubbing mixes it deeper");
     breathIdx = 0;
     breathTick();
     tick();
@@ -2721,7 +2721,7 @@ function renderShuffleStack() {
     ritual.releaseT = performance.now(); // シード成分1: 指を離した時刻
     vibrate(20);
     stack.classList.add("stopped");
-    hint.textContent = breathCycles >= 1 ? "止まりました — 深く混ざったデッキです" : "止まりました";
+    hint.textContent = breathCycles >= 1 ? L("止まりました — 深く混ざったデッキです", "It has settled — a deeply shuffled deck") : L("止まりました", "It has settled");
     setTimeout(() => (short ? renderDraw() : renderCut()), 420);
   };
   stack.addEventListener("pointerdown", down);
@@ -2735,12 +2735,12 @@ function renderCut() {
   chamberScreen(`
     <div class="ritual-step">
       <p class="ritual-eyebrow emerge">STEP 3 — CUT</p>
-      <p class="ritual-inst emerge" style="--ed:.2s"><strong>直感で</strong>、ひとつ</p>
+      <p class="ritual-inst emerge" style="--ed:.2s">${L("<strong>直感で</strong>、ひとつ", "<strong>By intuition</strong> — choose one")}</p>
       <div class="cut-piles">
         ${[0, 1, 2].map((k) => `
           <button class="cut-pile" data-k="${k}">
             ${tbackHtml("cp cp1")}${tbackHtml("cp cp2")}${tbackHtml("cp cp3")}
-            <span class="cut-label">${["ひとつ目", "ふたつ目", "みっつ目"][k]}</span>
+            <span class="cut-label">${[L("ひとつ目", "First"), L("ふたつ目", "Second"), L("みっつ目", "Third")][k]}</span>
           </button>`).join("")}
       </div>
     </div>`);
@@ -2765,7 +2765,7 @@ function renderDraw() {
       ${compact
         ? `<div class="draw-progress" id="draw-progress">${Array.from({ length: conf.count }, () => '<span class="dp"></span>').join("")}</div>`
         : slotsHtml(-1)}
-      <p class="ritual-inst">呼ばれた気がするカードを、<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong></p>
+      <p class="ritual-inst">${L(`呼ばれた気がするカードを、<strong>あと <span id="draw-left">${conf.count}</span> 枚</strong>`, `Reach for the cards that call you — <strong><span id="draw-left">${conf.count}</span> to go</strong>`)}</p>
       <div class="draw-strip" id="draw-strip">
         ${Array.from({ length: DRAW_FAN_COUNT }, (_, k) => tbackHtml("draw-card", `data-k="${k}" role="button" tabindex="0" style="--k:${k % 7}"`)).join("")}
       </div>
@@ -2831,7 +2831,7 @@ function renderReveal() {
         <p class="rv-label-ja emerge" style="--ed:.3s">${pos.ja}</p>
         <div class="rv-card" id="rv-card">${tbackHtml("slot-back")}</div>
         <div class="rv-text" id="rv-text"></div>
-        ${conf.count > 1 ? `<button class="rv-skip" id="rv-skip" aria-label="すべて開いて結果へ">SKIP »</button>` : ""}
+        ${conf.count > 1 ? `<button class="rv-skip" id="rv-skip" aria-label="${L("すべて開いて結果へ", "Reveal all and see the results")}">SKIP »</button>` : ""}
       </div>`);
     const rvCard = document.getElementById("rv-card");
     const rvText = document.getElementById("rv-text");
@@ -2857,10 +2857,10 @@ function renderReveal() {
       phase = 2;
       rvText.innerHTML = `
         <span class="rv-no emerge">${cardNo(card)}</span>
-        <span class="rv-name emerge" style="--ed:.2s">${card.name}</span>
-        <span class="rv-en emerge" style="--ed:.4s">${card.en}</span>
-        <span class="rv-ori ${card.reversed ? "rev" : "up"} emerge" style="--ed:.65s">${card.reversed ? "逆位置" : "正位置"}</span>
-        <span class="rv-hint emerge" style="--ed:1.2s">${i + 1 < conf.count ? "─ タップでつぎへ ─" : "─ タップで読み解きへ ─"}</span>`;
+        <span class="rv-name emerge" style="--ed:.2s">${cardName(card)}</span>
+        ${I18N.en ? "" : `<span class="rv-en emerge" style="--ed:.4s">${card.en}</span>`}
+        <span class="rv-ori ${card.reversed ? "rev" : "up"} emerge" style="--ed:.65s">${card.reversed ? L("逆位置", "Reversed") : L("正位置", "Upright")}</span>
+        <span class="rv-hint emerge" style="--ed:1.2s">${i + 1 < conf.count ? L("─ タップでつぎへ ─", "─ tap for the next ─") : L("─ タップで読み解きへ ─", "─ tap to read the cards ─")}</span>`;
     };
 
     const chargeAt = i === 0 ? 800 : 400; // 2枚目以降はテンポよく
@@ -2921,11 +2921,11 @@ function yesNoVerdictHtml(card) {
   const yes = !card.reversed;
   return `
     <div class="result-card span-all yn-card">
-      ${cardH4("VERDICT", "カードの答え")}
+      ${cardH4("VERDICT", L("カードの答え", "The card's answer"))}
       <p class="yn-answer ${yes ? "yes" : "no"}">${yes ? "YES" : "NO"}</p>
       <p>${yes
-        ? "カードは正位置 — 追い風のサインです。進めて大丈夫。ただし答えを確かなものにする鍵は、カードの言葉の中にあります。"
-        : "カードは逆位置 — いまは見送りのサイン。ただし「永遠のNO」ではありません。カードが示す課題を整えれば、答えは変わります。"}</p>
+        ? L("カードは正位置 — 追い風のサインです。進めて大丈夫。ただし答えを確かなものにする鍵は、カードの言葉の中にあります。", "The card is upright — a sign of tailwind. It's safe to move ahead. The key that makes the answer certain, though, is in the card's own words.")
+        : L("カードは逆位置 — いまは見送りのサイン。ただし「永遠のNO」ではありません。カードが示す課題を整えれば、答えは変わります。", "The card is reversed — a sign to hold off for now. But this is no eternal no. Settle the matter the card points to, and the answer changes.")}</p>
     </div>`;
 }
 
@@ -2933,13 +2933,13 @@ function choiceVerdictHtml() {
   const [a, b] = ritual.cards;
   const scoreA = a.reversed ? 0 : 1, scoreB = b.reversed ? 0 : 1;
   const msg = scoreA > scoreB
-    ? "カードは<strong>選択肢A</strong>に追い風を見ています。Bを選ぶ場合は、逆位置が示す課題を先に片付けて。"
+    ? L("カードは<strong>選択肢A</strong>に追い風を見ています。Bを選ぶ場合は、逆位置が示す課題を先に片付けて。", "The cards see the tailwind behind <strong>option A</strong>. If you choose B, settle what the reversed card points to first.")
     : scoreB > scoreA
-      ? "カードは<strong>選択肢B</strong>に追い風を見ています。Aを選ぶ場合は、逆位置が示す課題を先に片付けて。"
-      : "AとBは互角。決め手は3枚目の「助言」のカードです。あなたの直感が最初に引いた方にも、心の答えが出ています。";
+      ? L("カードは<strong>選択肢B</strong>に追い風を見ています。Aを選ぶ場合は、逆位置が示す課題を先に片付けて。", "The cards see the tailwind behind <strong>option B</strong>. If you choose A, settle what the reversed card points to first.")
+      : L("AとBは互角。決め手は3枚目の「助言」のカードです。あなたの直感が最初に引いた方にも、心の答えが出ています。", "A and B stand even. The deciding voice is the third card — the advice. And the option your intuition reached for first holds your heart's answer, too.");
   return `
     <div class="result-card span-all">
-      ${cardH4("VERDICT", "どちらを選ぶ?")}
+      ${cardH4("VERDICT", L("どちらを選ぶ?", "Which to choose?"))}
       <p>${msg}</p>
     </div>`;
 }
@@ -2949,55 +2949,56 @@ function tarotConclusion() {
   const c = ritual.cards;
   if (!c.length) return null;
   const ori = (k) => (k.reversed ? "逆位置" : "正位置");
-  const first = (t) => t.split("。")[0] + "。";
+  const oriEn = (k) => (k.reversed ? "reversed" : "upright");
+  const first = (t) => (I18N.en ? firstSentence(t) + "." : t.split("。")[0] + "。");
   let word, reason, action;
 
   if (ritual.spread === "daily") {
     const k = c[0];
-    word = k.reversed ? "今日は「攻める」より「整える」日" : "今日は、迷わず進んでいい日";
-    reason = `今日の一枚は「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    word = k.reversed ? L("今日は「攻める」より「整える」日", "Today favors “settling” over “charging”") : L("今日は、迷わず進んでいい日", "Today, you may move ahead without hesitating");
+    reason = L(`今日の一枚は「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`, `Today's card is “${cardName(k)},” ${oriEn(k)}. ${first(genreMeaning(k))}`);
     action = k.advice;
   } else if (ritual.spread === "one") {
     const k = c[0];
-    word = k.reversed ? "いったん立ち止まるが正解 — 角度を変えれば通ります" : "その件、動いて大丈夫";
-    reason = `答えの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    word = k.reversed ? L("いったん立ち止まるが正解 — 角度を変えれば通ります", "Pausing is the right call — change the angle, and it goes through") : L("その件、動いて大丈夫", "That matter — it's safe to move");
+    reason = L(`答えの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`, `In the answer's place: “${cardName(k)},” ${oriEn(k)}. ${first(genreMeaning(k))}`);
     action = k.advice;
   } else if (ritual.spread === "yesno") {
     const k = c[0];
-    word = k.reversed ? "答えは「いまはまだ」— 条件がひとつ残っています" : "答えは「YES」— 進めて大丈夫";
-    reason = `答えの位置に「${k.name}」が${ori(k)}で出ました。${first(genreMeaning(k))}`;
+    word = k.reversed ? L("答えは「いまはまだ」— 条件がひとつ残っています", "The answer is “not yet” — one condition remains") : L("答えは「YES」— 進めて大丈夫", "The answer is “yes” — go ahead");
+    reason = L(`答えの位置に「${k.name}」が${ori(k)}で出ました。${first(genreMeaning(k))}`, `“${cardName(k)}” appeared ${oriEn(k)} in the answer's place. ${first(genreMeaning(k))}`);
     action = k.advice;
   } else if (ritual.spread === "three") {
     const [pa, pr, fu] = c;
-    word = fu.reversed ? "焦らず、足元を整えてから進む流れ" : "このまま進めば、流れは開けていく";
-    reason = `過去「${pa.name}」→ 現在「${pr.name}」ときて、未来の位置に「${fu.name}」の${ori(fu)}。${first(genreMeaning(fu))}`;
+    word = fu.reversed ? L("焦らず、足元を整えてから進む流れ", "A current that asks you to steady your footing before moving on") : L("このまま進めば、流れは開けていく", "Keep going as you are, and the current opens up");
+    reason = L(`過去「${pa.name}」→ 現在「${pr.name}」ときて、未来の位置に「${fu.name}」の${ori(fu)}。${first(genreMeaning(fu))}`, `From “${cardName(pa)}” in the past, through “${cardName(pr)}” in the present, to “${cardName(fu)},” ${oriEn(fu)}, in the future's place. ${first(genreMeaning(fu))}`);
     action = fu.advice;
   } else if (ritual.spread === "choice") {
     const [a, b, adv] = c;
-    word = !a.reversed && b.reversed ? "カードが推すのは、選択肢A"
-      : a.reversed && !b.reversed ? "カードが推すのは、選択肢B"
-      : "AとBは互角 — 決め手は「助言」の一枚";
-    reason = `A「${a.name}(${ori(a)})」、B「${b.name}(${ori(b)})」。助言の位置には「${adv.name}」。${first(genreMeaning(adv))}`;
+    word = !a.reversed && b.reversed ? L("カードが推すのは、選択肢A", "The cards lean toward option A")
+      : a.reversed && !b.reversed ? L("カードが推すのは、選択肢B", "The cards lean toward option B")
+      : L("AとBは互角 — 決め手は「助言」の一枚", "A and B stand even — the advice card decides");
+    reason = L(`A「${a.name}(${ori(a)})」、B「${b.name}(${ori(b)})」。助言の位置には「${adv.name}」。${first(genreMeaning(adv))}`, `A: “${cardName(a)}” (${oriEn(a)}); B: “${cardName(b)}” (${oriEn(b)}). In the advice's place, “${cardName(adv)}.” ${first(genreMeaning(adv))}`);
     action = adv.advice;
   } else if (ritual.spread === "celtic") {
     const challenge = c[1], outcome = c[9];
-    word = outcome.reversed ? "結末はまだ書き換えられる — 鍵は「課題」の一枚" : "ゆきつく先は、良い流れ";
-    reason = `10枚の結末の位置に「${outcome.name}」の${ori(outcome)}。向き合う課題は「${challenge.name}」が示しています。${first(genreMeaning(outcome))}`;
+    word = outcome.reversed ? L("結末はまだ書き換えられる — 鍵は「課題」の一枚", "The outcome can still be rewritten — the key is the challenge card") : L("ゆきつく先は、良い流れ", "Where this leads is a good current");
+    reason = L(`10枚の結末の位置に「${outcome.name}」の${ori(outcome)}。向き合う課題は「${challenge.name}」が示しています。${first(genreMeaning(outcome))}`, `In the outcome's place of the ten: “${cardName(outcome)},” ${oriEn(outcome)}. The challenge to face is shown by “${cardName(challenge)}.” ${first(genreMeaning(outcome))}`);
     action = outcome.advice;
   } else if (ritual.spread === "night") {
     const [rel, , lamp] = c;
-    word = lamp.reversed ? "今夜は結論を出さない — それがいちばんの手当て" : "今日はここまでで上出来。明日の灯は、もう点いています";
-    reason = `手放していいことの位置に「${rel.name}」の${ori(rel)}。明日への灯には「${lamp.name}」。${first(genreMeaning(lamp))}`;
+    word = lamp.reversed ? L("今夜は結論を出さない — それがいちばんの手当て", "Draw no conclusions tonight — that is the kindest care") : L("今日はここまでで上出来。明日の灯は、もう点いています", "Today was enough. Tomorrow's lamp is already lit");
+    reason = L(`手放していいことの位置に「${rel.name}」の${ori(rel)}。明日への灯には「${lamp.name}」。${first(genreMeaning(lamp))}`, `In the place of what may be released: “${cardName(rel)},” ${oriEn(rel)}. For tomorrow's lamp, “${cardName(lamp)}.” ${first(genreMeaning(lamp))}`);
     action = lamp.advice;
   } else if (ritual.spread === "newmoon") {
     const k = c[0];
-    word = k.reversed ? "種はまだ土の中 — 焦らず、静かに準備を" : "この新月に蒔く種は、これ";
-    reason = `はじまりの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    word = k.reversed ? L("種はまだ土の中 — 焦らず、静かに準備を", "The seed is still in the soil — prepare quietly, without hurry") : L("この新月に蒔く種は、これ", "This is the seed to sow on this new moon");
+    reason = L(`はじまりの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`, `In the beginning's place: “${cardName(k)},” ${oriEn(k)}. ${first(genreMeaning(k))}`);
     action = k.advice;
   } else if (ritual.spread === "fullmoon") {
     const k = c[0];
-    word = k.reversed ? "手放すのは物ではなく、こだわりの方" : "満月に返すのは、これ";
-    reason = `手放しの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`;
+    word = k.reversed ? L("手放すのは物ではなく、こだわりの方", "What to release is not a thing, but a grip") : L("満月に返すのは、これ", "This is what to return to the full moon");
+    reason = L(`手放しの位置に「${k.name}」の${ori(k)}。${first(genreMeaning(k))}`, `In the release's place: “${cardName(k)},” ${oriEn(k)}. ${first(genreMeaning(k))}`);
     action = k.advice;
   } else {
     return null;
@@ -3010,10 +3011,10 @@ function tarotConclusionHtml() {
   if (!conc) return "";
   return `
     <div class="result-card span-all tarot-verdict">
-      ${cardH4("CONCLUSION", "つまり、こういうこと")}
-      <p class="tv-word">「${conc.word}」</p>
+      ${cardH4("CONCLUSION", L("つまり、こういうこと", "In short"))}
+      <p class="tv-word">${L(`「${conc.word}」`, `“${conc.word}”`)}</p>
       <p class="tv-reason">${conc.reason}</p>
-      <p class="tv-action">きょうの一手 — <strong>${conc.action}</strong></p>
+      <p class="tv-action">${L(`きょうの一手 — <strong>${conc.action}</strong>`, `Today's move — <strong>${conc.action}</strong>`)}</p>
     </div>`;
 }
 
@@ -3029,16 +3030,16 @@ function deckReadingHtml() {
   const domTie = sorted.length > 1 && sorted[1][1] === sorted[0][1];
 
   const majorNote = majors >= Math.ceil(total / 2)
-    ? `大アルカナが${majors}枚 — 運命の歯車が大きく回っている局面です。流れそのものが強く、いまの選択が長く効いていきます。`
+    ? L(`大アルカナが${majors}枚 — 運命の歯車が大きく回っている局面です。流れそのものが強く、いまの選択が長く効いていきます。`, `${majors} Major Arcana — the wheels of fate are turning at full size. The current itself is strong, and the choices you make now will carry a long way.`)
     : majors === 0
-      ? "すべて小アルカナ — 答えは日常の中にあります。大きな運命よりも、毎日の行動と習慣で流れを自由に変えられる時期です。"
-      : `大アルカナ${majors}枚・小アルカナ${total - majors}枚 — 大きな流れと日々の行動、その両方が答えに関わっています。`;
+      ? L("すべて小アルカナ — 答えは日常の中にあります。大きな運命よりも、毎日の行動と習慣で流れを自由に変えられる時期です。", "All Minor Arcana — the answer lives in the everyday. Less grand fate, more daily action: this is a stretch where habits can freely bend the current.")
+      : L(`大アルカナ${majors}枚・小アルカナ${total - majors}枚 — 大きな流れと日々の行動、その両方が答えに関わっています。`, `${majors} Major and ${total - majors} Minor Arcana — both the larger current and your daily actions have a hand in the answer.`);
 
   const SUIT_NOTE = {
-    wands: "ワンド(火)が目立ちます。テーマの中心は情熱と行動。考えるより、まず動くことが答えに近づく鍵です。",
-    cups: "カップ(水)が目立ちます。テーマの中心は感情と関係。気持ちを言葉にして、人とのつながりを丁寧に扱うのが鍵です。",
-    swords: "ソード(風)が目立ちます。テーマの中心は思考と決断。情報を整理して、はっきり決めることが鍵です。",
-    pentacles: "ペンタクル(地)が目立ちます。テーマの中心は実りと現実。焦らず着実に、目に見える形にしていくのが鍵です。",
+    wands: L("ワンド(火)が目立ちます。テーマの中心は情熱と行動。考えるより、まず動くことが答えに近づく鍵です。", "Wands (Fire) stand out. The heart of the matter is passion and action. Moving first and thinking second is what brings you closer to the answer."),
+    cups: L("カップ(水)が目立ちます。テーマの中心は感情と関係。気持ちを言葉にして、人とのつながりを丁寧に扱うのが鍵です。", "Cups (Water) stand out. The heart of the matter is feeling and connection. Put your emotions into words, and handle your ties with care — that is the key."),
+    swords: L("ソード(風)が目立ちます。テーマの中心は思考と決断。情報を整理して、はっきり決めることが鍵です。", "Swords (Air) stand out. The heart of the matter is thought and decision. Sort the facts, then decide cleanly — that is the key."),
+    pentacles: L("ペンタクル(地)が目立ちます。テーマの中心は実りと現実。焦らず着実に、目に見える形にしていくのが鍵です。", "Pentacles (Earth) stand out. The heart of the matter is harvest and the tangible. Without hurry, steadily give things a visible form — that is the key."),
   };
   const suitNote = sorted.length && sorted[0][1] >= 2 && !domTie ? SUIT_NOTE[sorted[0][0]] : "";
 
@@ -3046,40 +3047,40 @@ function deckReadingHtml() {
   const combos = [];
   const cs = ritual.cards;
   const courts = cs.filter((x) => ["page", "knight", "queen", "king"].includes(x.rank)).length;
-  if (courts >= 2) combos.push(`人物札(コートカード)が${courts}枚 — 鍵を握るのは「人」。あなたの立ち居振る舞いの変化や、周囲の人物が状況を動かします。`);
+  if (courts >= 2) combos.push(L(`人物札(コートカード)が${courts}枚 — 鍵を握るのは「人」。あなたの立ち居振る舞いの変化や、周囲の人物が状況を動かします。`, `${courts} court cards — people hold the key. A shift in how you carry yourself, or someone around you, will move the situation.`));
   const aces = cs.filter((x) => x.rank === "ace").length;
-  if (aces >= 2) combos.push(`エースが${aces}枚 — 複数の「はじまり」が同時に訪れています。優先順位だけ決めれば、全部始めてしまって大丈夫。`);
-  const NUM_MEANING = { "02": "選択と均衡", "03": "成長と協調", "04": "安定と土台", "05": "揺らぎと挑戦", "06": "調和とめぐり", "07": "見極めと試行", "08": "力の使いどころ", "09": "成熟の一歩手前", "10": "ひと区切りと次" };
+  if (aces >= 2) combos.push(L(`エースが${aces}枚 — 複数の「はじまり」が同時に訪れています。優先順位だけ決めれば、全部始めてしまって大丈夫。`, `${aces} Aces — several beginnings arriving at once. Decide the order of priority, and it's fine to start them all.`));
+  const NUM_MEANING = { "02": L("選択と均衡", "choice and balance"), "03": L("成長と協調", "growth and cooperation"), "04": L("安定と土台", "stability and foundation"), "05": L("揺らぎと挑戦", "unsettling and challenge"), "06": L("調和とめぐり", "harmony and circulation"), "07": L("見極めと試行", "discernment and trial"), "08": L("力の使いどころ", "where to apply your strength"), "09": L("成熟の一歩手前", "one step before ripeness"), "10": L("ひと区切りと次", "closure, and what comes next") };
   const numCount = {};
   cs.forEach((x) => { if (x.rank && NUM_MEANING[x.rank]) numCount[x.rank] = (numCount[x.rank] || 0) + 1; });
   for (const [r, n] of Object.entries(numCount)) {
-    if (n >= 2) combos.push(`「${Number(r)}」の札が${n}枚 — 数字の${Number(r)}が示すのは「${NUM_MEANING[r]}」。スートを越えて、このテーマが強調されています。`);
+    if (n >= 2) combos.push(L(`「${Number(r)}」の札が${n}枚 — 数字の${Number(r)}が示すのは「${NUM_MEANING[r]}」。スートを越えて、このテーマが強調されています。`, `${n} cards of “${Number(r)}” — the number ${Number(r)} speaks of ${NUM_MEANING[r]}. Across the suits, this theme is underlined.`));
   }
   const has = (n) => cs.some((x) => x.n === n);
-  if ((has(13) || has(16)) && (has(17) || has(19))) combos.push("「死神/塔」と「星/太陽」の共演 — 一度手放して、より良く開ける配置。終わりの札は悪い知らせではありません。");
-  if (has(6) && has(15)) combos.push("「恋人」と「悪魔」の共演 — 強い引力の暗示。心地よさと執着の線引きが、今回の隠れたテーマです。");
-  if (has(0) && has(21)) combos.push("「愚者」と「世界」の共演 — ひとつの章の完成と、次の旅の始まりが同時に来ています。");
-  if (has(18) && has(19)) combos.push("「月」と「太陽」の共演 — 不安の霧はやがて晴れる並び。夜の後に朝が約束されています。");
+  if ((has(13) || has(16)) && (has(17) || has(19))) combos.push(L("「死神/塔」と「星/太陽」の共演 — 一度手放して、より良く開ける配置。終わりの札は悪い知らせではありません。", "Death or the Tower alongside the Star or the Sun — a layout that lets go once, so things open better. The ending cards are not bad news."));
+  if (has(6) && has(15)) combos.push(L("「恋人」と「悪魔」の共演 — 強い引力の暗示。心地よさと執着の線引きが、今回の隠れたテーマです。", "The Lovers and the Devil together — a sign of strong attraction. Where comfort ends and clinging begins is this reading's hidden theme."));
+  if (has(0) && has(21)) combos.push(L("「愚者」と「世界」の共演 — ひとつの章の完成と、次の旅の始まりが同時に来ています。", "The Fool and the World together — the completion of one chapter and the start of the next journey, arriving at once."));
+  if (has(18) && has(19)) combos.push(L("「月」と「太陽」の共演 — 不安の霧はやがて晴れる並び。夜の後に朝が約束されています。", "The Moon and the Sun together — an arrangement where the fog of worry eventually clears. After the night, morning is promised."));
 
   const revNote = revs === 0
-    ? "すべて正位置 — エネルギーが素直に巡っています。出た答えを、そのまま受け取って大丈夫。"
+    ? L("すべて正位置 — エネルギーが素直に巡っています。出た答えを、そのまま受け取って大丈夫。", "All upright — the energy is circulating cleanly. You may take the answer just as it is.")
     : revs >= Math.ceil(total / 2)
-      ? `逆位置が${revs}枚 — 外の状況より、内側を整えることが先の時期。逆位置は「禁止」ではなく、伸びる前の準備を示すサインです。`
-      : `逆位置は${revs}枚 — おおむね素直な流れの中に、調整ポイントがいくつかあります。`;
+      ? L(`逆位置が${revs}枚 — 外の状況より、内側を整えることが先の時期。逆位置は「禁止」ではなく、伸びる前の準備を示すサインです。`, `${revs} reversed — a stretch for tending the inside before the outside. Reversal is not a prohibition; it marks the preparation that comes before growth.`)
+      : L(`逆位置は${revs}枚 — おおむね素直な流れの中に、調整ポイントがいくつかあります。`, `${revs} reversed — within a mostly straightforward current, a few points ask for adjustment.`);
 
   return `
     <div class="result-card span-all">
-      ${cardH4("DECK READING", "出たカードの構成から")}
+      ${cardH4("DECK READING", L("出たカードの構成から", "From the shape of the draw"))}
       <div class="chip-row" style="margin-top:0">
-        <span class="chip">大アルカナ <strong>${majors}</strong>/${total}</span>
-        ${sorted.map(([k, v]) => `<span class="chip">${MINOR_SUITS[k].ja} <strong>${v}</strong></span>`).join("")}
-        <span class="chip">逆位置 <strong>${revs}</strong>/${total}</span>
+        <span class="chip">${L(`大アルカナ <strong>${majors}</strong>/${total}`, `Major Arcana <strong>${majors}</strong>/${total}`)}</span>
+        ${sorted.map(([k, v]) => `<span class="chip">${I18N.en ? MINOR_SUITS[k].en : MINOR_SUITS[k].ja} <strong>${v}</strong></span>`).join("")}
+        <span class="chip">${L(`逆位置 <strong>${revs}</strong>/${total}`, `Reversed <strong>${revs}</strong>/${total}`)}</span>
       </div>
       <p style="margin-top:14px">${majorNote}</p>
       ${suitNote ? `<p style="margin-top:8px">${suitNote}</p>` : ""}
       <p class="sub" style="margin-top:10px">${revNote}</p>
       ${combos.length ? `<div class="combo-list">${combos.map((x) => `<p class="combo">✦ ${x}</p>`).join("")}</div>` : ""}
-      ${explainHtml("構成読みって何?", "本格的なタロットでは1枚ずつの意味に加えて「出たカード全体の構成」を読みます。大アルカナは人生の大きな流れ、小アルカナは日々の具体的な出来事。スート(ワンド=火・カップ=水・ソード=風・ペンタクル=地)の偏りは、いまのテーマがどの領域にあるかを教えてくれます。78枚のフルデッキだからできる読み方です。")}
+      ${explainHtml(L("構成読みって何?", "What is a composition reading?"), L("本格的なタロットでは1枚ずつの意味に加えて「出たカード全体の構成」を読みます。大アルカナは人生の大きな流れ、小アルカナは日々の具体的な出来事。スート(ワンド=火・カップ=水・ソード=風・ペンタクル=地)の偏りは、いまのテーマがどの領域にあるかを教えてくれます。78枚のフルデッキだからできる読み方です。", "In full tarot practice, readers look beyond each card's meaning to the shape of the whole draw. Major Arcana speak of life's larger currents; Minor Arcana of concrete, everyday events. A lean toward one suit — Wands (Fire), Cups (Water), Swords (Air), Pentacles (Earth) — shows which territory your present theme lives in. It is a way of reading only a full 78-card deck allows."))}
     </div>`;
 }
 
@@ -3087,32 +3088,32 @@ function tarotOverallHtml() {
   if (ritual.spread !== "three") return "";
   const revCount = ritual.cards.filter((c) => c.reversed).length;
   const tone = [
-    "三枚とも正位置。強い追い風が吹いています。迷いを手放して、そのまま進んで大丈夫。",
-    "おおむね順調な流れです。逆位置のカードが示す一点だけ整えれば、道はまっすぐ開けます。",
-    "行きつ戻りつの時期。焦って進めるより、逆位置のカードが示す課題から順に片付けるのが近道です。",
-    "三枚とも逆位置。いまは動くより整える時。この時期を丁寧に過ごした人から、流れは変わりはじめます。",
+    L("三枚とも正位置。強い追い風が吹いています。迷いを手放して、そのまま進んで大丈夫。", "All three upright. A strong tailwind is blowing. Let go of hesitation and keep going just as you are."),
+    L("おおむね順調な流れです。逆位置のカードが示す一点だけ整えれば、道はまっすぐ開けます。", "The current runs mostly smooth. Tend to the one point the reversed card shows, and the road opens straight ahead."),
+    L("行きつ戻りつの時期。焦って進めるより、逆位置のカードが示す課題から順に片付けるのが近道です。", "A back-and-forth stretch. Rather than pushing ahead, clearing the reversed cards' tasks in order is the shorter way through."),
+    L("三枚とも逆位置。いまは動くより整える時。この時期を丁寧に過ごした人から、流れは変わりはじめます。", "All three reversed. A time for settling rather than moving. For those who tend this season with care, the current begins to turn."),
   ][revCount];
-  return `<div class="result-card span-all">${cardH4("OVERALL", "全体の流れ")}<p>${tone}</p></div>`;
+  return `<div class="result-card span-all">${cardH4("OVERALL", L("全体の流れ", "The overall current"))}<p>${tone}</p></div>`;
 }
 
 function showTarotSummary(restored) {
   const conf = RITUAL_SPREADS[ritual.spread];
   const genreLabel = Object.fromEntries(TAROT_GENRES)[ritual.genre];
-  const cardsLabel = ritual.cards.map((c) => `${c.name}(${c.reversed ? "逆" : "正"})`);
+  const cardsLabel = ritual.cards.map((c) => L(`${c.name}(${c.reversed ? "逆" : "正"})`, `${cardName(c)} (${c.reversed ? "rev" : "up"})`));
 
-  const kwShare = cardsLabel.length <= 3 ? cardsLabel : [...cardsLabel.slice(0, 2), `ほか${cardsLabel.length - 2}枚`];
+  const kwShare = cardsLabel.length <= 3 ? cardsLabel : [...cardsLabel.slice(0, 2), L(`ほか${cardsLabel.length - 2}枚`, `+${cardsLabel.length - 2} more`)];
   const conc = tarotConclusion();
   lastShare.tarot = {
     cards: ritual.cards.map((c) => ({ n: c.n, reversed: c.reversed })),
     eyebrow: `TAROT — ${conf.label}`,
-    title: conc ? conc.word : `${conf.label}の答え`,
+    title: conc ? conc.word : L(`${conf.label}の答え`, `${conf.label}: the answer`),
     keywords: kwShare,
     sub: null,
-    x: `【MYOURISCOPE タロット・${conf.label}】${conc ? `「${conc.word}」— ` : ""}${cardsLabel.slice(0, 3).join("、")}${cardsLabel.length > 3 ? ` ほか${cardsLabel.length - 3}枚` : ""} ✦`,
+    x: L(`【MYOURISCOPE タロット・${conf.label}】${conc ? `「${conc.word}」— ` : ""}${cardsLabel.slice(0, 3).join("、")}${cardsLabel.length > 3 ? ` ほか${cardsLabel.length - 3}枚` : ""} ✦`, `MYOURISCOPE Tarot — ${conf.label}: ${conc ? `“${conc.word}” — ` : ""}${cardsLabel.slice(0, 3).join(", ")}${cardsLabel.length > 3 ? ` +${cardsLabel.length - 3} more` : ""} ✦`),
   };
   if (!restored) {
-    recordHistory(`タロット(${conf.label})`, cardsLabel.join(" / "),
-      ritual.cards.map((c, i) => `${conf.positions[i].ja}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${genreMeaning(c)}`).join(" "));
+    recordHistory(L(`タロット(${conf.label})`, `Tarot (${conf.label})`), cardsLabel.join(" / "),
+      ritual.cards.map((c, i) => L(`${conf.positions[i].ja}: ${c.name}(${c.reversed ? "逆位置" : "正位置"}) — ${genreMeaning(c)}`, `${conf.positions[i].ja}: ${cardName(c)} (${c.reversed ? "Reversed" : "Upright"}) — ${genreMeaning(c)}`)).join(" "));
     // 託宣の記録に綴じる(24時間で薄れ、12時間・3日後に続きがひらく)
     addJournalEntry({
       id: Date.now(),
@@ -3139,16 +3140,16 @@ function showTarotSummary(restored) {
     const bonus = { ...rest[Math.floor(rng() * rest.length)], reversed: rng() < 0.5 };
     windHtml = `
       <div class="result-card span-all wind-card">
-        ${cardH4("THE WIND'S WORD", "ざわめきの一枚")}
+        ${cardH4("THE WIND'S WORD", L("ざわめきの一枚", "The stirring's card"))}
         <div class="tp-body">
-          <img class="tp-thumb ${bonus.reversed ? "is-rev" : ""}" src="${tarotImg(bonus.n)}" alt="${bonus.name}" loading="lazy" onerror="this.remove()" />
+          <img class="tp-thumb ${bonus.reversed ? "is-rev" : ""}" src="${tarotImg(bonus.n)}" alt="${cardName(bonus)}" loading="lazy" onerror="this.remove()" />
           <div class="tp-head">
-            <p class="tp-name">${bonus.name}</p>
-            <p class="tp-ori-line"><span class="tc-ori ${bonus.reversed ? "rev" : "up"}">${bonus.reversed ? "逆位置" : "正位置"}</span></p>
+            <p class="tp-name">${cardName(bonus)}</p>
+            <p class="tp-ori-line"><span class="tc-ori ${bonus.reversed ? "rev" : "up"}">${bonus.reversed ? L("逆位置", "Reversed") : L("正位置", "Upright")}</span></p>
           </div>
           <div class="tp-detail">
-            <p>今日はカードがざわつく日。あなたが引いた札のそばに、風がもう一枚落としていきました。<strong>${bonus.reversed ? bonus.rev : bonus.up}</strong></p>
-            <p class="tc-advice">風のひとこと — <strong>${bonus.advice}</strong></p>
+            <p>${L(`今日はカードがざわつく日。あなたが引いた札のそばに、風がもう一枚落としていきました。<strong>${bonus.reversed ? bonus.rev : bonus.up}</strong>`, `The cards are stirring today. Beside the ones you drew, the wind let one more fall. <strong>${bonus.reversed ? bonus.rev : bonus.up}</strong>`)}</p>
+            <p class="tc-advice">${L(`風のひとこと — <strong>${bonus.advice}</strong>`, `A word from the wind — <strong>${bonus.advice}</strong>`)}</p>
           </div>
         </div>
       </div>`;
@@ -3158,37 +3159,37 @@ function showTarotSummary(restored) {
     const t = TAROT_THEMES[c.n]?.[ritual.genre];
     const mean = ritual.genre !== "total" && t ? t : { up: c.up, rev: c.rev };
     const meta = c.n < 22
-      ? `<span class="tc-chip">大アルカナ ${cardNo(c)}</span>`
-      : `<span class="tc-chip">${MINOR_SUITS[c.suit].ja}の${cardNo(c)}</span><span class="tc-chip">${MINOR_SUITS[c.suit].el}の元素 — ${MINOR_SUITS[c.suit].theme}</span>`;
+      ? `<span class="tc-chip">${L(`大アルカナ ${cardNo(c)}`, `Major Arcana ${cardNo(c)}`)}</span>`
+      : `<span class="tc-chip">${L(`${MINOR_SUITS[c.suit].ja}の${cardNo(c)}`, `${cardNo(c)} of ${MINOR_SUITS[c.suit].en}`)}</span><span class="tc-chip">${L(`${MINOR_SUITS[c.suit].el}の元素 — ${MINOR_SUITS[c.suit].theme}`, `Element of ${NM(MINOR_SUITS[c.suit].el)} — ${MINOR_SUITS[c.suit].theme}`)}</span>`;
     return `
     <div class="result-card tarot-pos">
       ${cardH4(conf.positions[i].en, conf.positions[i].ja)}
       <div class="tp-body">
-        <img class="tp-thumb ${c.reversed ? "is-rev" : ""}" src="${tarotImg(c.n)}" alt="${c.name}" loading="lazy" onerror="this.remove()" />
+        <img class="tp-thumb ${c.reversed ? "is-rev" : ""}" src="${tarotImg(c.n)}" alt="${cardName(c)}" loading="lazy" onerror="this.remove()" />
         <div class="tp-head">
-          <p class="tp-name">${c.name}</p>
-          <p class="tp-ori-line"><span class="tc-ori ${c.reversed ? "rev" : "up"}">${c.reversed ? "逆位置" : "正位置"}</span></p>
+          <p class="tp-name">${cardName(c)}</p>
+          <p class="tp-ori-line"><span class="tc-ori ${c.reversed ? "rev" : "up"}">${c.reversed ? L("逆位置", "Reversed") : L("正位置", "Upright")}</span></p>
           <div class="tc-meta">${meta}</div>
         </div>
         <div class="tp-detail">
           <div class="tc-meanings">
-            <p class="${c.reversed ? "tc-dim" : ""}"><span class="tc-ori up">正位置</span>${mean.up}</p>
-            <p class="${c.reversed ? "" : "tc-dim"}"><span class="tc-ori rev">逆位置</span>${mean.rev}</p>
+            <p class="${c.reversed ? "tc-dim" : ""}"><span class="tc-ori up">${L("正位置", "Upright")}</span>${mean.up}</p>
+            <p class="${c.reversed ? "" : "tc-dim"}"><span class="tc-ori rev">${L("逆位置", "Reversed")}</span>${mean.rev}</p>
           </div>
-          <p class="tc-advice">このカードの助言 — <strong>${c.advice}</strong></p>
+          <p class="tc-advice">${L(`このカードの助言 — <strong>${c.advice}</strong>`, `This card's advice — <strong>${c.advice}</strong>`)}</p>
         </div>
       </div>
     </div>`;
   }).join("");
 
   const NEW_NOTES = [
-    "これが、今日のあなたの一枚。もう一回引きたい顔をしていますね?でも、こういうのは1日1回にしときましょう。おかわりすると効き目が薄まるので — <strong>また明日、新しい一枚を。</strong>",
-    "本日の一枚、これにて確定です。引き直しボタンは、探してもありません。カードも一発勝負、あなたも一発勝負 — <strong>続きはまた明日。</strong>",
-    "今日の一枚はこれで決まり。おかわりは明日の朝、デッキが混ざり直ってからどうぞ。今日のところは、この札と仲良くやってください — <strong>また明日。</strong>",
+    L("これが、今日のあなたの一枚。もう一回引きたい顔をしていますね?でも、こういうのは1日1回にしときましょう。おかわりすると効き目が薄まるので — <strong>また明日、新しい一枚を。</strong>", "So this is your card for today. You look like you'd love to draw again — but let's keep this to once a day. Seconds water it down. <strong>A fresh card awaits tomorrow.</strong>"),
+    L("本日の一枚、これにて確定です。引き直しボタンは、探してもありません。カードも一発勝負、あなたも一発勝負 — <strong>続きはまた明日。</strong>", "Today's card is hereby final. There is no redraw button, however hard you look. One shot for the cards, one shot for you — <strong>more tomorrow.</strong>"),
+    L("今日の一枚はこれで決まり。おかわりは明日の朝、デッキが混ざり直ってからどうぞ。今日のところは、この札と仲良くやってください — <strong>また明日。</strong>", "Today's card is settled. Seconds are served tomorrow morning, once the deck has re-mingled. For now, make friends with this one — <strong>see you tomorrow.</strong>"),
   ];
   const RESTORED_NOTES = [
-    "今日の一枚は、もう引いてあります。何度ひらいても同じ札が出るのが占いというものです。往生際よくいきましょう — <strong>新しい一枚は、また明日。</strong>",
-    "はい、本日のぶんはこちらでした。2枚目はありません。星も「1日1枚まで」と決めているようです — <strong>続きはまた明日。</strong>",
+    L("今日の一枚は、もう引いてあります。何度ひらいても同じ札が出るのが占いというものです。往生際よくいきましょう — <strong>新しい一枚は、また明日。</strong>", "Today's card has already been drawn. Open this as often as you like — the same card will greet you; that is how divination works. Let's accept it gracefully — <strong>a new card comes tomorrow.</strong>"),
+    L("はい、本日のぶんはこちらでした。2枚目はありません。星も「1日1枚まで」と決めているようです — <strong>続きはまた明日。</strong>", "Yes — this was today's card. There is no second one. Even the stars seem to have settled on one a day — <strong>more tomorrow.</strong>"),
   ];
   const notePool = restored ? RESTORED_NOTES : NEW_NOTES;
   const dailyNote = conf.once ? `
@@ -3199,11 +3200,11 @@ function showTarotSummary(restored) {
   showResult(tarotSummary, `
     <div class="result-hero" style="text-align:center">
       <span class="result-symbol">☾</span>
-      <p class="result-eyebrow">TAROT — ${conf.label} ・ ${genreLabel}</p>
-      ${ritual.question ? `<p class="tarot-q">あなたの問い:「${esc(ritual.question)}」</p>` : ""}
-      <h3 class="result-title">${ritual.spread === "daily" ? "今日のあなたへの一枚" : "カードの答え"}</h3>
-      <p class="result-lead" style="margin-inline:auto">正位置は素直に巡る力。逆位置は、内にこもる力。</p>
-      ${ritual.deepShuffle ? '<p class="deep-shuffle-mark">☽ 呼吸とともに、深く混ぜられたデッキから</p>' : ""}
+      <p class="result-eyebrow">${L(`TAROT — ${conf.label} ・ ${genreLabel}`, `TAROT — ${conf.label} · ${genreLabel}`)}</p>
+      ${ritual.question ? `<p class="tarot-q">${L(`あなたの問い:「${esc(ritual.question)}」`, `Your question: “${esc(ritual.question)}”`)}</p>` : ""}
+      <h3 class="result-title">${ritual.spread === "daily" ? L("今日のあなたへの一枚", "One card, for you today") : L("カードの答え", "The cards' answer")}</h3>
+      <p class="result-lead" style="margin-inline:auto">${L("正位置は素直に巡る力。逆位置は、内にこもる力。", "Upright, the force flows freely; reversed, it turns within.")}</p>
+      ${ritual.deepShuffle ? `<p class="deep-shuffle-mark">${L("☽ 呼吸とともに、深く混ぜられたデッキから", "☽ From a deck shuffled deep, in time with your breath")}</p>` : ""}
       ${shareRowHtml("tarot")}
     </div>
     <div class="result-grid">
@@ -3213,16 +3214,16 @@ function showTarotSummary(restored) {
       ${windHtml}
       ${!restored && !conf.once ? `
       <div class="result-card span-all j-pointer">
-        <p>この読みは<strong>「託宣の記録」</strong>に綴じました。言葉は<strong>24時間で薄れます</strong> — ひとこと書き残したものだけが残ります。12時間後には「ふたつめの意味」が、3日後には「振り返りの問い」がひらきます。</p>
-        <div class="result-actions" style="margin-top:12px"><button class="btn btn-ghost" id="goto-journal">いま、書き残しておく</button></div>
+        <p>${L("この読みは<strong>「託宣の記録」</strong>に綴じました。言葉は<strong>24時間で薄れます</strong> — ひとこと書き残したものだけが残ります。12時間後には「ふたつめの意味」が、3日後には「振り返りの問い」がひらきます。", "This reading has been bound into your <strong>Reading Journal</strong>. Its words <strong>fade in 24 hours</strong> — only what you write down remains. After 12 hours the second meaning opens; after 3 days, the reflection question.")}</p>
+        <div class="result-actions" style="margin-top:12px"><button class="btn btn-ghost" id="goto-journal">${L("いま、書き残しておく", "Write it down now")}</button></div>
       </div>` : ""}
       ${dailyNote}
     </div>
     <div class="crosslinks">
-      <span class="crosslinks-label">─ 旅はつづく</span>
-      <button id="tarot-again">別のスプレッドで引く</button>
-      <button data-nav="integrated">生年月日から統合鑑定</button>
-      <button data-nav="aisho">気になる人との相性をみる</button>
+      <span class="crosslinks-label">${L("─ 旅はつづく", "─ the journey continues")}</span>
+      <button id="tarot-again">${L("別のスプレッドで引く", "Draw with another spread")}</button>
+      <button data-nav="integrated">${L("生年月日から統合鑑定", "Full Reading from your birth date")}</button>
+      <button data-nav="aisho">${L("気になる人との相性をみる", "Check your compatibility with someone")}</button>
     </div>
   `);
   renderSharePreview("tarot");
