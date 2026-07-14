@@ -273,6 +273,7 @@ function showResult(el, html) {
     n.style.animationDelay = `${i * 90}ms`;
     n.classList.add("reveal-item");
   });
+  el.querySelectorAll(".week-strip, .seg").forEach(enableMouseScroll);
   requestAnimationFrame(() => {
     el.querySelectorAll(".meter-fill").forEach((m) => {
       requestAnimationFrame(() => { m.style.width = `${m.dataset.w}%`; });
@@ -884,6 +885,7 @@ function renderMypage() {
     n.style.animationDelay = `${i * 90}ms`;
     n.classList.add("reveal-item");
   });
+  root.querySelectorAll(".week-strip").forEach(enableMouseScroll);
   requestAnimationFrame(() => {
     root.querySelectorAll(".meter-fill").forEach((m) => {
       requestAnimationFrame(() => { m.style.width = `${m.dataset.w}%`; });
@@ -1791,6 +1793,45 @@ function bindDrawKeyboard(strip) {
   });
 }
 
+/* 横スクロール帯をマウスでも操作できるように(Windows/PCのChrome等)。
+   - 縦ホイール → 横スクロールに変換
+   - マウスの左ドラッグ → スクロール(6px以上動いたら直後のクリックは握りつぶし、誤ピックを防ぐ)
+   タッチ端末は元々ネイティブのスワイプで動くので何もしない */
+function enableMouseScroll(el) {
+  if (!el || el.dataset.mouseScroll) return;
+  el.dataset.mouseScroll = "1";
+
+  el.addEventListener("wheel", (e) => {
+    if (el.scrollWidth <= el.clientWidth) return;
+    if (Math.abs(e.deltaY) <= Math.abs(e.deltaX)) return; // 横ホイール・トラックパッドは素通し
+    el.scrollLeft += e.deltaY;
+    e.preventDefault();
+  }, { passive: false });
+
+  let down = null, dragged = false;
+  el.addEventListener("pointerdown", (e) => {
+    if (e.pointerType !== "mouse" || e.button !== 0) return;
+    if (el.scrollWidth <= el.clientWidth) return;
+    down = { x: e.clientX, left: el.scrollLeft };
+    dragged = false; // 新しい操作が始まったら前回のドラッグ状態は捨てる
+  });
+  el.addEventListener("pointermove", (e) => {
+    if (!down || e.pointerType !== "mouse") return;
+    const dx = e.clientX - down.x;
+    if (!dragged && Math.abs(dx) > 6) { dragged = true; el.classList.add("dragging"); }
+    if (dragged) el.scrollLeft = down.left - dx;
+  });
+  const end = () => { down = null; el.classList.remove("dragging"); };
+  el.addEventListener("pointerup", end);
+  el.addEventListener("pointerleave", end);
+  el.addEventListener("click", (e) => {
+    if (!dragged) return;
+    dragged = false;
+    e.stopPropagation();
+    e.preventDefault();
+  }, true);
+}
+
 const DAILY_CARD_KEY = "fortuna:dailycard";
 const QUESTION_KEY = "fortuna:question";
 
@@ -1865,6 +1906,7 @@ function renderQuickDraw() {
   const strip = document.getElementById("draw-strip");
   strip.scrollLeft = Math.max(0, (strip.scrollWidth - strip.clientWidth) / 2); // 真ん中から
   bindDrawKeyboard(strip);
+  enableMouseScroll(strip);
   strip.addEventListener("click", (e) => {
     const el = e.target.closest(".draw-card");
     if (!el || ritual.cards.length) return;
@@ -2054,6 +2096,7 @@ function renderAsk() {
       tarotStage.querySelectorAll("[data-genre]").forEach((x) => x.classList.toggle("active", x === b));
     });
   });
+  tarotStage.querySelectorAll(".seg").forEach(enableMouseScroll);
   tarotStage.querySelector("[data-journal-jump]")?.addEventListener("click", (e) => {
     const id = Number(e.currentTarget.dataset.journalJump);
     renderTarotJournal(id);
@@ -2497,6 +2540,7 @@ function renderDraw() {
 
   const strip = document.getElementById("draw-strip");
   bindDrawKeyboard(strip);
+  enableMouseScroll(strip);
   strip.addEventListener("click", (e) => {
     const el = e.target.closest(".draw-card");
     if (!el || el.classList.contains("taken")) return;
@@ -3385,6 +3429,7 @@ function renderGuide(articleKey) {
 })();
 
 /* ---------- 初期化 ---------- */
+document.querySelectorAll(".seg").forEach(enableMouseScroll); // 静的な切替タブ(ホロスコープのテーマ等)
 prefillForms(loadProfile());
 renderHomeDaily();
 renderInviteBanner();

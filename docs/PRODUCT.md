@@ -156,6 +156,7 @@
 - 横幅は必ず端末幅以内(`html,body { overflow-x: clip }`)。横スクロールはカルーセル内のみ。
 - 右下に「↑」(ページ上部へ)ボタン: 900pxスクロールで出現、儀式中は非表示(z-index 40 < 儀式の間 100)。
 - ドローの扇は Enter/Space のキーボード操作にも対応(`bindDrawKeyboard`)。JSON-LD(WebSite)と noscript 案内あり。
+- **マウス環境(Windows/PCのChrome等)**: 横スクロール帯(ドローの扇・週間ストリップ・segタブ)は `enableMouseScroll` で縦ホイール→横変換+左ドラッグスクロールに対応。ドラッグ後のclickはcaptureで握りつぶし誤ピックを防ぐ。fine pointerでは扇に細い金のスクロールバーを表示。
 
 ## 11. localStorage キー
 

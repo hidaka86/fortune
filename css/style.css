@@ -1080,6 +1080,20 @@ body.ritual-open { overflow: hidden; }
 }
 .draw-strip::-webkit-scrollbar { display: none; }
 .draw-strip.fan-done { opacity: 0; pointer-events: none; }
+/* マウス環境(Windows/PC等): 細いスクロールバーを見せて「スクロールできる」と分かるように。
+   帯はホイール・ドラッグでも動く(enableMouseScroll) */
+@media (hover: hover) and (pointer: fine) {
+  .draw-strip {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(217, 192, 138, 0.45) transparent;
+    cursor: grab;
+  }
+  .draw-strip::-webkit-scrollbar { display: block; height: 6px; }
+  .draw-strip::-webkit-scrollbar-thumb { background: rgba(217, 192, 138, 0.4); border-radius: 99px; }
+  .draw-strip::-webkit-scrollbar-track { background: transparent; margin: 0 24px; }
+  .draw-strip.dragging { cursor: grabbing; }
+  .draw-strip.dragging .tback.draw-card { cursor: grabbing; }
+}
 .tback.draw-card {
   flex: 0 0 96px; width: 96px; height: 154px;
   scroll-snap-align: center;
