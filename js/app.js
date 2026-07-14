@@ -13,6 +13,7 @@ function gaPageView(target) {
     page_location: location.href,
     page_path: target === "home" ? "/" : `/#${target}`,
     view_name: target,
+    site_lang: I18N.lang,
   });
 }
 
@@ -50,7 +51,10 @@ document.addEventListener("click", (e) => {
   if (!el) return;
   const d = new Date();
   const phase = moonPhaseToday();
-  el.textContent = `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${["日","月","火","水","木","金","土"][d.getDay()]}曜日 ${phase.emoji}︎ ${phase.name}`;
+  el.textContent = L(
+    `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${["日","月","火","水","木","金","土"][d.getDay()]}曜日 ${phase.emoji}︎ ${phase.name}`,
+    `${fmtWD(d.getDay())}, ${fmtYMD(d.getFullYear(), d.getMonth() + 1, d.getDate())} ${phase.emoji}︎ ${NM(phase.name)}`
+  );
 })();
 
 /* ---------- ステータスバー(今日の暦) ---------- */
@@ -60,12 +64,15 @@ document.addEventListener("click", (e) => {
   const phase = moonPhaseToday();
   // 空の都合でひらく窓たち:急がせる理由は、アプリではなく世界観の側に置く
   const extras = [];
-  if (celestialWindows().length) extras.push(`<button class="status-item status-window" data-nav="tarot">✦ ${phase.name === "新月" ? "新月の窓" : "満月の窓"}が、今夜までひらいています</button>`);
-  if (windCallToday()) extras.push('<button class="status-item status-wind" data-nav="tarot">🌬 今日、カードがざわついています</button>');
-  if (nightWindow().open) extras.push('<button class="status-item status-night" data-nav="tarot">☾ 月の間が、ひらいています</button>');
+  if (celestialWindows().length) extras.push(`<button class="status-item status-window" data-nav="tarot">${L(
+    `✦ ${phase.name === "新月" ? "新月の窓" : "満月の窓"}が、今夜までひらいています`,
+    `✦ The ${phase.name === "新月" ? "new moon" : "full moon"} window is open until tonight`
+  )}</button>`);
+  if (windCallToday()) extras.push(`<button class="status-item status-wind" data-nav="tarot">${L("🌬 今日、カードがざわついています", "🌬 The cards are stirring today")}</button>`);
+  if (nightWindow().open) extras.push(`<button class="status-item status-night" data-nav="tarot">${L("☾ 月の間が、ひらいています", "☾ The Moon Chamber is open")}</button>`);
   document.getElementById("status-bar").innerHTML = `
     <span class="status-item status-quote">${dailyQuote()}</span>
-    <span class="status-item"><span class="moon">${phase.emoji}</span>${phase.name} — ${phase.note}</span>${extras.join("")}`;
+    <span class="status-item"><span class="moon">${phase.emoji}</span>${NM(phase.name)} — ${phase.note}</span>${extras.join("")}`;
 })();
 
 /* ---------- ヒーローの観測盤キャンバス(orbital layering / temporal arcs) ---------- */
@@ -132,7 +139,7 @@ function starsHtml(score) {
   return `<span class="stars">${html}</span>`;
 }
 
-const THEME_LABELS = { love: "恋愛運", work: "仕事運", money: "金運", health: "健康運" };
+const THEME_LABELS = { love: L("恋愛運", "Love"), work: L("仕事運", "Work"), money: L("金運", "Money"), health: L("健康運", "Health") };
 
 function metersHtml(scores, markTop = false) {
   const band = (v) => (v >= 4 ? "hi" : v >= 3 ? "mid" : "lo");
@@ -163,17 +170,17 @@ function skyLineForToday(verdict, scores) {
   const [topK, topV] = sorted[0];
   const [lowK, lowV] = sorted[sorted.length - 1];
   const sky = {
-    "大吉": "空は快晴。めったにない追い風が吹いています",
-    "吉": "晴れ間の多い、歩きやすい空です",
-    "平": "おだやかな凪。じっくり歩ける空です",
-    "静": "うす曇り。急がなくていい空です",
-    "休": "雨やどりの空。今日はゆっくりで大丈夫",
-  }[verdict.rank] || "おだやかな空です";
-  let line = `${sky}。`;
+    "大吉": L("空は快晴。めったにない追い風が吹いています", "The sky is clear — a rare tailwind is blowing"),
+    "吉": L("晴れ間の多い、歩きやすい空です", "Plenty of sunny breaks — an easy sky to walk under"),
+    "平": L("おだやかな凪。じっくり歩ける空です", "A gentle calm — a sky for taking your time"),
+    "静": L("うす曇り。急がなくていい空です", "Thin clouds — a sky with no need to hurry"),
+    "休": L("雨やどりの空。今日はゆっくりで大丈夫", "A sky for sheltering from the rain — it's fine to go slow today"),
+  }[verdict.rank] || L("おだやかな空です", "A calm sky");
+  let line = L(`${sky}。`, `${sky}.`);
   line += topV >= 4
-    ? `とくに${THEME_LABELS[topK]}が、よく晴れています。`
-    : `風がいちばん通っているのは、${THEME_LABELS[topK]}です。`;
-  if (lowV <= 2 && lowK !== topK) line += `${THEME_LABELS[lowK]}だけは、ゆっくりめに。`;
+    ? L(`とくに${THEME_LABELS[topK]}が、よく晴れています。`, ` ${THEME_LABELS[topK]}, in particular, is looking bright.`)
+    : L(`風がいちばん通っているのは、${THEME_LABELS[topK]}です。`, ` The wind is moving best through ${THEME_LABELS[topK]}.`);
+  if (lowV <= 2 && lowK !== topK) line += L(`${THEME_LABELS[lowK]}だけは、ゆっくりめに。`, ` Only ${THEME_LABELS[lowK]} asks for a slower pace.`);
   return line;
 }
 
@@ -183,7 +190,7 @@ function scoreRingHtml(score) {
   const c = Math.round(2 * Math.PI * r * 10) / 10;
   const offset = Math.round(c * (1 - score / 100) * 10) / 10;
   return `
-    <div class="score-ring" role="img" aria-label="今日の運気 ${score}/100">
+    <div class="score-ring" role="img" aria-label="${L(`今日の運気 ${score}/100`, `Today's fortune ${score}/100`)}">
       <svg viewBox="0 0 144 144" aria-hidden="true">
         <defs>
           <linearGradient id="srGold" x1="0" y1="0" x2="1" y2="1">
@@ -196,7 +203,7 @@ function scoreRingHtml(score) {
       </svg>
       <div class="sr-center">
         <span class="sr-num"><span data-count="${score}">0</span><small>/100</small></span>
-        <span class="sr-label">今日の運気</span>
+        <span class="sr-label">${L("今日の運気", "Today's fortune")}</span>
       </div>
     </div>`;
 }
@@ -208,7 +215,10 @@ function luckyHtml(daily) {
     <div class="lucky-item"><span class="k">PLACE</span><span class="v">${daily.luckyPlace}</span></div>
     <div class="lucky-item"><span class="k">NUMBER</span><span class="v">${daily.luckyNumber}</span></div>
   </div>
-  <p class="lucky-line">「<strong>${daily.luckyColor}</strong>」を今日のどこかにひとつ。<strong>${daily.luckyItem}</strong>をお守りに、<strong>${daily.luckyPlace}</strong>に立ち寄れたら、なお良し。「<strong>${daily.luckyNumber}</strong>」の数字を見かけたら、それは追い風のサインです。</p>`;
+  <p class="lucky-line">${L(
+    `「<strong>${daily.luckyColor}</strong>」を今日のどこかにひとつ。<strong>${daily.luckyItem}</strong>をお守りに、<strong>${daily.luckyPlace}</strong>に立ち寄れたら、なお良し。「<strong>${daily.luckyNumber}</strong>」の数字を見かけたら、それは追い風のサインです。`,
+    `Slip a touch of <strong>${daily.luckyColor}</strong> somewhere into your day. Keep <strong>${daily.luckyItem}</strong> close as a charm, and if you can stop by <strong>${daily.luckyPlace}</strong>, all the better. If the number <strong>${daily.luckyNumber}</strong> crosses your path, that's a tailwind.`
+  )}</p>`;
 }
 
 function cardH4(en, ja) {
@@ -232,35 +242,66 @@ function explainHtml(summary, body) {
   return `<details class="explain"><summary>${summary}</summary><p>${body}</p></details>`;
 }
 
-const EXPLAIN_TSUHENSEI = "四柱推命では、生まれた日の十干(=日主)があなた自身を表します。そこに毎日・毎月めぐってくる干支との関係を「通変星」という10タイプで読み、その日の追い風・向かい風を判断します。同じ日でも人によって吹く風が違う——それがこのスコアの根拠です。";
+/* 先頭の一文だけを取り出す(JAは「。」区切り、ENは ". " 区切り。末尾の句点は付けない) */
+function firstSentence(s) {
+  if (I18N.en) {
+    const t = String(s).split(". ")[0];
+    return t.endsWith(".") ? t.slice(0, -1) : t;
+  }
+  return String(s).split("。")[0];
+}
+
+const EXPLAIN_TSUHENSEI = L(
+  "四柱推命では、生まれた日の十干(=日主)があなた自身を表します。そこに毎日・毎月めぐってくる干支との関係を「通変星」という10タイプで読み、その日の追い風・向かい風を判断します。同じ日でも人によって吹く風が違う——それがこのスコアの根拠です。",
+  "In Four Pillars astrology, the heavenly stem of your birth day — your day master — stands for you yourself. Its relationship with the stem-and-branch pair that arrives each day and month is read through ten types called the Ten Gods, which tell whether the day's wind is at your back or in your face. The same day blows differently for each person — that is what this score rests on."
+);
 
 /* 今日の気流ブロック(数式図+ひとこと+解説) */
 function todayLogicHtml(daily) {
   const d = new Date();
   return `
     ${logicFlowHtml([
-      { tag: "あなたの日主", main: daily.myKan, sub: daily.mySymbol },
+      { tag: L("あなたの日主", "Your day master"), main: NM(daily.myKan), sub: daily.mySymbol },
       "×",
-      { tag: "今日の干支", main: daily.dayKanshi, sub: `${d.getMonth() + 1}/${d.getDate()}` },
+      { tag: L("今日の干支", "Today's pillar"), main: NMK(daily.dayKanshi), sub: fmtMD(d.getMonth() + 1, d.getDate()) },
       "=",
-      { tag: "今日の気流", main: daily.dayStar.name, sub: daily.dayStar.day.split("。")[0], result: true },
+      { tag: L("今日の気流", "Today's current"), main: NM(daily.dayStar.name), sub: firstSentence(daily.dayStar.day), result: true },
     ])}
     <p class="sub">${daily.dayStar.day}</p>
-    ${explainHtml(`「${daily.dayStar.name}」って何?通変星のしくみ`, EXPLAIN_TSUHENSEI)}`;
+    ${explainHtml(L(`「${daily.dayStar.name}」って何?通変星のしくみ`, `What is “${NM(daily.dayStar.name)}”? How the Ten Gods work`), EXPLAIN_TSUHENSEI)}`;
 }
 
 /* 観測中オーバーレイ:占う人のドキドキを引き出す、結果までの溜め */
 const OBS_STEPS = {
-  today: ["今日の暦をめくっています……", "あなたの気流を観測しています……", "今日のマインドを言葉にしています……"],
-  integrated: ["生年月日から暦を立てています……", "十干と九星を照合しています……", "運命の称号を探しています……"],
-  western: ["10天体の位置を計算しています……", "土星と木星の巡りを読んでいます……", "あなたの章をめくっています……"],
-  eastern: ["年柱・月柱・日柱を立てています……", "日主から通変星を読んでいます……"],
-  aisho: ["二人の暦を並べています……", "星・五行・干支を照合しています……", "縁の形を観測しています……"],
+  today: [
+    L("今日の暦をめくっています……", "Turning today's calendar pages…"),
+    L("あなたの気流を観測しています……", "Observing your current…"),
+    L("今日のマインドを言葉にしています……", "Putting today's mind into words…"),
+  ],
+  integrated: [
+    L("生年月日から暦を立てています……", "Casting the calendar from your birth date…"),
+    L("十干と九星を照合しています……", "Cross-checking the ten stems and the Nine Stars…"),
+    L("運命の称号を探しています……", "Searching for your destined title…"),
+  ],
+  western: [
+    L("10天体の位置を計算しています……", "Calculating the positions of the ten planets…"),
+    L("土星と木星の巡りを読んでいます……", "Reading the cycles of Saturn and Jupiter…"),
+    L("あなたの章をめくっています……", "Turning to your chapter…"),
+  ],
+  eastern: [
+    L("年柱・月柱・日柱を立てています……", "Raising the year, month and day pillars…"),
+    L("日主から通変星を読んでいます……", "Reading the Ten Gods from your day master…"),
+  ],
+  aisho: [
+    L("二人の暦を並べています……", "Laying your two calendars side by side…"),
+    L("星・五行・干支を照合しています……", "Cross-checking stars, elements and zodiac signs…"),
+    L("縁の形を観測しています……", "Observing the shape of your bond…"),
+  ],
 };
 
 function observeThen(kind, reveal, after) {
   if (REDUCED_MOTION) { reveal(); after?.(); return; }
-  const steps = OBS_STEPS[kind] || ["観測しています……"];
+  const steps = OBS_STEPS[kind] || [L("観測しています……", "Observing…")];
   const ov = document.createElement("div");
   ov.className = "obs-overlay";
   ov.innerHTML = `
@@ -289,17 +330,37 @@ function observeThen(kind, reveal, after) {
 
 /* 回遊導線:結果の下に「次の扉」を提示 */
 const CROSS_SUGGEST = {
-  integrated: [["tarot", "3枚スプレッドで深掘りする"], ["aisho", "気になる人との相性をみる"], ["western", "ホロスコープをみる"]],
-  western: [["integrated", "まとめて統合鑑定"], ["eastern", "四柱推命ではどう出る?"], ["tarot", "今日の一枚を引く"]],
-  eastern: [["western", "ホロスコープで流れをみる"], ["integrated", "統合鑑定で全体をみる"], ["aisho", "大切な人との相性をみる"]],
-  tarot: [["integrated", "生年月日から統合鑑定"], ["western", "ホロスコープをみる"], ["eastern", "四柱推命で器をみる"]],
-  aisho: [["integrated", "自分の統合鑑定をみる"], ["tarot", "二人の今日を一枚で占う"], ["western", "月星座の相性も気になる?"]],
+  integrated: [
+    ["tarot", L("3枚スプレッドで深掘りする", "Go deeper with a three-card spread")],
+    ["aisho", L("気になる人との相性をみる", "Check your bond with someone on your mind")],
+    ["western", L("ホロスコープをみる", "See your horoscope")],
+  ],
+  western: [
+    ["integrated", L("まとめて統合鑑定", "Bring it all together — Full Reading")],
+    ["eastern", L("四柱推命ではどう出る?", "What do the Four Pillars say?")],
+    ["tarot", L("今日の一枚を引く", "Draw today's card")],
+  ],
+  eastern: [
+    ["western", L("ホロスコープで流れをみる", "See the currents in your horoscope")],
+    ["integrated", L("統合鑑定で全体をみる", "See the whole picture — Full Reading")],
+    ["aisho", L("大切な人との相性をみる", "Check your bond with someone dear")],
+  ],
+  tarot: [
+    ["integrated", L("生年月日から統合鑑定", "A Full Reading from your birth date")],
+    ["western", L("ホロスコープをみる", "See your horoscope")],
+    ["eastern", L("四柱推命で器をみる", "See your vessel in the Four Pillars")],
+  ],
+  aisho: [
+    ["integrated", L("自分の統合鑑定をみる", "See your own Full Reading")],
+    ["tarot", L("二人の今日を一枚で占う", "Draw one card for the two of you today")],
+    ["western", L("月星座の相性も気になる?", "Curious about your moon-sign match?")],
+  ],
 };
 
 function crossLinksHtml(current) {
   const items = (CROSS_SUGGEST[current] || []).map(([nav, label]) =>
     `<button data-nav="${nav}">${label}</button>`).join("");
-  return `<div class="crosslinks"><span class="crosslinks-label">─ 旅はつづく</span>${items}</div>`;
+  return `<div class="crosslinks"><span class="crosslinks-label">${L("─ 旅はつづく", "— the journey continues")}</span>${items}</div>`;
 }
 
 /* カウントアップ演出 */
@@ -346,9 +407,9 @@ function setupBirthdateSelects() {
     let mopts = "";
     for (let m = 1; m <= 12; m++) mopts += `<option value="${m}">${m}</option>`;
     box.innerHTML = `
-      <select class="bd-y" aria-label="年" required><option value="">年</option>${opts}</select>
-      <select class="bd-m" aria-label="月" required><option value="">月</option>${mopts}</select>
-      <select class="bd-d" aria-label="日" required><option value="">日</option></select>
+      <select class="bd-y" aria-label="${L("年", "Year")}" required><option value="">${L("年", "Year")}</option>${opts}</select>
+      <select class="bd-m" aria-label="${L("月", "Month")}" required><option value="">${L("月", "Month")}</option>${mopts}</select>
+      <select class="bd-d" aria-label="${L("日", "Day")}" required><option value="">${L("日", "Day")}</option></select>
       <input type="hidden" name="${name}" />`;
     const [ySel, mSel, dSel] = box.querySelectorAll("select");
     const hidden = box.querySelector("input[type=hidden]");
@@ -358,7 +419,7 @@ function setupBirthdateSelects() {
       const m = Number(mSel.value) || 1;
       const days = new Date(y, m, 0).getDate();
       const cur = dSel.value;
-      let dopts = '<option value="">日</option>';
+      let dopts = `<option value="">${L("日", "Day")}</option>`;
       for (let d = 1; d <= days; d++) dopts += `<option value="${d}">${d}</option>`;
       dSel.innerHTML = dopts;
       if (cur && Number(cur) <= days) dSel.value = cur;
@@ -438,8 +499,8 @@ const HERO_DEFAULT_HTML = heroContentEl ? heroContentEl.innerHTML : "";
 function orderNav() { /* マイページはヘッダー右上の固定アイコンになったため並べ替え不要 */ }
 
 function streakMilestone(streak) {
-  if (streak >= 30) return "🎖 30日連続達成 — 暦はもう、あなたの生活の一部です。";
-  if (streak >= 7) return "🔥 7日連続達成 — 星があなたの習慣を覚えはじめました。";
+  if (streak >= 30) return L("🎖 30日連続達成 — 暦はもう、あなたの生活の一部です。", "🎖 30 days in a row — the calendar is part of your life now.");
+  if (streak >= 7) return L("🔥 7日連続達成 — 星があなたの習慣を覚えはじめました。", "🔥 7 days in a row — the stars are learning your habits.");
   return "";
 }
 
@@ -458,20 +519,23 @@ function renderHomeDaily() {
   const visits = updateStreak() || {};
   const phase = moonPhaseToday();
   const d = new Date();
-  const who = p.name ? `${esc(p.name)}さん` : "あなた";
+  const who = esc(whoLabel(p.name));
   const dc = loadDailyCard();
   heroEl.classList.add("hero-member");
 
   if (!dc) {
     // まだ今日を観測していない:結果は見せない(ネタバレ禁止)。静かな問いかけだけ
     heroContentEl.innerHTML = `
-      <p class="hero-eyebrow">Welcome back — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
-      <h1 class="hero-title hero-title-member"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span></h1>
-      <p class="hero-sub">今日の流れは、まだ誰も知りません。</p>
+      <p class="hero-eyebrow">Welcome back — ${L(`${d.getMonth() + 1}.${d.getDate()}`, fmtMD(d.getMonth() + 1, d.getDate()))} ${phase.emoji}</p>
+      <h1 class="hero-title hero-title-member">${L(
+        `<span class="nw">おかえりなさい、</span><span class="nw">${who}。</span>`,
+        `<span class="nw">Welcome back${p.name ? `, ${esc(p.name)}` : ""}.</span>`
+      )}</h1>
+      <p class="hero-sub">${L("今日の流れは、まだ誰も知りません。", "No one knows today's current yet.")}</p>
       <div class="hero-cta" style="margin-top:26px">
-        <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の占いをはじめる</button>
+        <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>${L("今日の占いをはじめる", "Start today's reading")}</button>
       </div>
-      ${(visits.streak || 1) >= 2 ? `<p class="hero-streak">連続 ${visits.streak} 日目の観測${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>` : ""}`;
+      ${(visits.streak || 1) >= 2 ? `<p class="hero-streak">${L(`連続 ${visits.streak} 日目の観測`, `Day ${visits.streak} of consecutive observations`)}${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>` : ""}`;
     return;
   }
 
@@ -480,17 +544,25 @@ function renderHomeDaily() {
   const verdict = dailyVerdict(p.birthdate);
   const base = cardByN(dc.n);
   // CTAの文言は日替わり(毎日同じボタンにしない)
-  const ctaWords = ["今日の流れを、くわしく観る", "観測記録の全文をひらく", "羅針盤のつづきを観る", "今日の空模様を、もう一度"];
+  const ctaWords = [
+    L("今日の流れを、くわしく観る", "See today's current in detail"),
+    L("観測記録の全文をひらく", "Open the full observation log"),
+    L("羅針盤のつづきを観る", "See the rest of your compass"),
+    L("今日の空模様を、もう一度", "Today's sky, one more time"),
+  ];
   const ctaWord = ctaWords[Math.floor(seededRng(`${todayKey()}|cta|${p.birthdate}`)() * ctaWords.length)];
   heroContentEl.innerHTML = `
-    <p class="hero-eyebrow">Today's Compass — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}</p>
-    <h1 class="hero-title hero-title-member"><span class="nw">今日は<em>「${verdict.word}」</em>。</span></h1>
+    <p class="hero-eyebrow">Today's Compass — ${L(`${d.getMonth() + 1}.${d.getDate()}`, fmtMD(d.getMonth() + 1, d.getDate()))} ${phase.emoji}</p>
+    <h1 class="hero-title hero-title-member">${L(
+      `<span class="nw">今日は<em>「${verdict.word}」</em>。</span>`,
+      `<span class="nw">Today: <em>“${verdict.word}.”</em></span>`
+    )}</h1>
     <div class="hero-score">
       <span><span class="hs-num" data-count="${daily.score100}">0</span><span class="hs-denom"> /100</span></span>
-      <span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />${base.name}</span>
-      <span class="chip">連続 <strong>${visits.streak || 1}日目</strong>${(visits.streak || 1) >= 7 ? " 🔥" : ""}</span>
+      <span class="chip chip-card"><img src="${tarotImg(dc.n)}" alt="" class="${dc.reversed ? "is-rev" : ""}" onerror="this.remove()" />${cardName(base)}</span>
+      <span class="chip">${L(`連続 <strong>${visits.streak || 1}日目</strong>`, `Streak <strong>day ${visits.streak || 1}</strong>`)}${(visits.streak || 1) >= 7 ? " 🔥" : ""}</span>
     </div>
-    <p class="hero-action">今日の一手 — <strong>${daily.action}</strong></p>
+    <p class="hero-action">${L(`今日の一手 — <strong>${daily.action}</strong>`, `Today's move — <strong>${daily.action}</strong>`)}</p>
     ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
     <div class="hero-cta" style="margin-top:22px">
       <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>${ctaWord}</button>
@@ -523,23 +595,23 @@ function mindForToday(verdict, card, daily) {
     try { localStorage.setItem(MIND_HISTORY_KEY, JSON.stringify({ date: todayKey(), word, recent: nextRecent })); } catch { /* noop */ }
   }
   const points = [
-    { k: "暦から", v: daily.dayStar.day.split("。")[0] + "。" },
-    ...(card ? [{ k: "カードから", v: card.advice }] : []),
-    { k: "開運アクション", v: daily.action },
+    { k: L("暦から", "From the calendar"), v: I18N.en ? daily.dayStar.day.split(". ")[0] + "." : daily.dayStar.day.split("。")[0] + "。" },
+    ...(card ? [{ k: L("カードから", "From the card"), v: card.advice }] : []),
+    { k: L("開運アクション", "Lucky action"), v: daily.action },
   ];
   return { word, points };
 }
 
 /* マインドの結び:毎日ちがう見送りの言葉 */
 const MIND_SENDOFFS = [
-  "— いってらっしゃい、{who}。良い一日を。",
-  "— 今日のあなたは、もう整っています。いってらっしゃい。",
-  "— 夜になったら、答え合わせをしに戻ってきてくださいね。",
-  "— 深呼吸ひとつぶんの余裕を、ポケットに入れて。",
-  "— 出発の前に、空を一度だけ見上げてみてください。",
-  "— この言葉は、今日の{who}だけのものです。",
-  "— 大丈夫。今日も、ちゃんといい日にできます。",
-  "— {who}に、ちょうどいい風が吹きますように。",
+  L("— いってらっしゃい、{who}。良い一日を。", "— Off you go, {who}. Have a good day."),
+  L("— 今日のあなたは、もう整っています。いってらっしゃい。", "— You are already in order today. Off you go."),
+  L("— 夜になったら、答え合わせをしに戻ってきてくださいね。", "— Come back tonight and see how the day compared."),
+  L("— 深呼吸ひとつぶんの余裕を、ポケットに入れて。", "— Keep one deep breath's worth of room in your pocket."),
+  L("— 出発の前に、空を一度だけ見上げてみてください。", "— Before you set out, look up at the sky just once."),
+  L("— この言葉は、今日の{who}だけのものです。", "— These words belong to {who}, today only."),
+  L("— 大丈夫。今日も、ちゃんといい日にできます。", "— It's all right. You can make today a good day, too."),
+  L("— {who}に、ちょうどいい風が吹きますように。", "— May just the right wind find {who} today."),
 ];
 
 function mindSendoff(who) {
@@ -557,21 +629,21 @@ function renderToday() {
     root.innerHTML = `
       <div class="view-head">
         <p class="view-eyebrow">TODAY'S OBSERVATION</p>
-        <h2>今日の占い</h2>
-        <p class="view-sub">生年月日だけで、今日の流れとマインドを。データはこの端末にのみ保存されます。</p>
+        <h2>${L("今日の占い", "Today's Reading")}</h2>
+        <p class="view-sub">${L("生年月日だけで、今日の流れとマインドを。データはこの端末にのみ保存されます。", "Just your birth date — today's current, and today's mind. Your data stays on this device only.")}</p>
       </div>
       <form class="panel form" id="today-form">
         <div class="form-row">
           <label class="field">
-            <span class="field-label">生年月日 <em>必須</em></span>
+            <span class="field-label">${L("生年月日", "Birth date")} <em>${L("必須", "required")}</em></span>
             <div class="bd-select" data-bd="birthdate"></div>
           </label>
           <label class="field">
-            <span class="field-label">名前(任意)</span>
-            <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
+            <span class="field-label">${L("名前(任意)", "Name (optional)")}</span>
+            <input type="text" name="name" placeholder="${L("例:ヒナタ", "e.g. Alex")}" maxlength="20" />
           </label>
         </div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">今日の占いをみる</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">${L("今日の占いをみる", "See today's reading")}</button>
       </form>`;
     setupBirthdateSelects();
     document.getElementById("today-form").addEventListener("submit", (e) => {
@@ -609,26 +681,33 @@ function renderToday() {
   const dc = loadDailyCard();
   const card = { ...cardByN(dc.n), reversed: dc.reversed };
   const mind = mindForToday(verdict, card, daily);
-  const who = p.name ? `${esc(p.name)}さん` : "あなた";
+  const who = whoLabel(p.name ? esc(p.name) : null);
 
   lastShare.today = {
     cards: [{ n: dc.n, reversed: dc.reversed }],
     eyebrow: `TODAY — ${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`,
     title: mind.word,
-    keywords: [`「${verdict.word}」`, `「${daily.dayStar.name}」の日`, `ラッキーカラーは${daily.luckyColor}`],
-    score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
+    keywords: [
+      L(`「${verdict.word}」`, verdict.word),
+      L(`「${daily.dayStar.name}」の日`, `A “${NM(daily.dayStar.name)}” day`),
+      L(`ラッキーカラーは${daily.luckyColor}`, `Lucky color: ${daily.luckyColor}`),
+    ],
+    score: daily.score100, scoreLabel: L("今日の運気", "Today's luck"), scoreSuffix: "/100",
     sub: null,
-    x: `【MYOURISCOPE 今日の占い】「${verdict.word}」— ${mind.word}。今日の運気は${daily.score100}/100 ✦`,
+    x: L(
+      `【MYOURISCOPE 今日の占い】「${verdict.word}」— ${mind.word}。今日の運気は${daily.score100}/100 ✦`,
+      `MYOURISCOPE Today's Reading — “${verdict.word}.” ${mind.word} Today's luck: ${daily.score100}/100 ✦`
+    ),
   };
 
   const cardBlock = `
     <div class="result-card span-all">
-      ${cardH4("TODAY'S CARD", "今日の一枚")}
+      ${cardH4("TODAY'S CARD", L("今日の一枚", "Today's card"))}
       <div class="tp-body">
-        <img class="tp-thumb ${card.reversed ? "is-rev" : ""}" src="${tarotImg(card.n)}" alt="${card.name}" loading="lazy" onerror="this.remove()" />
+        <img class="tp-thumb ${card.reversed ? "is-rev" : ""}" src="${tarotImg(card.n)}" alt="${cardName(card)}" loading="lazy" onerror="this.remove()" />
         <div class="tp-head">
-          <p class="tp-name">${card.name}</p>
-          <p class="tp-ori-line"><span class="tc-ori ${card.reversed ? "rev" : "up"}">${card.reversed ? "逆位置" : "正位置"}</span></p>
+          <p class="tp-name">${cardName(card)}</p>
+          <p class="tp-ori-line"><span class="tc-ori ${card.reversed ? "rev" : "up"}">${card.reversed ? L("逆位置", "Reversed") : L("正位置", "Upright")}</span></p>
         </div>
         <div class="tp-detail">
           <p>${card.reversed ? card.rev : card.up}</p>
@@ -638,31 +717,34 @@ function renderToday() {
 
   showResult(root, `
     <div class="result-hero" style="text-align:center">
-      <p class="result-eyebrow">TODAY'S OBSERVATION — ${d.getMonth() + 1}.${d.getDate()} ${phase.emoji}︎ ${phase.name}</p>
-      <h3 class="result-title"><span class="nw">${who}の今日は、</span><span class="nw">「${verdict.word}」。</span></h3>
+      <p class="result-eyebrow">TODAY'S OBSERVATION — ${L(`${d.getMonth() + 1}.${d.getDate()}`, fmtMD(d.getMonth() + 1, d.getDate()))} ${phase.emoji}︎ ${NM(phase.name)}</p>
+      <h3 class="result-title">${L(
+        `<span class="nw">${who}の今日は、</span><span class="nw">「${verdict.word}」。</span>`,
+        `<span class="nw">Today is</span> <span class="nw">“${verdict.word}.”</span>`
+      )}</h3>
       <p class="result-lead" style="margin-inline:auto">${skyLineForToday(verdict, daily.scores)}</p>
       ${scoreRingHtml(daily.score100)}
       <div class="chip-row" style="justify-content:center">
-        <span class="chip">「${daily.dayStar.name}」の日</span>
-        <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
+        <span class="chip">${L(`「${daily.dayStar.name}」の日`, `A “${NM(daily.dayStar.name)}” day`)}</span>
+        <span class="chip">${L("ラッキーカラー", "Lucky color")} <strong>${daily.luckyColor}</strong></span>
       </div>
     </div>
     <div class="result-grid">
       ${cardBlock}
       ${verdictHtml(verdict)}
       <div class="result-card span-all">
-        ${cardH4("TODAY'S KI", "今日の気流")}
+        ${cardH4("TODAY'S KI", L("今日の気流", "Today's currents"))}
         ${metersHtml(daily.scores, true)}
         ${kiNotesHtml(daily.scores)}
         <div style="margin-top:20px">${todayLogicHtml(daily)}</div>
       </div>
       <div class="result-card span-all">
-        ${cardH4("LUCKY GUIDE", "今日の開運キー")}
+        ${cardH4("LUCKY GUIDE", L("今日の開運キー", "Today's lucky keys"))}
         ${luckyHtml(daily)}
       </div>
       <div class="result-card span-all mind-card">
-        ${cardH4("TODAY'S MIND", "きょうのマインド")}
-        <p class="mind-word">「${mind.word}」</p>
+        ${cardH4("TODAY'S MIND", L("きょうのマインド", "Today's mind"))}
+        <p class="mind-word">${L(`「${mind.word}」`, `“${mind.word}”`)}</p>
         ${mind.points.map((pt) => `<p class="mind-point"><span class="mp-k">${pt.k}</span>${pt.v}</p>`).join("")}
         <p class="mind-sendoff">${mindSendoff(who)}</p>
       </div>
@@ -671,10 +753,10 @@ function renderToday() {
       <div class="share-preview-slot" data-share-preview="today"></div>
     </div>
     <div class="crosslinks">
-      <span class="crosslinks-label">─ もっと観測する</span>
-      <button data-nav="tarot">スプレッドで深く占う</button>
-      <button data-nav="western">ホロスコープをみる</button>
-      <button data-nav="mypage">マイページ</button>
+      <span class="crosslinks-label">${L("─ もっと観測する", "— observe further")}</span>
+      <button data-nav="tarot">${L("スプレッドで深く占う", "Go deeper with a spread")}</button>
+      <button data-nav="western">${L("ホロスコープをみる", "See your horoscope")}</button>
+      <button data-nav="mypage">${L("マイページ", "My page")}</button>
     </div>`);
 
   renderSharePreview("today");
@@ -688,29 +770,42 @@ function verdictHtml(v) {
       <span class="vf-body"><span class="vf-method">${f.method}</span><strong>${f.label}</strong> — ${f.note}</span>
     </div>`).join("");
   const rare = v.rank === "大吉"
-    ? "独立した複数の暦がここまで同時に揃う日は、年に数えるほどしかありません。"
+    ? L(
+      "独立した複数の暦がここまで同時に揃う日は、年に数えるほどしかありません。",
+      "Days when this many independent calendars line up at once come only a handful of times a year."
+    )
     : v.rank === "休"
-      ? "ここまで揃って「休め」と出る日もめったにありません。堂々と充電してください。"
+      ? L(
+        "ここまで揃って「休め」と出る日もめったにありません。堂々と充電してください。",
+        "It's just as rare for every reading to say “rest.” Recharge without a second thought."
+      )
       : "";
   return `
     <div class="result-card span-all verdict-card">
-      ${cardH4("VERDICT", "今日の結論")}
+      ${cardH4("VERDICT", L("今日の結論", "Today's verdict"))}
       <div class="verdict-main">
-        <span class="verdict-rank">${v.rank}</span>
+        <span class="verdict-rank">${NM(v.rank)}</span>
         <div class="verdict-text">
-          <p class="verdict-word">今日は「${v.word}」</p>
+          <p class="verdict-word">${L(`今日は「${v.word}」`, `Today is “${v.word}”`)}</p>
           <p class="verdict-advice">${v.advice}</p>
           ${rare ? `<p class="verdict-rare">✦ ${rare}</p>` : ""}
         </div>
       </div>
       <div class="vf-list">${rows}</div>
-      ${explainHtml("この結論はどう出している?", "四柱推命の日運・月運、干支の巡り(三合・支合・冲)、月の満ち欠け——それぞれ独立した暦の手法が今日をどう見ているかを「票」として集計し、総合の結論を出しています。すべてが同じ方向を向く日は、それだけ強い日です。")}
+      ${explainHtml(
+        L("この結論はどう出している?", "How is this verdict reached?"),
+        L(
+          "四柱推命の日運・月運、干支の巡り(三合・支合・冲)、月の満ち欠け——それぞれ独立した暦の手法が今日をどう見ているかを「票」として集計し、総合の結論を出しています。すべてが同じ方向を向く日は、それだけ強い日です。",
+          "The daily and monthly currents of Four Pillars, the cycling of the stem-and-branch pairs (Sango, Shigō and Chū), and the phase of the moon — each independent calendar method casts a “vote” on how it sees today, and the votes are tallied into one overall verdict. When they all point the same way, the day is that much stronger."
+        )
+      )}
     </div>`;
 }
 
 /* ---------- マイページ(簡易会員) ---------- */
 function compassSvg(kichi) {
   const cx = 140, cy = 140, r = 96;
+  const dirShort = { "北": "N", "北東": "NE", "東": "E", "南東": "SE", "南": "S", "南西": "SW", "西": "W", "北西": "NW" };
   let marks = "";
   for (const dir of DIRECTIONS) {
     const rad = (dir.angle - 90) * Math.PI / 180;
@@ -724,9 +819,9 @@ function compassSvg(kichi) {
     const size = good ? 7 : 4;
     marks += `
       <circle cx="${dx}" cy="${dy}" r="${size}" fill="${color}" />
-      <text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="14" fill="${good ? "#8F6C38" : bad ? "#a25a4d" : "#5D6270"}" font-weight="${good ? 700 : 400}">${dir.name}</text>`;
+      <text x="${lx}" y="${ly + 5}" text-anchor="middle" font-size="14" fill="${good ? "#8F6C38" : bad ? "#a25a4d" : "#5D6270"}" font-weight="${good ? 700 : 400}">${I18N.en ? dirShort[dir.name] : dir.name}</text>`;
   }
-  return `<svg viewBox="0 0 280 280" class="compass" role="img" aria-label="今月の方位盤">
+  return `<svg viewBox="0 0 280 280" class="compass" role="img" aria-label="${L("今月の方位盤", "This month's direction board")}">
     <circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="rgba(28,35,51,.16)" stroke-width="1" />
     <circle cx="${cx}" cy="${cy}" r="${r - 22}" fill="none" stroke="rgba(28,35,51,.07)" stroke-width="1" />
     <circle cx="${cx}" cy="${cy}" r="3" fill="#A8844E" />
@@ -742,22 +837,22 @@ function renderMypage() {
     root.innerHTML = `
       <div class="view-head">
         <p class="view-eyebrow">MEMBERSHIP</p>
-        <h2>マイページ</h2>
-        <p class="view-sub">登録すると、あなた専用の観測室が開きます。</p>
+        <h2>${L("マイページ", "My Page")}</h2>
+        <p class="view-sub">${L("登録すると、あなた専用の観測室が開きます。", "Register, and an observation room of your own opens.")}</p>
       </div>
       <form class="panel form" id="register-form">
         <div class="form-row">
           <label class="field">
-            <span class="field-label">名前(任意)</span>
-            <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
+            <span class="field-label">${L("名前(任意)", "Name (optional)")}</span>
+            <input type="text" name="name" placeholder="${L("例:ヒナタ", "e.g. Alex")}" maxlength="20" />
           </label>
           <label class="field">
-            <span class="field-label">生年月日 <em>必須</em></span>
+            <span class="field-label">${L("生年月日", "Birth date")} <em>${L("必須", "required")}</em></span>
             <div class="bd-select" data-bd="birthdate"></div>
           </label>
         </div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">登録する</button>
-        <p class="form-note">データはこの端末にのみ保存されます。</p>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">${L("登録する", "Register")}</button>
+        <p class="form-note">${L("データはこの端末にのみ保存されます。", "Your data stays on this device only.")}</p>
       </form>`;
     setupBirthdateSelects();
     document.getElementById("register-form").addEventListener("submit", (e) => {
@@ -773,7 +868,7 @@ function renderMypage() {
   }
 
   const visits = updateStreak() || {};
-  const who = p.name ? `${esc(p.name)}さん` : "あなた";
+  const who = whoLabel(p.name ? esc(p.name) : null);
   const flow = kiFlow(p.birthdate);
   const week = weekFlow(p.birthdate);
   const daily = dailyFortune(p.birthdate);
@@ -791,125 +886,155 @@ function renderMypage() {
     <div class="week-day ${w.today ? "is-today" : ""} ${w === best ? "is-best" : ""}">
       <span class="wd-date">${w.label}<small>(${w.wd})</small></span>
       <span class="wd-kanshi">${w.kanshi}</span>
-      <span class="wd-star">${w.star.name}</span>
-      ${w === best ? '<span class="wd-badge">◎ 好機</span>' : ""}
+      <span class="wd-star">${NM(w.star.name)}</span>
+      ${w === best ? `<span class="wd-badge">${L("◎ 好機", "◎ Best day")}</span>` : ""}
     </div>`).join("");
 
   const goodList = kichi.good.length
-    ? kichi.good.map((g) => `<span class="chip"><strong>${g.dir}</strong> ${g.grade}(${g.star})</span>`).join("")
-    : '<span class="chip">今月は無理に動かないのが吉</span>';
+    ? kichi.good.map((g) => `<span class="chip"><strong>${NM(g.dir)}</strong> ${L(`${g.grade}(${g.star})`, `${NM(g.grade)} (${NM(g.star)})`)}</span>`).join("")
+    : `<span class="chip">${L("今月は無理に動かないのが吉", "This month, staying put is the lucky move")}</span>`;
 
   const themeLine = (label, dir, fallback) => {
-    if (!dir) return `<p class="theme-dir"><span>${label}</span>今月は方位にこだわらず、${fallback}</p>`;
+    if (!dir) return `<p class="theme-dir"><span>${label}</span>${L(`今月は方位にこだわらず、${fallback}`, `No need to mind direction this month — ${fallback}`)}</p>`;
     const dd = DIRECTIONS.find((x) => x.name === dir);
-    return `<p class="theme-dir"><span>${label}</span><strong>${dir}</strong> — ${dd.tip}</p>`;
+    return `<p class="theme-dir"><span>${label}</span><strong>${NM(dir)}</strong> — ${dd.tip}</p>`;
   };
 
   root.innerHTML = `
     <div class="result-hero mypage-hero">
       <span class="result-symbol">${flow.myKan}</span>
-      <p class="result-eyebrow">MY PAGE — ${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()} <span class="nw">${phase.emoji} ${phase.name}</span></p>
-      <h3 class="result-title"><span class="nw">おかえりなさい、</span><span class="nw">${who}。</span></h3>
-      <p class="result-keyword">「${fortuneTitle(p.birthdate).title}」— 連続 ${visits.streak || 1} 日目${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>
+      <p class="result-eyebrow">MY PAGE — ${L(`${now.getFullYear()}.${now.getMonth() + 1}.${now.getDate()}`, fmtYMD(now.getFullYear(), now.getMonth() + 1, now.getDate()))} <span class="nw">${phase.emoji} ${NM(phase.name)}</span></p>
+      <h3 class="result-title">${L(
+        `<span class="nw">おかえりなさい、</span><span class="nw">${who}。</span>`,
+        `<span class="nw">Welcome back${p.name ? `, ${esc(p.name)}` : ""}.</span>`
+      )}</h3>
+      <p class="result-keyword">${L(
+        `「${fortuneTitle(p.birthdate).title}」— 連続 ${visits.streak || 1} 日目`,
+        `“${fortuneTitle(p.birthdate).title}” — streak day ${visits.streak || 1}`
+      )}${(visits.streak || 1) >= 7 ? " 🔥" : ""}</p>
       ${streakMilestone(visits.streak || 1) ? `<p class="milestone">${streakMilestone(visits.streak || 1)}</p>` : ""}
       <div class="chip-row">
-        <span class="chip">日主 <strong>${flow.myKan}(${flow.nikkan.symbol})</strong></span>
-        <span class="chip">本命星 <strong>${kyusei.name}</strong></span>
-        <span class="chip">今日の運気 <strong>${daily.score100} /100</strong></span>
+        <span class="chip">${L("日主", "Day master")} <strong>${L(`${flow.myKan}(${flow.nikkan.symbol})`, `${NM(flow.myKan)} (${flow.nikkan.symbol})`)}</strong></span>
+        <span class="chip">${L("本命星", "Natal star")} <strong>${NM(kyusei.name)}</strong></span>
+        <span class="chip">${L("今日の運気", "Today's luck")} <strong>${daily.score100} /100</strong></span>
       </div>
     </div>
 
     <div class="result-grid">
       ${verdictHtml(verdict)}
       <div class="result-card span-all">
-        ${cardH4("TODAY'S KI", "今日の気流")}
+        ${cardH4("TODAY'S KI", L("今日の気流", "Today's currents"))}
         ${todayLogicHtml(daily)}
         <div style="margin-top:18px">${metersHtml(daily.scores)}</div>
-        <p style="margin-top:16px"><strong style="color:var(--gold-bright)">今日の開運アクション</strong> — ${daily.action}</p>
+        <p style="margin-top:16px"><strong style="color:var(--gold-bright)">${L("今日の開運アクション", "Today's lucky action")}</strong> — ${daily.action}</p>
       </div>
 
       <div class="result-card span-all">
-        ${cardH4("7 DAYS", "一週間の気流")}
+        ${cardH4("7 DAYS", L("一週間の気流", "The week's currents"))}
         <div class="week-strip">${weekHtml}</div>
-        <p class="sub" style="margin-top:12px">◎は今週いちばん追い風が吹く日。大事な予定はこの日に。日付の下は「その日の干支」と、あなたから見た「通変星」です。</p>
+        <p class="sub" style="margin-top:12px">${L(
+          "◎は今週いちばん追い風が吹く日。大事な予定はこの日に。日付の下は「その日の干支」と、あなたから見た「通変星」です。",
+          "◎ marks the day with the strongest tailwind this week — save your important plans for it. Under each date: that day's stem-and-branch pair, and how it reads for you through the Ten Gods."
+        )}</p>
       </div>
 
       <div class="result-card">
-        ${cardH4("THIS MONTH", "今月の立ち回り")}
+        ${cardH4("THIS MONTH", L("今月の立ち回り", "This month's approach"))}
         ${logicFlowHtml([
-          { tag: "あなたの日主", main: flow.myKan, sub: flow.nikkan.symbol },
+          { tag: L("あなたの日主", "Your day master"), main: NM(flow.myKan), sub: flow.nikkan.symbol },
           "×",
-          { tag: "今月の干支", main: flow.month.pillar.kan + flow.month.pillar.shi, sub: `${now.getMonth() + 1}月` },
+          { tag: L("今月の干支", "This month's pillar"), main: NMK(flow.month.pillar.kan + flow.month.pillar.shi), sub: L(`${now.getMonth() + 1}月`, I18N_MONTHS[now.getMonth()]) },
           "=",
-          { tag: "今月の気流", main: flow.month.star.name, sub: "", result: true },
+          { tag: L("今月の気流", "This month's current"), main: NM(flow.month.star.name), sub: "", result: true },
         ])}
         <p style="margin-top:8px">${flow.month.star.month}</p>
-        <p class="sub" style="margin-top:12px">今年は「${flow.year.star.name}」の年 — ${flow.year.star.month.replace(/^「.+?」の月 — /, "").replace(/月/g, "年")}</p>
+        <p class="sub" style="margin-top:12px">${L(
+          `今年は「${flow.year.star.name}」の年 — ${flow.year.star.month.replace(/^「.+?」の月 — /, "").replace(/月/g, "年")}`,
+          `This is a “${NM(flow.year.star.name)}” year — ${(flow.year.star.month.split("— ")[1] || flow.year.star.month).replaceAll("month", "year")}`
+        )}</p>
       </div>
 
       <div class="result-card">
-        ${cardH4("DIRECTIONS", "今月の吉方位")}
+        ${cardH4("DIRECTIONS", L("今月の吉方位", "This month's lucky directions"))}
         <div class="compass-wrap">${compassSvg(kichi)}</div>
         <div class="legend">
-          <span><i class="dot-good"></i>吉方位</span>
-          <span><i class="dot-bad"></i>凶方位(五黄殺など)</span>
-          <span><i class="dot-flat"></i>平運</span>
+          <span><i class="dot-good"></i>${L("吉方位", "Lucky")}</span>
+          <span><i class="dot-bad"></i>${L("凶方位(五黄殺など)", "Avoid")}</span>
+          <span><i class="dot-flat"></i>${L("平運", "Neutral")}</span>
         </div>
         <div class="chip-row" style="justify-content:center">${goodList}</div>
         <div style="margin-top:16px">
-          ${themeLine("恋愛", themes.love, "心が安らぐ場所で会うのが吉。")}
-          ${themeLine("仕事", themes.work, "いつもの場所で足元を固めて。")}
-          ${themeLine("金運", themes.money, "散財を避けて守りの月に。")}
-          ${themeLine("健康", themes.health, "近所の散歩と早寝がいちばんの薬。")}
+          ${themeLine(L("恋愛", "Love"), themes.love, L("心が安らぐ場所で会うのが吉。", "meet somewhere your heart can rest."))}
+          ${themeLine(L("仕事", "Work"), themes.work, L("いつもの場所で足元を固めて。", "steady your footing right where you are."))}
+          ${themeLine(L("金運", "Money"), themes.money, L("散財を避けて守りの月に。", "skip the splurges and make it a month of keeping."))}
+          ${themeLine(L("健康", "Health"), themes.health, L("近所の散歩と早寝がいちばんの薬。", "a walk nearby and an early night are the best medicine."))}
         </div>
-        ${explainHtml("吉方位はどう決まる?", "九星気学では、9つの星が毎月方位盤の上を巡ります。あなたの本命星(" + kyusei.name + ")と相性の良い星が巡る方角が吉方位。誰にとっても凶となる五黄殺・暗剣殺と、あなた固有の本命殺・本命的殺は除いています。自宅から見た方角で使ってください。")}
+        ${explainHtml(
+          L("吉方位はどう決まる?", "How are lucky directions decided?"),
+          L(
+            "九星気学では、9つの星が毎月方位盤の上を巡ります。あなたの本命星(" + kyusei.name + ")と相性の良い星が巡る方角が吉方位。誰にとっても凶となる五黄殺・暗剣殺と、あなた固有の本命殺・本命的殺は除いています。自宅から見た方角で使ってください。",
+            "In Nine Star Ki, nine stars move around the direction board each month. The directions visited by stars in harmony with your natal star (" + NM(kyusei.name) + ") become your lucky directions. Five-Yellow and Hidden Blade — unlucky for everyone — and your personal Natal Star and Natal Opposite directions are excluded. Read the directions as seen from your home."
+          )
+        )}
       </div>
     </div>
 
-    <div class="mypage-divider" role="separator"><span class="md-en">ARCHIVE</span><span class="md-ja">ここから下は、あなたの記録</span></div>
+    <div class="mypage-divider" role="separator"><span class="md-en">ARCHIVE</span><span class="md-ja">${L("ここから下は、あなたの記録", "Below this line: your records")}</span></div>
 
     <div class="result-grid archive-grid">
       <div class="result-card archive-card span-all">
-        ${cardH4("COLLECTION", "称号図鑑")}
+        ${cardH4("COLLECTION", L("称号図鑑", "Title collection"))}
         ${(() => {
-          addToCollection(fortuneTitle(p.birthdate).title, p.name || "あなた");
+          addToCollection(fortuneTitle(p.birthdate).title, p.name || L("あなた", "you"));
           const col = loadCollection();
           const bar = Math.min(100, col.length / 1080 * 100 * 20); // 視覚用に20倍で進捗を見せる
           return `
-            <p class="col-count"><strong>${col.length}</strong> / 1080 種の称号を発見</p>
+            <p class="col-count"><strong>${col.length}</strong>${L(" / 1080 種の称号を発見", " of 1,080 titles discovered")}</p>
             <div class="meter" style="margin:10px 0 16px">
-              <span class="meter-label">発見率</span>
+              <span class="meter-label">${L("発見率", "Discovery")}</span>
               <div class="meter-track"><div class="meter-fill mid" data-w="${bar.toFixed(1)}"></div></div>
               <span class="meter-value">${(col.length / 1080 * 100).toFixed(1)}%</span>
             </div>
             <div class="col-grid">${col.slice(0, 24).map((c) => `
               <div class="col-item">
-                <span class="col-title">「${esc(c.title)}」</span>
+                <span class="col-title">${L(`「${esc(c.title)}」`, `“${esc(c.title)}”`)}</span>
                 <span class="col-meta">${esc(c.owner)} ・ ${c.d.slice(5).replace("-", "/")}</span>
               </div>`).join("")}</div>
-            <p class="sub" style="margin-top:12px">統合鑑定・相性診断・友達からの招待リンクで、新しい称号が図鑑に加わります。</p>`;
+            <p class="sub" style="margin-top:12px">${L(
+              "統合鑑定・相性診断・友達からの招待リンクで、新しい称号が図鑑に加わります。",
+              "New titles join your collection through Full Readings, compatibility readings and invitation links from friends."
+            )}</p>`;
         })()}
       </div>
 
       <div class="result-card archive-card span-all app-card">
-        ${cardH4("APP", "ホーム画面に追加")}
-        <p>MYOURISCOPEをホーム画面に追加すると、毎朝ワンタップで「今日の流れ」が開きます。</p>
+        ${cardH4("APP", L("ホーム画面に追加", "Add to home screen"))}
+        <p>${L(
+          "MYOURISCOPEをホーム画面に追加すると、毎朝ワンタップで「今日の流れ」が開きます。",
+          "Add MYOURISCOPE to your home screen, and each morning today's current opens with a single tap."
+        )}</p>
         <div class="result-actions" style="margin-top:14px">
-          <button class="btn btn-primary" id="install-app">アプリとして追加する</button>
+          <button class="btn btn-primary" id="install-app">${L("アプリとして追加する", "Add as an app")}</button>
         </div>
-        <p class="sub app-ios-hint" style="margin-top:10px">iPhoneの方: Safariの共有ボタン → 「ホーム画面に追加」でインストールできます。</p>
+        <p class="sub app-ios-hint" style="margin-top:10px">${L(
+          "iPhoneの方: Safariの共有ボタン → 「ホーム画面に追加」でインストールできます。",
+          "On iPhone: tap Safari's share button, then “Add to Home Screen” to install."
+        )}</p>
         <div class="result-actions" style="margin-top:18px">
-          <button class="btn btn-ghost" id="backup-export">引き継ぎコードをコピー</button>
-          <button class="btn btn-ghost" id="backup-import">コードを入力して復元</button>
+          <button class="btn btn-ghost" id="backup-export">${L("引き継ぎコードをコピー", "Copy transfer code")}</button>
+          <button class="btn btn-ghost" id="backup-import">${L("コードを入力して復元", "Restore from code")}</button>
         </div>
-        <p class="sub" style="margin-top:8px">機種変更や新しいドメインへの移行時に、称号図鑑・履歴・連続日数をそのまま持ち越せます。</p>
+        <p class="sub" style="margin-top:8px">${L(
+          "機種変更や新しいドメインへの移行時に、称号図鑑・履歴・連続日数をそのまま持ち越せます。",
+          "When you change phones or move to a new domain, your title collection, history and streak carry over as they are."
+        )}</p>
       </div>
 
       <div class="result-card archive-card span-all">
-        ${cardH4("HISTORY", "鑑定の記録")}
+        ${cardH4("HISTORY", L("鑑定の記録", "Reading history"))}
         ${(() => {
           const hist = loadHistory();
-          if (!hist.length) return '<p class="sub">まだ記録がありません。鑑定を受けると、ここに自動で残っていきます。</p>';
+          if (!hist.length) return `<p class="sub">${L("まだ記録がありません。鑑定を受けると、ここに自動で残っていきます。", "No records yet. Readings will be saved here automatically.")}</p>`;
           return hist.slice(0, 20).map((h) => `
             <details class="explain history-item">
               <summary><span class="hi-date">${h.d.slice(5).replace("-", "/")}</span><span class="hi-kind">${h.k}</span><span class="hi-title">${h.t}</span></summary>
@@ -920,11 +1045,11 @@ function renderMypage() {
     </div>
 
     <div class="crosslinks">
-      <span class="crosslinks-label">─ 旅はつづく</span>
-      <button data-nav="integrated">統合鑑定を受ける</button>
-      <button data-nav="tarot">今日の一枚を引く</button>
-      <button id="edit-profile">プロフィール編集</button>
-      <button id="logout">登録情報を削除</button>
+      <span class="crosslinks-label">${L("─ 旅はつづく", "— the journey continues")}</span>
+      <button data-nav="integrated">${L("統合鑑定を受ける", "Get a Full Reading")}</button>
+      <button data-nav="tarot">${L("今日の一枚を引く", "Draw today's card")}</button>
+      <button id="edit-profile">${L("プロフィール編集", "Edit profile")}</button>
+      <button id="logout">${L("登録情報を削除", "Delete my data")}</button>
     </div>`;
 
   [...root.querySelectorAll(".result-hero, .result-card, .crosslinks")].forEach((n, i) => {
@@ -952,27 +1077,27 @@ function renderMypage() {
   document.getElementById("backup-export")?.addEventListener("click", async (e) => {
     try {
       await navigator.clipboard.writeText(exportBackupCode());
-      e.target.textContent = "コピーしました ✓";
+      e.target.textContent = L("コピーしました ✓", "Copied ✓");
     } catch {
-      prompt("このコードを控えてください:", exportBackupCode());
+      prompt(L("このコードを控えてください:", "Copy this code and keep it safe:"), exportBackupCode());
     }
-    setTimeout(() => { e.target.textContent = "引き継ぎコードをコピー"; }, 1800);
+    setTimeout(() => { e.target.textContent = L("引き継ぎコードをコピー", "Copy transfer code"); }, 1800);
   });
   document.getElementById("backup-import")?.addEventListener("click", () => {
-    const code = prompt("引き継ぎコード(FTN1.〜)を貼り付けてください:");
+    const code = prompt(L("引き継ぎコード(FTN1.〜)を貼り付けてください:", "Paste your transfer code (it starts with FTN1.):"));
     if (!code) return;
     if (importBackupCode(code.trim())) {
-      alert("復元しました。マイページを更新します。");
+      alert(L("復元しました。マイページを更新します。", "Restored. Refreshing your page."));
       prefillForms(loadProfile());
       renderHomeDaily();
       renderMypage();
     } else {
-      alert("コードを読み取れませんでした。全文がコピーされているか確認してください。");
+      alert(L("コードを読み取れませんでした。全文がコピーされているか確認してください。", "Couldn't read that code. Please check that the whole code was copied."));
     }
   });
 
   document.getElementById("logout").addEventListener("click", () => {
-    if (!confirm("この端末に保存された登録情報と来訪記録を削除します。よろしいですか?")) return;
+    if (!confirm(L("この端末に保存された登録情報と来訪記録を削除します。よろしいですか?", "This will delete the profile and visit records saved on this device. Are you sure?"))) return;
     try { localStorage.removeItem(PROFILE_KEY); localStorage.removeItem(VISIT_KEY); } catch { /* noop */ }
     renderHomeDaily();
     renderMypage();
@@ -987,14 +1112,14 @@ function renderMypage() {
 function buildShareText(r) {
   const ori = r.card.reversed ? "逆位置" : "正位置";
   return [
-    `【MYOURISCOPE 統合鑑定】${r.name ? r.name + "さん" : ""}`,
-    `運命の称号:「${fortuneTitle(r.birthdateStr).title}」(1080タイプにひとつ)`,
-    `太陽 ${r.zodiac.name} × 月 ${r.moon.name} × ${r.kyusei.name}`,
-    `日主: ${r.pillars.day.kan}(${r.pillars.nikkan.symbol}) / 干支: ${r.jikkan}${r.eto.name}`,
-    `今日の運気: ${r.daily.total.toFixed(1)} / 5.0`,
-    `導きの一枚: ${r.card.name}(${ori}) — ${r.card.advice}`,
-    `ラッキーカラー: ${r.daily.luckyColor} / ラッキーアイテム: ${r.daily.luckyItem}`,
-    `あなたの称号は? → ${buildInviteUrl(r.name, fortuneTitle(r.birthdateStr).title)}`,
+    L(`【MYOURISCOPE 統合鑑定】${r.name ? r.name + "さん" : ""}`, `MYOURISCOPE Full Reading${r.name ? ` — ${r.name}` : ""}`),
+    L(`運命の称号:「${fortuneTitle(r.birthdateStr).title}」(1080タイプにひとつ)`, `Destined title: “${fortuneTitle(r.birthdateStr).title}” (one of 1,080 types)`),
+    L(`太陽 ${r.zodiac.name} × 月 ${r.moon.name} × ${r.kyusei.name}`, `Sun ${NM(r.zodiac.name)} × Moon ${NM(r.moon.name)} × ${NM(r.kyusei.name)}`),
+    L(`日主: ${r.pillars.day.kan}(${r.pillars.nikkan.symbol}) / 干支: ${r.jikkan}${r.eto.name}`, `Day master: ${NM(r.pillars.day.kan)} (${r.pillars.nikkan.symbol}) / Year: ${NM(r.jikkan)} ${NM(r.eto.name)}`),
+    L(`今日の運気: ${r.daily.total.toFixed(1)} / 5.0`, `Today's luck: ${r.daily.total.toFixed(1)} / 5.0`),
+    L(`導きの一枚: ${r.card.name}(${ori}) — ${r.card.advice}`, `Guiding card: ${cardName(r.card)} (${r.card.reversed ? "reversed" : "upright"}) — ${r.card.advice}`),
+    L(`ラッキーカラー: ${r.daily.luckyColor} / ラッキーアイテム: ${r.daily.luckyItem}`, `Lucky color: ${r.daily.luckyColor} / Lucky item: ${r.daily.luckyItem}`),
+    L(`あなたの称号は? → ${buildInviteUrl(r.name, fortuneTitle(r.birthdateStr).title)}`, `What's your title? → ${buildInviteUrl(r.name, fortuneTitle(r.birthdateStr).title)}`),
   ].join("\n");
 }
 
@@ -1004,10 +1129,10 @@ document.addEventListener("click", async (e) => {
   try {
     await navigator.clipboard.writeText(btn.dataset.copy);
     const orig = btn.textContent;
-    btn.textContent = "コピーしました ✓";
+    btn.textContent = L("コピーしました ✓", "Copied ✓");
     setTimeout(() => { btn.textContent = orig; }, 1600);
   } catch {
-    btn.textContent = "コピーできませんでした";
+    btn.textContent = L("コピーできませんでした", "Couldn't copy");
   }
 });
 
@@ -1035,7 +1160,7 @@ async function renderSharePreview(kind) {
   try {
     const blob = await makeShareCard(lastShare[kind]);
     const url = URL.createObjectURL(blob);
-    slot.innerHTML = `<img class="share-preview" src="${url}" alt="シェア画像プレビュー" loading="lazy" />`;
+    slot.innerHTML = `<img class="share-preview" src="${url}" alt="${L("シェア画像プレビュー", "Share image preview")}" loading="lazy" />`;
   } catch { /* プレビュー失敗時はボタンのみ */ }
 }
 
@@ -1127,7 +1252,7 @@ async function makeShareCard(p) {
       if (p.cards.length > 3) {
         ctx.fillStyle = "#9AA0B8";
         ctx.font = `500 30px ${serif}`;
-        ctx.fillText(`ほか ${p.cards.length - 3} 枚`, W / 2, visTop + visH + 8);
+        ctx.fillText(L(`ほか ${p.cards.length - 3} 枚`, `+${p.cards.length - 3} more`), W / 2, visTop + visH + 8);
       }
     }
   } else if (p.svg) {
@@ -1170,8 +1295,8 @@ async function makeShareCard(p) {
     // 非対称の見え方(話のタネ)
     ctx.font = `500 38px ${serif}`;
     ctx.fillStyle = "#C9CEE0";
-    ctx.fillText(`${p.duo.nameA}から見ると「${p.duo.labelA}」`, W / 2, cy + R + 96);
-    ctx.fillText(`${p.duo.nameB}から見ると「${p.duo.labelB}」`, W / 2, cy + R + 158);
+    ctx.fillText(L(`${p.duo.nameA}から見ると「${p.duo.labelA}」`, `To ${p.duo.nameA}: “${p.duo.labelA}”`), W / 2, cy + R + 96);
+    ctx.fillText(L(`${p.duo.nameB}から見ると「${p.duo.labelB}」`, `To ${p.duo.nameB}: “${p.duo.labelB}”`), W / 2, cy + R + 158);
   } else {
     // 観測盤モチーフ
     const cy = visTop + visH / 2;
@@ -1202,13 +1327,25 @@ async function makeShareCard(p) {
   const words = String(p.title || "");
   if (ctx.measureText(words).width > W - 200) {
     const half = Math.ceil(words.length / 2);
-    let cut = half;
-    for (const sep of ["、", "。", "は", "の", "と"]) {
-      const idx = words.indexOf(sep, Math.max(2, half - 5));
-      if (idx > 1 && idx < words.length - 2) { cut = idx + 1; break; }
+    if (I18N.en) {
+      // 英語は単語の切れ目(スペース)で折り返す
+      const sp = words.lastIndexOf(" ", half + 6);
+      if (sp >= 4) {
+        ctx.fillText(words.slice(0, sp), W / 2, titleY);
+        ctx.fillText(words.slice(sp + 1), W / 2, titleY + 104);
+      } else {
+        ctx.fillText(words.slice(0, half), W / 2, titleY);
+        ctx.fillText(words.slice(half), W / 2, titleY + 104);
+      }
+    } else {
+      let cut = half;
+      for (const sep of ["、", "。", "は", "の", "と"]) {
+        const idx = words.indexOf(sep, Math.max(2, half - 5));
+        if (idx > 1 && idx < words.length - 2) { cut = idx + 1; break; }
+      }
+      ctx.fillText(words.slice(0, cut), W / 2, titleY);
+      ctx.fillText(words.slice(cut), W / 2, titleY + 104);
     }
-    ctx.fillText(words.slice(0, cut), W / 2, titleY);
-    ctx.fillText(words.slice(cut), W / 2, titleY + 104);
   } else {
     ctx.fillText(words, W / 2, titleY + 50);
   }
@@ -1310,17 +1447,21 @@ function journalSecondMeaning(e) {
   if (!c) return "";
   const other = e.cards[0].reversed ? c.up : c.rev;
   const face = e.cards[0].reversed ? "正位置" : "逆位置";
-  return `ひと晩おくと、札には裏側の顔が見えてきます。「${c.name}」をもし${face}で読むなら — ${other} 引いた瞬間の意味と、この裏の顔。いまのあなたに近いのは、どちらでしょう。`;
+  return L(
+    `ひと晩おくと、札には裏側の顔が見えてきます。「${c.name}」をもし${face}で読むなら — ${other} 引いた瞬間の意味と、この裏の顔。いまのあなたに近いのは、どちらでしょう。`,
+    `Left to rest overnight, a card begins to show its other face. If “${cardName(c)}” were read ${e.cards[0].reversed ? "upright" : "reversed"} instead — ${other} The meaning at the moment you drew it, and this hidden face. Which feels closer to where you are now?`
+  );
 }
 
 /* 振り返りの問い:3日後にひらく。当てる/当てないではなく、自分で意味づけする時間 */
 function journalReflectQuestion(e) {
   const c = cardByN(e.cards[0].n);
   const name = c ? c.name : "あの札";
+  const enName = c ? cardName(c) : "that card";
   const pool = [
-    `あの日の「${name}」。いま振り返ると、なにを指していたと思いますか?`,
-    `「${name}」を引いてから3日。あのカードの言葉で、なにか変わりましたか?`,
-    `3日前のあなたは「${name}」を引きました。いまのあなたなら、あの問いになんと答えますか?`,
+    L(`あの日の「${name}」。いま振り返ると、なにを指していたと思いますか?`, `That day's “${enName}.” Looking back now, what do you think it was pointing to?`),
+    L(`「${name}」を引いてから3日。あのカードの言葉で、なにか変わりましたか?`, `Three days since you drew “${enName}.” Did the card's words change anything?`),
+    L(`3日前のあなたは「${name}」を引きました。いまのあなたなら、あの問いになんと答えますか?`, `Three days ago, you drew “${enName}.” How would today's you answer that question?`),
   ];
   return pool[hashString(String(e.id)) % pool.length];
 }
