@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MYOURISCOPE — この世の理と、あなたの流れを観る。</title>
   <meta name="description" content="西洋占星術・四柱推命・九星気学・タロット・相性。複数の占術をひとつの流れとして統合し、過去・現在・未来を静かに観測する占いサービス。" />
+  <link rel="canonical" href="https://myouriscope.com/" />
   <meta name="theme-color" content="#F3EEE5" />
   <meta property="og:title" content="MYOURISCOPE — この世の理と、あなたの流れを観る。" />
   <meta property="og:description" content="過去・現在・未来を、ひとつの流れとして読む。複数の占術を統合した、静かな観測のための占い体験。" />
@@ -15,6 +16,49 @@
   <meta name="twitter:title" content="MYOURISCOPE — あなたの流れを観る" />
   <meta name="twitter:description" content="タロット78枚のフルデッキと、1080タイプの称号。過去・現在・未来を、ひとつの流れとして読む。" />
   <meta name="twitter:image" content="https://myouriscope.com/ogp.png" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://myouriscope.com/#website",
+        "url": "https://myouriscope.com/",
+        "name": "MYOURISCOPE",
+        "alternateName": "ミョウリスコープ",
+        "description": "西洋占星術・四柱推命・九星気学・タロット・相性。複数の占術をひとつの流れとして統合し、過去・現在・未来を静かに観測する占いサービス。",
+        "inLanguage": "ja",
+        "publisher": { "@id": "https://myouriscope.com/#org" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://myouriscope.com/#org",
+        "name": "MYOURISCOPE",
+        "url": "https://myouriscope.com/",
+        "logo": "https://myouriscope.com/assets/brand/symbol.png"
+      },
+      {
+        "@type": "WebApplication",
+        "@id": "https://myouriscope.com/#app",
+        "name": "MYOURISCOPE",
+        "url": "https://myouriscope.com/",
+        "applicationCategory": "LifestyleApplication",
+        "operatingSystem": "Web",
+        "browserRequirements": "Requires JavaScript",
+        "inLanguage": "ja",
+        "description": "タロット78枚のフルデッキ、出生図ホロスコープ、四柱推命と九星気学、生年月日の相性診断、1080タイプの運命の称号。登録不要・データは端末の中だけで完結する占いWebアプリ。",
+        "featureList": [
+          "今日の運勢(四柱推命・干支・月相の合議)",
+          "タロット占い(78枚フルデッキ・今日の一枚)",
+          "ホロスコープ(出生図・10天体・アセンダント)",
+          "四柱推命と九星気学(命式・吉方位)",
+          "相性診断(生年月日のみ・4層スコア)",
+          "統合鑑定(1080タイプの運命の称号)"
+        ]
+      }
+    ]
+  }
+  </script>
   <!-- Google Analytics (GA4) — 測定IDを設定すると計測が始まります -->
   <script>
     window.GA_MEASUREMENT_ID = "G-PQC4DKWZ78";
@@ -301,15 +345,26 @@
         <img class="footer-logo" src="assets/brand/wordmark_footer.png" alt="MYOURISCOPE" />
         <p class="footer-tagline">この世の理と、あなたの流れを観る。</p>
       </div>
-      <nav class="footer-nav">
-        <button data-nav="today">今日の占い</button>
-        <button data-nav="tarot">タロット</button>
-        <button data-nav="western">ホロスコープ</button>
-        <button data-nav="eastern">四柱推命</button>
-        <button data-nav="aisho">相性診断</button>
-        <button data-nav="integrated">統合鑑定</button>
-        <button data-nav="mypage">マイページ</button>
-      </nav>
+      <div class="footer-cols">
+        <nav class="footer-nav">
+          <button data-nav="today">今日の占い</button>
+          <button data-nav="tarot">タロット</button>
+          <button data-nav="western">ホロスコープ</button>
+          <button data-nav="eastern">四柱推命</button>
+          <button data-nav="aisho">相性診断</button>
+          <button data-nav="integrated">統合鑑定</button>
+          <button data-nav="mypage">マイページ</button>
+        </nav>
+        <p class="footer-nav-label">Guide</p>
+        <nav class="footer-nav" aria-label="占いの案内ページ">
+          <a href="/today/">今日の運勢とは</a>
+          <a href="/tarot/">タロット占いとは</a>
+          <a href="/horoscope/">ホロスコープとは</a>
+          <a href="/shichusuimei/">四柱推命と九星気学とは</a>
+          <a href="/aisho/">相性占いのしくみ</a>
+          <a href="/shogo/">運命の称号とは</a>
+        </nav>
+      </div>
     </div>
     <p class="footer-note">占い結果はエンターテインメントとしてお楽しみください。 © 2026 MYOURISCOPE</p>
   </footer>

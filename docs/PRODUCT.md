@@ -3,7 +3,7 @@
 > 妙理(みょうり)= 言葉にしがたい、ものごとの奥にある理 × scope(観測器)。
 > 本番: https://myouriscope.com/ (GitHub Pages / 純粋な静的サイト・サーバーなし)
 
-最終更新: 2026-07-07
+最終更新: 2026-07-14
 
 ---
 
@@ -151,7 +151,22 @@
 | `fortuna:bp` | 出生地(都道府県index) |
 | 引き継ぎ | マイページの引き継ぎコード(export/import) |
 
-## 12. 開発運用メモ
+## 12. 流入(SEO・シェア計測)
+
+> SPAはハッシュルーティングのため、検索エンジンからは「1ページのサイト」に見える。
+> 検索の入口は静的LPが担い、本体アプリへは `/#tarot` 等のハッシュリンクで送客する。
+
+- **検索流入用LP(静的HTML)**: `/today/` `/tarot/` `/horoscope/` `/shichusuimei/` `/aisho/` `/shogo/`。
+  各ページ固有の title / description / canonical / OGP+本文+FAQ。構造化データは WebPage / BreadcrumbList / FAQPage。
+  スタイルは `css/style.css` を共用し、LP差分だけ `css/lp.css`。生成元テンプレはなくHTML直編集(構成は6ページ共通)。
+- **サイト全体のSEO**: `robots.txt`(tarot-debug.html除外)/ `sitemap.xml`(LP追加時はここに追記)/ `404.html`(noindex・主要ページへの導線)。
+  トップは canonical+WebSite/Organization/WebApplication の構造化データ。
+- **内部リンク**: トップのfooterに「Guide」リンク列(クローラが辿れる実アンカー)。LP側はヘッダー/フッター/関連グリッドで相互リンク。
+- **シェア計測**: 招待URL(`buildInviteUrl`)に `utm_source=invite&utm_medium=share` を付与。GA4で友達招待経由の流入を区別できる。
+- **キャッシュバスト**: workflowの置換対象は全HTML(`find . -name "*.html" ... sed`)。LPを足すときは `?v=dev` を付けてCSS/JSを参照する。
+- **文言ルール**: LPでも「無料」等の商業的な煽り表現は使わない。「登録不要」「データは端末の中だけ」は事実の説明としてOK。
+
+## 13. 開発運用メモ
 
 - **監修ループ**: スクリーンショット一式→視点の異なるレビューエージェント(初心者目線/ビジュアル/コピー)→指摘反映→再検証、を繰り返す。
 - **検証**: Playwright(`/opt/pw-browsers`)でE2E。フォームの生年月日は `bd-select` の各selectに値を入れて `change`(**bubbles: true 必須**)。

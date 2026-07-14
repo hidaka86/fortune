@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /tarot-debug.html
+
+Sitemap: https://myouriscope.com/sitemap.xml

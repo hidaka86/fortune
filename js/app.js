@@ -1019,6 +1019,9 @@ function buildInviteUrl(name, title) {
   const q = new URLSearchParams();
   if (name) q.set("in", name);
   q.set("it", title);
+  // GA4で「招待リンク経由の流入」を区別できるように(値は固定・個人情報は含めない)
+  q.set("utm_source", "invite");
+  q.set("utm_medium", "share");
   return `${SITE_URL}?${q.toString()}`;
 }
 
