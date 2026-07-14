@@ -1480,71 +1480,91 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
   prefillForms(loadProfile());
   renderHomeDaily();
 
-  const who = r.name ? `${esc(r.name)}さん` : "あなた";
+  const who = whoLabel(r.name ? esc(r.name) : null);
   const ori = r.card.reversed ? "逆位置" : "正位置";
+  const oriEn = r.card.reversed ? "Reversed" : "Upright";
   const cardMeaning = r.card.reversed ? r.card.rev : r.card.up;
 
   const shogo = fortuneTitle(fd.get("birthdate"));
-  addToCollection(shogo.title, r.name || "あなた");
+  addToCollection(shogo.title, r.name || L("あなた", "you"));
   lastShare.integrated = {
     cards: [{ n: r.card.n, reversed: r.card.reversed }],
     eyebrow: "MY FORTUNE IDENTITY",
-    title: `「${shogo.title}」`,
-    keywords: [`${r.zodiac.name} × 日主${r.pillars.day.kan} × ${r.kyusei.name}`, "1080タイプにひとつの称号"],
-    score: r.daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `私の運命の称号は「${shogo.title}」— 1080タイプにひとつ。今日の運気は${r.daily.score100}/100 ✦ あなたの称号は?`,
+    title: L(`「${shogo.title}」`, `“${shogo.title}”`),
+    keywords: [
+      L(`${r.zodiac.name} × 日主${r.pillars.day.kan} × ${r.kyusei.name}`, `${NM(r.zodiac.name)} × Day master ${NM(r.pillars.day.kan)} × ${NM(r.kyusei.name)}`),
+      L("1080タイプにひとつの称号", "A title that is one of 1,080 types"),
+    ],
+    score: r.daily.score100, scoreLabel: L("今日の運気", "Today's luck"), scoreSuffix: "/100",
+    x: L(
+      `私の運命の称号は「${shogo.title}」— 1080タイプにひとつ。今日の運気は${r.daily.score100}/100 ✦ あなたの称号は?`,
+      `My destined title is “${shogo.title}” — one of 1,080 types. Today's luck: ${r.daily.score100}/100 ✦ What's yours?`
+    ),
     url: buildInviteUrl(r.name, shogo.title),
   };
-  recordHistory("統合鑑定", `「${shogo.title}」— 運気${r.daily.score100}/100`, `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`);
+  recordHistory(
+    L("統合鑑定", "Full Reading"),
+    L(`「${shogo.title}」— 運気${r.daily.score100}/100`, `“${shogo.title}” — luck ${r.daily.score100}/100`),
+    L(
+      `${r.zodiac.name}×${r.kyusei.name}。導きの一枚「${r.card.name}(${ori})」。${r.themeComment}`,
+      `${NM(r.zodiac.name)} × ${NM(r.kyusei.name)}. Guiding card: “${cardName(r.card)}” (${oriEn.toLowerCase()}). ${r.themeComment}`
+    )
+  );
 
   document.getElementById("integrated-form").classList.add("form-quiet");
   observeThen("integrated", () => showResult(document.getElementById("integrated-result"), `
     <div class="result-hero">
       <span class="result-symbol">${r.zodiac.symbol}︎</span>
       <p class="result-eyebrow">INTEGRATED REPORT</p>
-      <h3 class="result-title">${who}の統合鑑定書</h3>
+      <h3 class="result-title">${L(`${who}の統合鑑定書`, r.name ? `A Full Reading for ${esc(r.name)}` : "Your Full Reading")}</h3>
       <div class="shogo">
-        <p class="shogo-label">あなたの運命の称号</p>
-        <p class="shogo-title">「${shogo.title}」</p>
-        <p class="shogo-rarity">日主 × 太陽星座 × 本命星が織りなす、<strong>1080タイプ</strong>にひとつのあなた</p>
+        <p class="shogo-label">${L("あなたの運命の称号", "Your destined title")}</p>
+        <p class="shogo-title">${L(`「${shogo.title}」`, `“${shogo.title}”`)}</p>
+        <p class="shogo-rarity">${L(
+          "日主 × 太陽星座 × 本命星が織りなす、<strong>1080タイプ</strong>にひとつのあなた",
+          "Day master × sun sign × natal star — a you that is <strong>one of 1,080 types</strong>"
+        )}</p>
         <div class="shogo-origin">
           ${shogo.origin.map((o) => `<span class="sg-part"><strong>${o.word}</strong><small>${o.from}<br>${o.why}</small></span>`).join('<span class="sg-x">×</span>')}
         </div>
       </div>
       <div class="chip-row">
-        <span class="chip">太陽 <strong>${r.zodiac.name}</strong></span>
-        <span class="chip">月 <strong>${r.moon.name}</strong></span>
-        <span class="chip">日主 <strong>${r.pillars.day.kan}(${r.pillars.nikkan.symbol})</strong></span>
-        <span class="chip">干支 <strong>${r.jikkan}${r.eto.name}</strong></span>
-        <span class="chip">本命星 <strong>${r.kyusei.name}</strong></span>
+        <span class="chip">${L(`太陽 <strong>${r.zodiac.name}</strong>`, `Sun <strong>${NM(r.zodiac.name)}</strong>`)}</span>
+        <span class="chip">${L(`月 <strong>${r.moon.name}</strong>`, `Moon <strong>${NM(r.moon.name)}</strong>`)}</span>
+        <span class="chip">${L(`日主 <strong>${r.pillars.day.kan}(${r.pillars.nikkan.symbol})</strong>`, `Day master <strong>${NM(r.pillars.day.kan)} (${r.pillars.nikkan.symbol})</strong>`)}</span>
+        <span class="chip">${L(`干支 <strong>${r.jikkan}${r.eto.name}</strong>`, `Year <strong>${NM(r.jikkan)} ${NM(r.eto.name)}</strong>`)}</span>
+        <span class="chip">${L(`本命星 <strong>${r.kyusei.name}</strong>`, `Natal star <strong>${NM(r.kyusei.name)}</strong>`)}</span>
       </div>
       <p class="result-lead">${r.elementNote}</p>
       <div class="share-block">
         <div class="share-preview-slot" data-share-preview="integrated"></div>
         <div class="result-actions" style="justify-content:center">
-          <button class="btn btn-ghost" data-copy="${esc(buildShareText(r))}">結果をコピー</button>
+          <button class="btn btn-ghost" data-copy="${esc(buildShareText(r))}">${L("結果をコピー", "Copy result")}</button>
         </div>
       </div>
     </div>
     <div class="result-grid">
       <div class="result-card span-all">
-        ${cardH4("WEST × EAST", "西の星 × 東の暦の重ね読み")}
-        <p>西洋の星はあなたを<strong style="color:var(--gold-bright)">${r.zodiac.name}(${r.zodiac.element}のサイン)</strong>、東洋の暦は<strong style="color:var(--gold-bright)">「${r.pillars.nikkan.symbol}」(${r.pillars.nikkan.yinyang}の${r.pillars.nikkan.element})</strong>と観ています。${ELEMENT_STYLE[r.zodiac.element]}外向きのエンジンに、${r.pillars.nikkan.symbol}の器 — この掛け合わせは1080通りの中であなたの称号だけのもの。どちらか一方ではなく、両方を使い分けられるのがあなたの強みです。</p>
+        ${cardH4("WEST × EAST", L("西の星 × 東の暦の重ね読み", "Western stars × Eastern calendar, read together"))}
+        <p>${L(
+          `西洋の星はあなたを<strong style="color:var(--gold-bright)">${r.zodiac.name}(${r.zodiac.element}のサイン)</strong>、東洋の暦は<strong style="color:var(--gold-bright)">「${r.pillars.nikkan.symbol}」(${r.pillars.nikkan.yinyang}の${r.pillars.nikkan.element})</strong>と観ています。${ELEMENT_STYLE[r.zodiac.element]}外向きのエンジンに、${r.pillars.nikkan.symbol}の器 — この掛け合わせは1080通りの中であなたの称号だけのもの。どちらか一方ではなく、両方を使い分けられるのがあなたの強みです。`,
+          `The Western stars see you as <strong style="color:var(--gold-bright)">${NM(r.zodiac.name)} (a ${NM(r.zodiac.element)} sign)</strong>; the Eastern calendar sees you as the <strong style="color:var(--gold-bright)">“${r.pillars.nikkan.symbol}” (${r.pillars.nikkan.yinyang} ${NM(r.pillars.nikkan.element)})</strong>. An outward-facing engine ${ELEMENT_STYLE[r.zodiac.element]}, held in the vessel of the ${r.pillars.nikkan.symbol} — among 1,080 combinations, this pairing belongs to your title alone. Your strength is that you can draw on both, not just one.`
+        )}</p>
       </div>
       <div class="result-card">
-        ${cardH4("SUN & MOON", "星がしめす二つの顔")}
-        <p><strong style="color:var(--gold-bright)">☉︎ ${r.zodiac.name}</strong> — ${r.zodiac.trait}</p>
-        <p class="sub" style="margin-top:12px"><strong>☾︎ ${r.moon.name}の月</strong> — ${r.moon.desc}</p>
+        ${cardH4("SUN & MOON", L("星がしめす二つの顔", "Two faces the stars reveal"))}
+        <p><strong style="color:var(--gold-bright)">☉︎ ${NM(r.zodiac.name)}</strong> — ${r.zodiac.trait}</p>
+        <p class="sub" style="margin-top:12px"><strong>${L(`☾︎ ${r.moon.name}の月`, `☾︎ Moon in ${NM(r.moon.name)}`)}</strong> — ${r.moon.desc}</p>
       </div>
       <div class="result-card">
-        ${cardH4("DAY MASTER", "暦がしめす器")}
-        <p><strong style="color:var(--gold-bright)">${r.pillars.day.kan} — ${r.pillars.nikkan.yinyang}の${r.pillars.nikkan.element}「${r.pillars.nikkan.symbol}」</strong></p>
+        ${cardH4("DAY MASTER", L("暦がしめす器", "The vessel the calendar reveals"))}
+        <p><strong style="color:var(--gold-bright)">${L(`${r.pillars.day.kan} — ${r.pillars.nikkan.yinyang}の${r.pillars.nikkan.element}「${r.pillars.nikkan.symbol}」`, `${NM(r.pillars.day.kan)} — ${r.pillars.nikkan.yinyang} ${NM(r.pillars.nikkan.element)}, the “${r.pillars.nikkan.symbol}”`)}</strong></p>
         <p style="margin-top:8px">${r.pillars.nikkan.text}</p>
         <p class="sub" style="margin-top:12px">${r.kyusei.trait}</p>
       </div>
       <div class="result-card">
-        ${cardH4("TAROT", "導きの一枚")}
-        <p><strong style="color:var(--gold-bright)">${r.card.name}(${ori})</strong> — ${cardMeaning}</p>
+        ${cardH4("TAROT", L("導きの一枚", "Your guiding card"))}
+        <p><strong style="color:var(--gold-bright)">${cardName(r.card)}${L(`(${ori})`, ` (${r.card.reversed ? L("逆位置", "Reversed") : L("正位置", "Upright")})`)}</strong> — ${cardMeaning}</p>
         <p class="sub" style="margin-top:12px">${r.card.advice}</p>
         <p style="margin-top:14px">${THEME_LABEL[r.theme]} ${starsHtml(r.themeScore)}<br /><span class="sub">${r.themeComment}</span></p>
       </div>
@@ -1556,8 +1576,8 @@ document.getElementById("integrated-form").addEventListener("submit", (e) => {
 /* ---------- ホロスコープ(太陽 × 月 × 10天体) ---------- */
 /* テーマ(人生/仕事/恋愛) */
 let westernTheme = "life";
-const WESTERN_THEMES = [["life", "人生"], ["work", "仕事"], ["love", "恋愛"]];
-const WESTERN_THEME_LABEL = { life: "人生", work: "仕事", love: "恋愛" };
+const WESTERN_THEMES = [["life", L("人生", "Life")], ["work", L("仕事", "Work")], ["love", L("恋愛", "Love")]];
+const WESTERN_THEME_LABEL = { life: L("人生", "Life"), work: L("仕事", "Work"), love: L("恋愛", "Love") };
 
 /* ホロスコープの円環図(出生図ホイール) */
 function horoscopeWheelSvg(h) {
@@ -1598,7 +1618,7 @@ function horoscopeWheelSvg(h) {
       <circle cx="${px}" cy="${py}" r="11" fill="#FDFBF6" stroke="rgba(168,132,78,.5)"/>
       <text x="${px}" y="${py + 4.5}" text-anchor="middle" font-size="13" fill="#1C2333">${pl.glyph}\uFE0E</text>`;
   }
-  return `<svg viewBox="0 0 ${size} ${size}" class="horo-svg" role="img" aria-label="出生図">${out}</svg>`;
+  return `<svg viewBox="0 0 ${size} ${size}" class="horo-svg" role="img" aria-label="${L("出生図", "Birth chart")}">${out}</svg>`;
 }
 
 document.querySelectorAll("#western-theme [data-wtheme]").forEach((b) => {
@@ -1650,87 +1670,132 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
   const sky = skyToday(Object.fromEntries(horo.planets.map((pl) => [pl.key, pl.lon])));
   const now = new Date();
   const planetJa = (k) => PLANET_BODIES.find((b) => b.key === k);
-  const toneText = { soft: "やさしい追い風を送っています。この組み合わせの事柄が、するすると進む日", hard: "少し緊張を生んでいます。ここを扱うときはひと呼吸おいて。丁寧に越えれば力になる日", hard0: "ぴたりと重なり、このテーマを強く照らしています。意識がそこへ向かう日" };
+  const toneText = {
+    soft: L("やさしい追い風を送っています。この組み合わせの事柄が、するすると進む日", "a gentle tailwind is blowing here. Matters of this pairing slide forward today"),
+    hard: L("少し緊張を生んでいます。ここを扱うときはひと呼吸おいて。丁寧に越えれば力になる日", "there's a touch of tension here. Take a breath before you handle it — crossed with care, it turns into strength"),
+    hard0: L("ぴたりと重なり、このテーマを強く照らしています。意識がそこへ向かう日", "they overlap exactly, shining a strong light on this theme. Your attention will find its way there today"),
+  };
   const skyHits = sky.hits.length
     ? sky.hits.map((h) => {
         const tp = planetJa(h.t), np = planetJa(h.n);
-        return `<p class="theme-point">${tp.glyph}︎ <strong>今日の${tp.ja}</strong> × あなたの${np.glyph}︎ ${np.ja}(${np.role}) — ${toneText[h.type.tone]}です。</p>`;
+        return `<p class="theme-point">${tp.glyph}︎ <strong>${L(`今日の${tp.ja}`, `Today's ${tp.ja}`)}</strong> × ${L(`あなたの${np.glyph}︎ ${np.ja}(${np.role})`, `your ${np.glyph}︎ ${np.ja} (${np.role})`)} — ${toneText[h.type.tone]}${L("です。", ".")}</p>`;
       }).join("")
-    : '<p class="theme-point">今日はあなたの出生図に強く触れる角度のない、静かな空。ニュートラルに過ごせる日です。</p>';
+    : `<p class="theme-point">${L("今日はあなたの出生図に強く触れる角度のない、静かな空。ニュートラルに過ごせる日です。", "A quiet sky today — no angles touching your birth chart strongly. A day you can spend on neutral ground.")}</p>`;
 
   const moonName = hasTime ? horoMoonSign.name : moon.name;
   lastShare.western = {
     svg: horoscopeWheelSvg(horo),
     eyebrow: "WESTERN ASTROLOGY",
-    title: `太陽は${z.name}、月は${moonName}`,
+    title: L(`太陽は${z.name}、月は${moonName}`, `Sun in ${NM(z.name)}, Moon in ${NM(moonName)}`),
     keywords: [z.keyword],
-    score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
-    x: `【MYOURISCOPE ホロスコープ】太陽星座は${z.name}、月星座は${moonName}。 ✦`,
+    score: daily.score100, scoreLabel: L("今日の運気", "Today's luck"), scoreSuffix: "/100",
+    x: L(
+      `【MYOURISCOPE ホロスコープ】太陽星座は${z.name}、月星座は${moonName}。 ✦`,
+      `MYOURISCOPE Horoscope — my sun sign is ${NM(z.name)}, my moon sign is ${NM(moonName)}. ✦`
+    ),
   };
-  recordHistory("ホロスコープ", `太陽${z.name} × 月${moonName}(${themeLabel})`, `${z.keyword}。${flow.blocks[2].title}へ向かう流れ。10天体のホロスコープ鑑定。`);
+  recordHistory(
+    L("ホロスコープ", "Horoscope"),
+    L(`太陽${z.name} × 月${moonName}(${themeLabel})`, `Sun ${NM(z.name)} × Moon ${NM(moonName)} (${themeLabel})`),
+    L(
+      `${z.keyword}。${flow.blocks[2].title}へ向かう流れ。10天体のホロスコープ鑑定。`,
+      `${z.keyword}. A current moving toward “${flow.blocks[2].title}.” A ten-planet horoscope reading.`
+    )
+  );
 
   document.getElementById("western-form").classList.add("form-quiet");
   observeThen("western", () => showResult(document.getElementById("western-result"), `
     <div class="result-hero">
       <span class="result-symbol">${z.symbol}︎</span>
       <p class="result-eyebrow">WESTERN ASTROLOGY</p>
-      <h3 class="result-title">太陽は${z.name}、月は${moonName}。</h3>
+      <h3 class="result-title">${L(`太陽は${z.name}、月は${moonName}。`, `Sun in ${NM(z.name)}, Moon in ${NM(moonName)}.`)}</h3>
       <p class="result-keyword">${z.keyword}</p>
       <div class="chip-row">
-        <span class="chip">エレメント <strong>${z.element}</strong></span>
-        <span class="chip">守護星 <strong>${z.planet}</strong></span>
-        <span class="chip">月星座 <strong>${moonName}</strong></span>
-        ${asc ? `<span class="chip">上昇星座 <strong>${asc.sign}</strong></span>` : ""}
+        <span class="chip">${L(`エレメント <strong>${z.element}</strong>`, `Element <strong>${NM(z.element)}</strong>`)}</span>
+        <span class="chip">${L(`守護星 <strong>${z.planet}</strong>`, `Ruling planet <strong>${NM(z.planet)}</strong>`)}</span>
+        <span class="chip">${L(`月星座 <strong>${moonName}</strong>`, `Moon sign <strong>${NM(moonName)}</strong>`)}</span>
+        ${asc ? `<span class="chip">${L(`上昇星座 <strong>${asc.sign}</strong>`, `Rising sign <strong>${NM(asc.sign)}</strong>`)}</span>` : ""}
       </div>
       ${shareRowHtml("western")}
     </div>
     <div class="result-grid">
       <div class="result-card span-all">
-        ${cardH4("TODAY'S SKY", `今日の空 — ${now.getMonth() + 1}月${now.getDate()}日`)}
-        <p><strong style="color:var(--gold-bright)">☽︎ 月は${sky.moonSign}に</strong> — ${sky.moonNote}。</p>
+        ${cardH4("TODAY'S SKY", L(`今日の空 — ${now.getMonth() + 1}月${now.getDate()}日`, `Today's sky — ${fmtMD(now.getMonth() + 1, now.getDate())}`))}
+        <p><strong style="color:var(--gold-bright)">${L(`☽︎ 月は${sky.moonSign}に`, `☽︎ The Moon is in ${NM(sky.moonSign)}`)}</strong> — ${sky.moonNote}${L("。", ".")}</p>
         <div style="margin-top:8px">${skyHits}</div>
-        <p class="sub" style="margin-top:12px">${sky.moonTomorrow !== sky.moonSign ? `月は明日、${sky.moonTomorrow}へ移ります。空の気分もそこで切り替わります。` : `月はもうしばらく${sky.moonSign}に滞在します。`}空は毎日動いているので、この欄は来るたびに変わります。</p>
+        <p class="sub" style="margin-top:12px">${sky.moonTomorrow !== sky.moonSign
+          ? L(`月は明日、${sky.moonTomorrow}へ移ります。空の気分もそこで切り替わります。`, `Tomorrow the Moon moves into ${NM(sky.moonTomorrow)}, and the mood of the sky shifts with it. `)
+          : L(`月はもうしばらく${sky.moonSign}に滞在します。`, `The Moon stays in ${NM(sky.moonSign)} a little while longer. `)}${L("空は毎日動いているので、この欄は来るたびに変わります。", "The sky moves every day, so this section changes each time you visit.")}</p>
       </div>
       <div class="result-card">
-        ${cardH4("SUN SIGN", "外に向かうあなた")}
+        ${cardH4("SUN SIGN", L("外に向かうあなた", "The you that faces outward"))}
         <p>${z.trait}</p>
       </div>
       <div class="result-card">
-        ${cardH4("MOON SIGN", "心の素顔")}
-        <p><strong style="color:var(--gold-bright)">☾︎ ${moonName}</strong> — ${MOONSIGN_DESC[moonName]}</p>
+        ${cardH4("MOON SIGN", L("心の素顔", "Your heart in private"))}
+        <p><strong style="color:var(--gold-bright)">☾︎ ${NM(moonName)}</strong> — ${MOONSIGN_DESC[moonName]}</p>
         <p style="margin-top:12px">${sunMoonBlend(z, ZODIAC.find((zz) => zz.name === moonName))}</p>
-        <p class="sub" style="margin-top:12px">${hasTime ? "※ 出生時刻をもとに計算しています。" : "※ 月は約2.5日で星座を移動します。出生時刻を入れると精度が上がります。"}</p>
+        <p class="sub" style="margin-top:12px">${hasTime
+          ? L("※ 出生時刻をもとに計算しています。", "Calculated from your birth time.")
+          : L("※ 月は約2.5日で星座を移動します。出生時刻を入れると精度が上がります。", "The Moon changes signs about every 2.5 days — adding your birth time improves precision.")}</p>
       </div>
       ${asc ? `
       <div class="result-card">
-        ${cardH4("RISING", "纏う雰囲気(上昇星座)")}
-        <p><strong style="color:var(--gold-bright)">↑ ${asc.sign}(${asc.deg}°)</strong> — ${ASCENDANT_DESC[asc.sign]}。</p>
-        <p class="sub" style="margin-top:12px">上昇星座(アセンダント)は、生まれた瞬間に東の地平線から昇っていた星座。出生時刻と出生地(${place[0]})から計算した、あなたの「第一印象」と「人生の入り口」です。</p>
+        ${cardH4("RISING", L("纏う雰囲気(上昇星座)", "The air you wear (rising sign)"))}
+        <p><strong style="color:var(--gold-bright)">${L(`↑ ${asc.sign}(${asc.deg}°)`, `↑ ${NM(asc.sign)} (${asc.deg}°)`)}</strong> — ${ASCENDANT_DESC[asc.sign]}${L("。", ".")}</p>
+        <p class="sub" style="margin-top:12px">${L(
+          `上昇星座(アセンダント)は、生まれた瞬間に東の地平線から昇っていた星座。出生時刻と出生地(${place[0]})から計算した、あなたの「第一印象」と「人生の入り口」です。`,
+          `Your rising sign (ascendant) is the sign that was climbing over the eastern horizon at the moment you were born. Calculated from your birth time and birthplace (${place[0]}), it is the first impression you give — and the doorway into your life.`
+        )}</p>
       </div>` : `
       <div class="result-card">
-        ${cardH4("RISING", "纏う雰囲気(上昇星座)")}
-        <p class="sub">出生時刻と出生地の両方を入れると、ここに「上昇星座(アセンダント)」— あなたが人に与える第一印象と人生の入り口 — が表示されます。母子手帳に出生時刻が載っていることが多いですよ。</p>
+        ${cardH4("RISING", L("纏う雰囲気(上昇星座)", "The air you wear (rising sign)"))}
+        <p class="sub">${L(
+          "出生時刻と出生地の両方を入れると、ここに「上昇星座(アセンダント)」— あなたが人に与える第一印象と人生の入り口 — が表示されます。母子手帳に出生時刻が載っていることが多いですよ。",
+          "Enter both your birth time and birthplace, and your rising sign (ascendant) will appear here — the first impression you give, and the doorway into your life. Your birth time is often written in your birth records."
+        )}</p>
       </div>`}
       <div class="result-card span-all flow-card">
-        ${cardH4("YOUR FLOW", `${themeLabel}の流れ — 5年周期で読む`)}
+        ${cardH4("YOUR FLOW", L(`${themeLabel}の流れ — 5年周期で読む`, `The current of your ${String(themeLabel).toLowerCase()} — read in five-year cycles`))}
         <div class="flow-line">
           ${flow.blocks.map((b) => `
             <div class="flow-block ${b.now ? "flow-now" : ""}">
-              <span class="fb-era">${b.label} ・ ${b.era}</span>
+              <span class="fb-era">${b.label}${L(" ・ ", " · ")}${b.era}</span>
               <span class="fb-title">${b.title}</span>
               <p class="fb-text">${b.text}</p>
               <p class="fb-jup">${b.jupText}</p>
             </div>`).join("")}
         </div>
         <p class="fb-personal">${flow.personal}</p>
-        ${flow.nextShift ? `<p class="fb-shift">いまの章は <strong>${flow.chapterSpan}年</strong>。次の章替わりは <strong>${flow.nextShift}年ごろ</strong> — 土星のリズム(約7年ごと)が変わり目を示しています。</p>` : ""}
-        ${explainHtml("この「流れ」はどう読んでいる?", "約29.5年で空を一周する土星は、生まれた位置から約7年ごとに「種まき→鍛錬→収穫→手放し」の節目を刻みます。約12年で一周する木星は幸運の巡りを示します。あなたの出生図と現在の星の位置(トランジット)の角度から、過去5年・いま・これから5年の章を読んでいます。可能性の読みとして、答え合わせしながら使ってください。")}
+        ${flow.nextShift ? `<p class="fb-shift">${L(
+          `いまの章は <strong>${flow.chapterSpan}年</strong>。次の章替わりは <strong>${flow.nextShift}年ごろ</strong> — 土星のリズム(約7年ごと)が変わり目を示しています。`,
+          `This chapter runs <strong>${String(flow.chapterSpan).replace("〜", "–")}</strong>. The next turn of the page comes <strong>around ${flow.nextShift}</strong> — Saturn's rhythm, roughly every seven years, marks the seams.`
+        )}</p>` : ""}
+        ${explainHtml(
+          L("この「流れ」はどう読んでいる?", "How is this “flow” read?"),
+          L(
+            "約29.5年で空を一周する土星は、生まれた位置から約7年ごとに「種まき→鍛錬→収穫→手放し」の節目を刻みます。約12年で一周する木星は幸運の巡りを示します。あなたの出生図と現在の星の位置(トランジット)の角度から、過去5年・いま・これから5年の章を読んでいます。可能性の読みとして、答え合わせしながら使ってください。",
+            "Saturn circles the sky in about 29.5 years, marking a turning point roughly every seven — sowing, training, harvest, release — measured from where it stood at your birth. Jupiter, on a lap of about twelve years, shows how fortune comes around. From the angles between your birth chart and where the planets stand now (the transits), we read the past five years, the present, and the five ahead as chapters. Treat it as a reading of possibilities, and check it against your own life as you go."
+          )
+        )}
       </div>
       <div class="result-card span-all">
-        ${cardH4("THIS YEAR", `${yearly.year}年の星模様`)}
-        <p class="theme-point" style="border-top:none;padding-top:0"><strong>♃︎ 幸運の木星は「${yearly.jupiter.theme}」の部屋に</strong>(第${yearly.jupiter.house}ハウス・${yearly.jupiter.sign}) — 今年いちばん膨らみやすい領域です。この方面の誘いには乗るが吉。</p>
-        <p class="theme-point"><strong>♄︎ 成長の土星は「${yearly.saturn.theme}」の部屋に</strong>(第${yearly.saturn.house}ハウス・${yearly.saturn.sign}) — 今年みっちり鍛えられる領域。ここでの粘りは章をまたいで効いてきます。</p>
-        ${explainHtml("「部屋」って何?", "太陽サインを起点に空を12の部屋(ソーラーハウス)に分け、幸運の星・木星と、成長の星・土星がいまどの部屋を通過中かを見る、伝統的な年運の読み方です。木星は約1年で、土星は約2年半で次の部屋へ移ります。")}
+        ${cardH4("THIS YEAR", L(`${yearly.year}年の星模様`, `The starscape of ${yearly.year}`))}
+        <p class="theme-point" style="border-top:none;padding-top:0">${L(
+          `<strong>♃︎ 幸運の木星は「${yearly.jupiter.theme}」の部屋に</strong>(第${yearly.jupiter.house}ハウス・${yearly.jupiter.sign}) — 今年いちばん膨らみやすい領域です。この方面の誘いには乗るが吉。`,
+          `<strong>♃︎ Lucky Jupiter is in the room of “${yearly.jupiter.theme}”</strong> (House ${yearly.jupiter.house} · ${NM(yearly.jupiter.sign)}) — the area most ready to grow this year. Say yes to invitations from this direction.`
+        )}</p>
+        <p class="theme-point">${L(
+          `<strong>♄︎ 成長の土星は「${yearly.saturn.theme}」の部屋に</strong>(第${yearly.saturn.house}ハウス・${yearly.saturn.sign}) — 今年みっちり鍛えられる領域。ここでの粘りは章をまたいで効いてきます。`,
+          `<strong>♄︎ Saturn, the teacher, is in the room of “${yearly.saturn.theme}”</strong> (House ${yearly.saturn.house} · ${NM(yearly.saturn.sign)}) — the area where you'll be trained hardest this year. Persistence here keeps paying off across chapters.`
+        )}</p>
+        ${explainHtml(
+          L("「部屋」って何?", "What is a “room”?"),
+          L(
+            "太陽サインを起点に空を12の部屋(ソーラーハウス)に分け、幸運の星・木星と、成長の星・土星がいまどの部屋を通過中かを見る、伝統的な年運の読み方です。木星は約1年で、土星は約2年半で次の部屋へ移ります。",
+            "Starting from your sun sign, the sky is divided into twelve rooms (solar houses). This traditional way of reading the year watches which room Jupiter, the star of luck, and Saturn, the star of growth, are passing through. Jupiter moves to the next room in about a year; Saturn in about two and a half."
+          )
+        )}
       </div>
       <div class="result-card span-all">
         ${cardH4("READING", themeReading.title)}
@@ -1738,47 +1803,58 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
         ${themeReading.points.map((pt) => `<p class="theme-point">${pt}</p>`).join("")}
       </div>
       <div class="result-card span-all">
-        ${cardH4("BIRTH CHART", "ホロスコープ(出生図)")}
+        ${cardH4("BIRTH CHART", L("ホロスコープ(出生図)", "Your birth chart"))}
         <div class="horo-wheel">${horoscopeWheelSvg(horo)}</div>
-        <p class="sub" style="text-align:center;margin-top:10px">生まれた日の空で、10天体がどの星座にいたか。${horo.hasTime ? "出生時刻をもとに計算しています。" : "出生時刻が不明のため正午で計算しています(月は前後の星座になる場合があります)。"}</p>
+        <p class="sub" style="text-align:center;margin-top:10px">${L("生まれた日の空で、10天体がどの星座にいたか。", "Where the ten planets stood in the sky on the day you were born. ")}${horo.hasTime
+          ? L("出生時刻をもとに計算しています。", "Calculated from your birth time.")
+          : L("出生時刻が不明のため正午で計算しています(月は前後の星座になる場合があります)。", "With no birth time given, positions are calculated for noon — the Moon may land in a neighboring sign.")}</p>
         <div class="legend" style="margin-top:8px">
-          <span><i style="background:#2E8C7E"></i>調和の角度</span>
-          <span><i style="background:#C05C82"></i>緊張の角度</span>
-          <span><i style="background:#A8844E"></i>重なり</span>
+          <span><i style="background:#2E8C7E"></i>${L("調和の角度", "Angles of harmony")}</span>
+          <span><i style="background:#C05C82"></i>${L("緊張の角度", "Angles of tension")}</span>
+          <span><i style="background:#A8844E"></i>${L("重なり", "Overlaps")}</span>
         </div>
       </div>
       <div class="result-card span-all">
-        ${cardH4("DETAILS", "もっと深く読む")}
+        ${cardH4("DETAILS", L("もっと深く読む", "Read deeper"))}
         <details class="explain">
-          <summary>10天体の配置(あなたの設計図)</summary>
+          <summary>${L("10天体の配置(あなたの設計図)", "The ten placements (your blueprint)")}</summary>
           <div class="planet-list" style="padding:0 16px 14px">
             ${horo.planets.map((pl) => `
               <div class="planet-row">
                 <span class="pr-glyph">${pl.glyph}</span>
                 <span class="pr-name">${pl.ja}<small>${pl.role}</small></span>
-                <span class="pr-sign">${pl.sign.symbol}︎ ${pl.sign.name}<small>${pl.deg}°${pl.gen ? " ・世代" : ""}</small></span>
-                <span class="pr-note">${ELEMENT_STYLE[pl.sign.element]}、${pl.sign.element}のサイン</span>
+                <span class="pr-sign">${pl.sign.symbol}︎ ${NM(pl.sign.name)}<small>${pl.deg}°${pl.gen ? L(" ・世代", " · generational") : ""}</small></span>
+                <span class="pr-note">${L(`${ELEMENT_STYLE[pl.sign.element]}、${pl.sign.element}のサイン`, `a ${NM(pl.sign.element)} sign — ${ELEMENT_STYLE[pl.sign.element]}`)}</span>
               </div>`).join("")}
           </div>
         </details>
         ${horo.aspects.length ? `
         <details class="explain">
-          <summary>天体同士の会話(アスペクト ${horo.aspects.length}件)</summary>
+          <summary>${L(`天体同士の会話(アスペクト ${horo.aspects.length}件)`, `Conversations between planets (${horo.aspects.length} aspects)`)}</summary>
           <div style="padding:0 16px 14px">
             ${horo.aspects.map((x) => `
               <div class="aspect-row">
                 <p class="ar-pair"><strong>${x.a.glyph}︎ ${x.a.ja} × ${x.b.glyph}︎ ${x.b.ja}</strong><span class="ar-type ${x.type.tone}">${x.type.ja}</span></p>
-                <p class="ar-note">「${x.a.role}」と「${x.b.role}」— ${x.type.note}</p>
+                <p class="ar-note">${L(`「${x.a.role}」と「${x.b.role}」— ${x.type.note}`, `“${x.a.role}” and “${x.b.role}” — ${x.type.note}`)}</p>
               </div>`).join("")}
           </div>
         </details>
         ` : ""}
       </div>
       <div class="result-card span-all mind-card">
-        ${cardH4("THIS YEAR'S MOVE", "今年の一手")}
-        <p class="mind-point" style="border-top:none;padding-top:0"><span class="mp-k">流れ</span>いまは「${flow.blocks[1].title}」の章(${flow.chapterSpan}年)。${flow.blocks[1].jupText}</p>
-        <p class="mind-point"><span class="mp-k">広げる</span>今年の幸運は「${yearly.jupiter.theme}」の部屋に。この方面の誘いには、乗ってください。</p>
-        <p class="mind-point"><span class="mp-k">鍛える</span>「${yearly.saturn.theme}」は今年しっかり試される場所。ここでの粘りが${flow.nextShift}年からの次の章の土台になります。</p>
+        ${cardH4("THIS YEAR'S MOVE", L("今年の一手", "This year's move"))}
+        <p class="mind-point" style="border-top:none;padding-top:0"><span class="mp-k">${L("流れ", "Flow")}</span>${L(
+          `いまは「${flow.blocks[1].title}」の章(${flow.chapterSpan}年)。`,
+          `You're in the “${flow.blocks[1].title}” chapter (${String(flow.chapterSpan).replace("〜", "–")}). `
+        )}${flow.blocks[1].jupText}</p>
+        <p class="mind-point"><span class="mp-k">${L("広げる", "Expand")}</span>${L(
+          `今年の幸運は「${yearly.jupiter.theme}」の部屋に。この方面の誘いには、乗ってください。`,
+          `This year's luck sits in the room of “${yearly.jupiter.theme}.” When invitations come from that direction, take them.`
+        )}</p>
+        <p class="mind-point"><span class="mp-k">${L("鍛える", "Train")}</span>${L(
+          `「${yearly.saturn.theme}」は今年しっかり試される場所。ここでの粘りが${flow.nextShift}年からの次の章の土台になります。`,
+          `“${yearly.saturn.theme}” is where you'll be properly tested this year. Persistence here becomes the foundation of the chapter that opens around ${flow.nextShift}.`
+        )}</p>
       </div>
     </div>
     ${crossLinksHtml("western")}
@@ -1803,96 +1879,136 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
     <div class="week-day ${w.today ? "is-today" : ""} ${w === best ? "is-best" : ""}">
       <span class="wd-date">${w.label}<small>(${w.wd})</small></span>
       <span class="wd-kanshi">${w.kanshi}</span>
-      <span class="wd-star">${w.star.name}</span>
-      ${w === best ? '<span class="wd-badge">◎ 好機</span>' : ""}
+      <span class="wd-star">${NM(w.star.name)}</span>
+      ${w === best ? `<span class="wd-badge">${L("◎ 好機", "◎ Best")}</span>` : ""}
     </div>`).join("");
   const mfHtml = mf.months.map((mo) => {
     const pct = Math.round(((mo.power + 2) / 4.2) * 100);
     const badges = [
-      mo === mf.bestWork ? "仕事◎" : "", mo === mf.bestLove ? "恋愛◎" : "", mo === mf.bestMoney ? "金運◎" : "",
+      mo === mf.bestWork ? L("仕事◎", "Work ◎") : "", mo === mf.bestLove ? L("恋愛◎", "Love ◎") : "", mo === mf.bestMoney ? L("金運◎", "Money ◎") : "",
     ].filter(Boolean);
     return `
     <div class="mf-row ${mo.current ? "mf-now" : ""}">
-      <span class="mf-m">${mo.m}<small>月</small></span>
-      <span class="mf-star">${mo.star.name}</span>
+      <span class="mf-m">${L(`${mo.m}<small>月</small>`, I18N_MONTHS[mo.m - 1])}</span>
+      <span class="mf-star">${NM(mo.star.name)}</span>
       <span class="mf-track"><i style="width:${Math.max(8, Math.min(100, pct))}%"></i></span>
-      <span class="mf-badges">${badges.map((b) => `<em>${b}</em>`).join("")}${mo.current ? "<em class='mf-cur'>いま</em>" : ""}</span>
+      <span class="mf-badges">${badges.map((b) => `<em>${b}</em>`).join("")}${mo.current ? `<em class='mf-cur'>${L("いま", "now")}</em>` : ""}</span>
     </div>`;
   }).join("");
 
   lastShare.eastern = {
     eyebrow: "FOUR PILLARS & NINE STARS",
-    title: `日主「${pillars.day.kan}」— ${pillars.nikkan.symbol}の人`,
-    keywords: [kyusei.name, `${pillars.year.kan}${pillars.year.shi}年生まれ`],
-    sub: `${pillars.nikkan.yinyang}の${pillars.nikkan.element}。${kyusei.name}。`,
-    x: `【MYOURISCOPE 四柱推命】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
+    title: L(`日主「${pillars.day.kan}」— ${pillars.nikkan.symbol}の人`, `Day master “${NM(pillars.day.kan)}” — the ${pillars.nikkan.symbol}`),
+    keywords: [NM(kyusei.name), L(`${pillars.year.kan}${pillars.year.shi}年生まれ`, `Born in a ${NMK(pillars.year.kan + pillars.year.shi)} year`)],
+    sub: L(`${pillars.nikkan.yinyang}の${pillars.nikkan.element}。${kyusei.name}。`, `${pillars.nikkan.yinyang} ${NM(pillars.nikkan.element)}. ${NM(kyusei.name)}.`),
+    x: L(
+      `【MYOURISCOPE 四柱推命】わたしの日主は「${pillars.day.kan}(${pillars.nikkan.symbol})」、本命星は${kyusei.name}でした ✦`,
+      `MYOURISCOPE Four Pillars — my day master is “${NM(pillars.day.kan)}” (${pillars.nikkan.symbol}), and my natal star is ${NM(kyusei.name)} ✦`
+    ),
   };
-  recordHistory("四柱推命", `日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`);
+  recordHistory(
+    L("四柱推命", "Four Pillars"),
+    L(`日主「${pillars.day.kan}」(${pillars.nikkan.symbol})`, `Day master “${NM(pillars.day.kan)}” (${pillars.nikkan.symbol})`),
+    L(
+      `${kyusei.name}・${eto.animal}年。三柱: ${pillars.year.kan}${pillars.year.shi}/${pillars.month.kan}${pillars.month.shi}/${pillars.day.kan}${pillars.day.shi}。`,
+      `${NM(kyusei.name)}, year of the ${eto.animal}. Three pillars: ${NMK(pillars.year.kan + pillars.year.shi)} / ${NMK(pillars.month.kan + pillars.month.shi)} / ${NMK(pillars.day.kan + pillars.day.shi)}.`
+    )
+  );
 
   document.getElementById("eastern-form").classList.add("form-quiet");
   observeThen("eastern", () => showResult(document.getElementById("eastern-result"), `
     <div class="result-hero">
       <span class="result-symbol">${pillars.day.kan}</span>
       <p class="result-eyebrow">FOUR PILLARS & NINE STARS</p>
-      <h3 class="result-title">日主「${pillars.day.kan}」— ${pillars.nikkan.yinyang}の${pillars.nikkan.element}、${pillars.nikkan.symbol}の人。</h3>
-      <p class="result-keyword">${kyusei.name} ・ ${eto.animal}年生まれ</p>
+      <h3 class="result-title">${L(
+        `日主「${pillars.day.kan}」— ${pillars.nikkan.yinyang}の${pillars.nikkan.element}、${pillars.nikkan.symbol}の人。`,
+        `Day master “${NM(pillars.day.kan)}” — ${pillars.nikkan.yinyang} ${NM(pillars.nikkan.element)}, the ${pillars.nikkan.symbol}.`
+      )}</h3>
+      <p class="result-keyword">${L(`${kyusei.name} ・ ${eto.animal}年生まれ`, `${NM(kyusei.name)} · born in a year of the ${eto.animal}`)}</p>
       <div class="pillars" style="max-width:420px;margin-top:22px">
-        <div class="pillar"><span class="p-label">年柱</span><span class="p-kanji">${pillars.year.kan}${pillars.year.shi}</span></div>
-        <div class="pillar"><span class="p-label">月柱</span><span class="p-kanji">${pillars.month.kan}${pillars.month.shi}</span></div>
-        <div class="pillar is-day"><span class="p-label">日柱</span><span class="p-kanji">${pillars.day.kan}${pillars.day.shi}</span></div>
+        <div class="pillar"><span class="p-label">${L("年柱", "Year pillar")}</span><span class="p-kanji">${pillars.year.kan}${pillars.year.shi}</span></div>
+        <div class="pillar"><span class="p-label">${L("月柱", "Month pillar")}</span><span class="p-kanji">${pillars.month.kan}${pillars.month.shi}</span></div>
+        <div class="pillar is-day"><span class="p-label">${L("日柱", "Day pillar")}</span><span class="p-kanji">${pillars.day.kan}${pillars.day.shi}</span></div>
       </div>
-      <p class="result-lead">※ 四柱推命は日柱の干(日主)があなた自身を表します。節入りは簡易日付で計算しています。</p>
+      <p class="result-lead">${L(
+        "※ 四柱推命は日柱の干(日主)があなた自身を表します。節入りは簡易日付で計算しています。",
+        "In Four Pillars astrology, the stem of your day pillar — the day master — stands for you yourself. Solar-term boundaries are calculated with simplified dates."
+      )}</p>
       ${shareRowHtml("eastern")}
     </div>
     <div class="result-grid">
       <div class="result-card">
-        ${cardH4("DAY MASTER", "日主がしめす本質")}
+        ${cardH4("DAY MASTER", L("日主がしめす本質", "The essence your day master reveals"))}
         <p>${pillars.nikkan.text}</p>
-        <p class="sub" style="margin-top:12px">干支の${eto.animal}は — ${eto.trait}</p>
+        <p class="sub" style="margin-top:12px">${L(`干支の${eto.animal}は — ${eto.trait}`, `And the ${eto.animal} of your zodiac year — ${eto.trait}`)}</p>
       </div>
       <div class="result-card">
-        ${cardH4("NINE STARS", "本命星の気質")}
-        <p><strong style="color:var(--gold-bright)">${kyusei.name}(五行は${kyusei.element})</strong></p>
+        ${cardH4("NINE STARS", L("本命星の気質", "The temper of your natal star"))}
+        <p><strong style="color:var(--gold-bright)">${L(`${kyusei.name}(五行は${kyusei.element})`, `${NM(kyusei.name)} (element: ${NM(kyusei.element)})`)}</strong></p>
         <p style="margin-top:8px">${kyusei.trait}</p>
       </div>
       <div class="result-card span-all">
-        ${cardH4("TODAY", `今日の気流 — ${now.getMonth() + 1}月${now.getDate()}日`)}
+        ${cardH4("TODAY", L(`今日の気流 — ${now.getMonth() + 1}月${now.getDate()}日`, `Today's current — ${fmtMD(now.getMonth() + 1, now.getDate())}`))}
         ${logicFlowHtml([
-          { tag: "あなたの日主", main: flow.myKan, sub: flow.nikkan.symbol },
+          { tag: L("あなたの日主", "Your day master"), main: NM(flow.myKan), sub: flow.nikkan.symbol },
           "×",
-          { tag: "今日の干支", main: flow.day.pillar.kan + flow.day.pillar.shi, sub: "日替わり" },
+          { tag: L("今日の干支", "Today's pillar"), main: NMK(flow.day.pillar.kan + flow.day.pillar.shi), sub: L("日替わり", "changes daily") },
           "=",
-          { tag: "今日の気流", main: flow.day.star.name, sub: "", result: true },
+          { tag: L("今日の気流", "Today's current"), main: NM(flow.day.star.name), sub: "", result: true },
         ])}
-        <p style="margin-top:10px">「${flow.day.star.name}」は${flow.day.star.gloss}。今日は${flow.day.star.day}</p>
-        <p class="sub" style="margin-top:12px">日運は毎日変わります。ここは来るたびに違う風が吹く場所 — 朝いちばんの羅針盤にどうぞ。</p>
+        <p style="margin-top:10px">${L(
+          `「${flow.day.star.name}」は${flow.day.star.gloss}。今日は${flow.day.star.day}`,
+          `“${NM(flow.day.star.name)}” is ${flow.day.star.gloss}. ${flow.day.star.day}`
+        )}</p>
+        <p class="sub" style="margin-top:12px">${L(
+          "日運は毎日変わります。ここは来るたびに違う風が吹く場所 — 朝いちばんの羅針盤にどうぞ。",
+          "The daily current changes every day — a different wind blows here each time you visit. Make it your first compass of the morning."
+        )}</p>
       </div>
       <div class="result-card span-all">
-        ${cardH4("THIS MONTH", "今月と今年の気流")}
+        ${cardH4("THIS MONTH", L("今月と今年の気流", "This month's and this year's currents"))}
         ${logicFlowHtml([
-          { tag: "あなたの日主", main: flow.myKan, sub: flow.nikkan.symbol },
+          { tag: L("あなたの日主", "Your day master"), main: NM(flow.myKan), sub: flow.nikkan.symbol },
           "×",
-          { tag: "今月の干支", main: flow.month.pillar.kan + flow.month.pillar.shi, sub: `${now.getMonth() + 1}月` },
+          { tag: L("今月の干支", "This month's pillar"), main: NMK(flow.month.pillar.kan + flow.month.pillar.shi), sub: L(`${now.getMonth() + 1}月`, I18N_MONTHS[now.getMonth()]) },
           "=",
-          { tag: "今月の気流", main: flow.month.star.name, sub: "", result: true },
+          { tag: L("今月の気流", "This month's current"), main: NM(flow.month.star.name), sub: "", result: true },
         ])}
         <p style="margin-top:10px">${flow.month.star.month}</p>
-        <p class="sub" style="margin-top:12px">今年は「${flow.year.star.name}」の年 — ${flow.year.star.month.replace(/^「.+?」の月 — /, "").replace(/月/g, "年")}</p>
+        <p class="sub" style="margin-top:12px">${L(
+          `今年は「${flow.year.star.name}」の年 — ${flow.year.star.month.replace(/^「.+?」の月 — /, "").replace(/月/g, "年")}`,
+          `This year runs on “${NM(flow.year.star.name)}” — ${flow.year.star.gloss}.`
+        )}</p>
       </div>
       <div class="result-card span-all">
-        ${cardH4("7 DAYS", "一週間の気流")}
+        ${cardH4("7 DAYS", L("一週間の気流", "The week's currents"))}
         <div class="week-strip">${weekHtml}</div>
-        <p class="sub" style="margin-top:12px">◎は今週いちばん追い風の日。大事な予定はこの日に。</p>
+        <p class="sub" style="margin-top:12px">${L("◎は今週いちばん追い風の日。大事な予定はこの日に。", "◎ marks the day with the strongest tailwind this week. Save the plans that matter for it.")}</p>
       </div>
       <div class="result-card span-all">
-        ${cardH4("12 MONTHS", "これから12ヶ月の流れ")}
+        ${cardH4("12 MONTHS", L("これから12ヶ月の流れ", "The flow of the next 12 months"))}
         <div class="mf-list">${mfHtml}</div>
         <div class="mf-summary">
-          <p class="theme-point" style="border-top:none;padding-top:4px"><strong>仕事の勝負月は ${mf.bestWork.m}月</strong> —「${mf.bestWork.star.name}」の気流。攻めの計画はここに。</p>
-          <p class="theme-point"><strong>恋愛の好機は ${mf.bestLove.m}月</strong> —「${mf.bestLove.star.name}」の気流。出会いも告白もこの月が追い風。</p>
-          <p class="theme-point"><strong>金運の山は ${mf.bestMoney.m}月</strong> —「${mf.bestMoney.star.name}」の気流。大きな買い物・投資の判断はここで。</p>
+          <p class="theme-point" style="border-top:none;padding-top:4px">${L(
+            `<strong>仕事の勝負月は ${mf.bestWork.m}月</strong> —「${mf.bestWork.star.name}」の気流。攻めの計画はここに。`,
+            `<strong>Best month for work: ${I18N_MONTHS[mf.bestWork.m - 1]}</strong> — a “${NM(mf.bestWork.star.name)}” current. Aim your boldest plans here.`
+          )}</p>
+          <p class="theme-point">${L(
+            `<strong>恋愛の好機は ${mf.bestLove.m}月</strong> —「${mf.bestLove.star.name}」の気流。出会いも告白もこの月が追い風。`,
+            `<strong>Best month for love: ${I18N_MONTHS[mf.bestLove.m - 1]}</strong> — a “${NM(mf.bestLove.star.name)}” current. For meeting someone or speaking your heart, the wind is behind you.`
+          )}</p>
+          <p class="theme-point">${L(
+            `<strong>金運の山は ${mf.bestMoney.m}月</strong> —「${mf.bestMoney.star.name}」の気流。大きな買い物・投資の判断はここで。`,
+            `<strong>Best month for money: ${I18N_MONTHS[mf.bestMoney.m - 1]}</strong> — a “${NM(mf.bestMoney.star.name)}” current. Save big purchases and investment decisions for this month.`
+          )}</p>
         </div>
-        ${explainHtml("この流れはどう出している?", "あなたの日主(生まれた日の十干)と、月ごとにめぐる干支の関係を「通変星」で読み、テーマ別の追い風を点数化しています。同じ月でも人によって吹く風が違う——それが四柱推命の月運です。")}
+        ${explainHtml(
+          L("この流れはどう出している?", "How is this flow calculated?"),
+          L(
+            "あなたの日主(生まれた日の十干)と、月ごとにめぐる干支の関係を「通変星」で読み、テーマ別の追い風を点数化しています。同じ月でも人によって吹く風が違う——それが四柱推命の月運です。",
+            "We read the relationship between your day master (the stem of the day you were born) and each month's arriving pillar through the Ten Gods, scoring the tailwind for each theme. The same month blows differently for each person — that is the monthly rhythm of the Four Pillars."
+          )
+        )}
       </div>
     </div>
     ${crossLinksHtml("eastern")}
