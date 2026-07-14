@@ -51,6 +51,7 @@ js/app.js       # UI(マイページ・シェア・図鑑・PWA)
 today/ tarot/ horoscope/ shichusuimei/ aisho/ shogo/
                 # 検索流入用の静的ランディングページ(SEOの入口)
 seiza/          # 12星座の一覧+星座別ページ13本(data.jsのZODIACと同値)
+tarot/cards/    # タロット78枚の意味ページ+一覧(本文はdata.jsから抽出)
 sitemap.xml     # サイトマップ(LP追加時はここに追記)
 robots.txt      # クローラ設定
 404.html        # Not Foundページ
