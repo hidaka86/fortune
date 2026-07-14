@@ -80,3 +80,10 @@ a.btn, a.btn-observe { display: inline-block; text-decoration: none; text-align:
 
 /* タロットLPのカード見本 */
 .lp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 14px; margin: 18px 0 6px; }
+
+/* 本文中のリンク */
+.guide-article a { color: var(--gold-bright); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(168, 132, 78, 0.45); }
+.guide-article a:hover { text-decoration-color: currentColor; }
+
+/* 12星座グリッド(項目が多いので少し詰める) */
+.lp-related-signs { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }

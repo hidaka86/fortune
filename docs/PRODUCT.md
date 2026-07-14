@@ -159,6 +159,9 @@
 - **検索流入用LP(静的HTML)**: `/today/` `/tarot/` `/horoscope/` `/shichusuimei/` `/aisho/` `/shogo/`。
   各ページ固有の title / description / canonical / OGP+本文+FAQ。構造化データは WebPage / BreadcrumbList / FAQPage。
   スタイルは `css/style.css` を共用し、LP差分だけ `css/lp.css`。生成元テンプレはなくHTML直編集(構成は6ページ共通)。
+- **12星座ページ**: `/seiza/`(一覧ハブ・ItemList構造化データ)+ `/seiza/aries/`〜`/seiza/pisces/` の12本。
+  日付範囲・エレメント・支配星・気質テキストは `js/data.js` の `ZODIAC` と一致させること(ずれると本体と矛盾する)。
+  相性の記述はエレメント(火↔風、地↔水)ベース+4層診断への誘導。
 - **サイト全体のSEO**: `robots.txt`(tarot-debug.html除外)/ `sitemap.xml`(LP追加時はここに追記)/ `404.html`(noindex・主要ページへの導線)。
   トップは canonical+WebSite/Organization/WebApplication の構造化データ。
 - **内部リンク**: トップのfooterに「Guide」リンク列(クローラが辿れる実アンカー)。LP側はヘッダー/フッター/関連グリッドで相互リンク。
