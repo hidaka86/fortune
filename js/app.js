@@ -27,6 +27,13 @@ function navigate(target, push = true) {
   if (target === "guide") renderGuide();
   views.forEach((v) => v.classList.toggle("active", v.id === `view-${target}`));
   navBtns.forEach((b) => b.classList.toggle("active", b.dataset.nav === target));
+  // モバイル:横スクロールnavで現在地が見えるように追従
+  const navEl = document.getElementById("nav");
+  const activeBtn = navEl?.querySelector(".nav-btn.active");
+  if (navEl && activeBtn && navEl.scrollWidth > navEl.clientWidth) {
+    const left = activeBtn.offsetLeft - (navEl.clientWidth - activeBtn.offsetWidth) / 2;
+    navEl.scrollTo({ left: Math.max(0, left), behavior: REDUCED_MOTION ? "auto" : "smooth" });
+  }
   if (push) {
     try { history.pushState(null, "", target === "home" ? location.pathname + location.search : `#${target}`); } catch { /* file://等 */ }
   }
@@ -1818,11 +1825,19 @@ const tarotImg = (n) => {
 };
 
 // 裏面画像があればCSSデザインから差し替え(後日画像を置くだけで切り替わる)
-(() => {
+// 初回表示を軽くするため、読み込みはアイドル時 or 裏面が実際に必要になる瞬間まで遅延
+let tarotBackProbed = false;
+function probeTarotBack() {
+  if (tarotBackProbed) return;
+  tarotBackProbed = true;
   const im = new Image();
   im.onload = () => document.documentElement.classList.add("tarot-back-art");
   im.src = TAROT_BACK_IMG;
-})();
+}
+window.addEventListener("load", () => {
+  if (window.requestIdleCallback) requestIdleCallback(probeTarotBack, { timeout: 4000 });
+  else setTimeout(probeTarotBack, 2500);
+});
 
 const vibrate = (ms) => { try { navigator.vibrate?.(ms); } catch { /* 非対応 */ } };
 
@@ -1850,6 +1865,7 @@ function genreMeaning(card) {
 }
 
 function tbackHtml(cls = "", attrs = "") {
+  probeTarotBack(); // 裏面が画面に出る=画像が要る合図(未実行ならここで読み込む)
   return `<div class="tback ${cls}" ${attrs}><span>✦</span></div>`;
 }
 
@@ -2248,6 +2264,7 @@ function renderShuffleField() {
   let finished = false;
 
   const spawn = () => {
+    probeTarotBack();
     const W = field.clientWidth, H = field.clientHeight;
     for (let i = 0; i < N; i++) {
       const el = document.createElement("div");

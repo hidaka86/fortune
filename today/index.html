@@ -207,5 +207,12 @@
     </div>
     <p class="footer-note">占い結果はエンターテインメントとしてお楽しみください。 © 2026 MYOURISCOPE</p>
   </footer>
+  <script>/* モバイル:横スクロールnavで現在地を見えるところへ */
+  (function () {
+    var a = document.querySelector(".lp-nav [aria-current]");
+    var n = a && a.parentElement;
+    if (a && n && n.scrollWidth > n.clientWidth) n.scrollLeft = Math.max(0, a.offsetLeft - (n.clientWidth - a.offsetWidth) / 2);
+  })();
+  </script>
 </body>
 </html>
