@@ -15,6 +15,9 @@
   <meta name="twitter:title" content="MYOURISCOPE — あなたの流れを観る" />
   <meta name="twitter:description" content="タロット78枚のフルデッキと、1080タイプの称号。過去・現在・未来を、ひとつの流れとして読む。" />
   <meta name="twitter:image" content="https://myouriscope.com/ogp.png" />
+  <link rel="alternate" hreflang="ja" href="https://myouriscope.com/" />
+  <link rel="alternate" hreflang="en" href="https://myouriscope.com/?lang=en" />
+  <link rel="alternate" hreflang="x-default" href="https://myouriscope.com/" />
   <!-- Google Analytics (GA4) — 測定IDを設定すると計測が始まります -->
   <script>
     window.GA_MEASUREMENT_ID = "G-PQC4DKWZ78";
@@ -52,16 +55,16 @@
         <img class="brand-logo" src="assets/brand/logo_header.png" alt="MYOURISCOPE" />
       </a>
       <nav class="nav" id="nav">
-        <button class="nav-btn active" data-nav="home">ホーム</button>
-        <button class="nav-btn" data-nav="today">今日の占い</button>
-        <button class="nav-btn" data-nav="tarot">タロット</button>
-        <button class="nav-btn" data-nav="western">ホロスコープ</button>
-        <button class="nav-btn" data-nav="eastern">四柱推命</button>
-        <button class="nav-btn" data-nav="aisho">相性診断</button>
-        <button class="nav-btn" data-nav="guide">読みもの</button>
-        <button class="nav-btn" data-nav="integrated">統合鑑定</button>
+        <button class="nav-btn active" data-nav="home" data-i18n="nav.home">ホーム</button>
+        <button class="nav-btn" data-nav="today" data-i18n="nav.today">今日の占い</button>
+        <button class="nav-btn" data-nav="tarot" data-i18n="nav.tarot">タロット</button>
+        <button class="nav-btn" data-nav="western" data-i18n="nav.western">ホロスコープ</button>
+        <button class="nav-btn" data-nav="eastern" data-i18n="nav.eastern">四柱推命</button>
+        <button class="nav-btn" data-nav="aisho" data-i18n="nav.aisho">相性診断</button>
+        <button class="nav-btn" data-nav="guide" data-i18n="nav.guide">読みもの</button>
+        <button class="nav-btn" data-nav="integrated" data-i18n="nav.integrated">統合鑑定</button>
       </nav>
-      <button class="nav-btn mypage-btn" data-nav="mypage" aria-label="マイページ" title="マイページ">
+      <button class="nav-btn mypage-btn" data-nav="mypage" aria-label="マイページ" title="マイページ" data-i18n-aria="nav.mypage">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
           <circle cx="12" cy="8.2" r="3.4" />
           <path d="M5.2 19.2c1.5-3.3 4-4.7 6.8-4.7s5.3 1.4 6.8 4.7" />
@@ -81,7 +84,7 @@
           <p class="hero-eyebrow">MYOURISCOPE</p>
           <p class="hero-date" id="hero-date"></p>
           <div class="hero-cta">
-            <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の占いをはじめる</button>
+            <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span><span data-i18n="cta.start">今日の占いをはじめる</span></button>
           </div>
         </div>
       </div>
@@ -92,39 +95,39 @@
 
       <div class="section-head">
         <p class="section-eyebrow">DIVINATIONS</p>
-        <h2 class="section-title">五つの観測</h2>
+        <h2 class="section-title" data-i18n="home.divinations">五つの観測</h2>
       </div>
 
       <div class="bento">
         <button class="bento-card bento-main bento-art" data-nav="tarot" style="--hue:#A8844E">
-          <span class="bento-tag">いちばん人気</span>
-          <h3>タロット</h3>
-          <p id="tarot-bento-copy">カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。</p>
-          <span class="bento-link">今日の一枚を引く</span>
+          <span class="bento-tag" data-i18n="home.tarot.tag">いちばん人気</span>
+          <h3 data-i18n="home.tarot.title">タロット</h3>
+          <p id="tarot-bento-copy" data-i18n="home.tarot.copy">カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。</p>
+          <span class="bento-link" data-i18n="home.tarot.link">今日の一枚を引く</span>
         </button>
         <button class="bento-card" data-nav="western" style="--hue:#6D5FC9">
           <img class="bento-icon" src="assets/site/icon_western.webp" alt="" loading="lazy" />
-          <h3>ホロスコープ</h3>
-          <p>10天体の出生図から、5年周期の流れを読む。</p>
-          <span class="bento-link">観測する</span>
+          <h3 data-i18n="home.western.title">ホロスコープ</h3>
+          <p data-i18n="home.western.copy">10天体の出生図から、5年周期の流れを読む。</p>
+          <span class="bento-link" data-i18n="home.observe">観測する</span>
         </button>
         <button class="bento-card" data-nav="eastern" style="--hue:#A8844E">
           <img class="bento-icon" src="assets/site/icon_eastern.webp" alt="" loading="lazy" />
-          <h3>四柱推命</h3>
-          <p>九星気学とあわせて、生まれ持った器を知る。</p>
-          <span class="bento-link">観測する</span>
+          <h3 data-i18n="home.eastern.title">四柱推命</h3>
+          <p data-i18n="home.eastern.copy">九星気学とあわせて、生まれ持った器を知る。</p>
+          <span class="bento-link" data-i18n="home.observe">観測する</span>
         </button>
         <button class="bento-card" data-nav="aisho" style="--hue:#C05C82">
           <img class="bento-icon" src="assets/site/icon_aisho.webp" alt="" loading="lazy" />
-          <h3>相性診断</h3>
-          <p>星座 × 五行 × 干支。三つの角度から二人の縁を。</p>
-          <span class="bento-link">観測する</span>
+          <h3 data-i18n="home.aisho.title">相性診断</h3>
+          <p data-i18n="home.aisho.copy">星座 × 五行 × 干支。三つの角度から二人の縁を。</p>
+          <span class="bento-link" data-i18n="home.observe">観測する</span>
         </button>
         <button class="bento-card" data-nav="integrated" style="--hue:#A8844E">
           <img class="bento-icon" src="assets/site/icon_integrated.webp" alt="" loading="lazy" />
-          <h3>統合鑑定</h3>
-          <p>占術を横断して、運命の称号と今日の答えを。</p>
-          <span class="bento-link">観測する</span>
+          <h3 data-i18n="home.integrated.title">統合鑑定</h3>
+          <p data-i18n="home.integrated.copy">占術を横断して、運命の称号と今日の答えを。</p>
+          <span class="bento-link" data-i18n="home.observe">観測する</span>
         </button>
       </div>
 
@@ -139,32 +142,32 @@
     <section class="view" id="view-integrated">
       <div class="view-head">
         <p class="view-eyebrow">INTEGRATED READING</p>
-        <h2>統合鑑定</h2>
-        <p class="view-sub">生年月日から占術を横断し、ひとつの鑑定書に。</p>
+        <h2 data-i18n="integrated.title">統合鑑定</h2>
+        <p class="view-sub" data-i18n="integrated.sub">生年月日から占術を横断し、ひとつの鑑定書に。</p>
       </div>
 
       <form class="panel form" id="integrated-form">
         <div class="form-row">
           <label class="field">
-            <span class="field-label">名前(任意)</span>
-            <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" />
+            <span class="field-label" data-i18n="form.name">名前(任意)</span>
+            <input type="text" name="name" placeholder="例:ヒナタ" maxlength="20" data-i18n-ph="ph.name" />
           </label>
           <label class="field">
-            <span class="field-label">生年月日 <em>必須</em></span>
+            <span class="field-label"><span data-i18n="form.birthdate">生年月日</span> <em data-i18n="form.required">必須</em></span>
             <div class="bd-select" data-bd="birthdate"></div>
           </label>
           <label class="field">
-            <span class="field-label">知りたいテーマ</span>
+            <span class="field-label" data-i18n="form.theme">知りたいテーマ</span>
             <select name="theme">
-              <option value="total">総合運</option>
-              <option value="love">恋愛運</option>
-              <option value="work">仕事運</option>
-              <option value="money">金運</option>
-              <option value="health">健康運</option>
+              <option value="total" data-i18n="theme.total">総合運</option>
+              <option value="love" data-i18n="theme.love">恋愛運</option>
+              <option value="work" data-i18n="theme.work">仕事運</option>
+              <option value="money" data-i18n="theme.money">金運</option>
+              <option value="health" data-i18n="theme.health">健康運</option>
             </select>
           </label>
         </div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">鑑定する</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" data-i18n="form.submit">鑑定する</button>
       </form>
 
       <div id="integrated-result" class="result-area" hidden></div>
@@ -174,37 +177,37 @@
     <section class="view" id="view-western">
       <div class="view-head">
         <p class="view-eyebrow">HOROSCOPE</p>
-        <h2>ホロスコープ</h2>
-        <p class="view-sub">生まれた日の10天体の配置から、あなたと流れを読みます。</p>
+        <h2 data-i18n="western.title">ホロスコープ</h2>
+        <p class="view-sub" data-i18n="western.sub">生まれた日の10天体の配置から、あなたと流れを読みます。</p>
       </div>
 
       <form class="panel form" id="western-form">
         <div class="form-row">
           <label class="field">
-            <span class="field-label">生年月日 <em>必須</em></span>
+            <span class="field-label"><span data-i18n="form.birthdate">生年月日</span> <em data-i18n="form.required">必須</em></span>
             <div class="bd-select" data-bd="birthdate"></div>
           </label>
           <label class="field">
-            <span class="field-label">知りたいテーマ</span>
+            <span class="field-label" data-i18n="form.theme">知りたいテーマ</span>
             <div class="seg" id="western-theme">
-              <button type="button" class="seg-btn active" data-wtheme="life">人生</button>
-              <button type="button" class="seg-btn" data-wtheme="work">仕事</button>
-              <button type="button" class="seg-btn" data-wtheme="love">恋愛</button>
+              <button type="button" class="seg-btn active" data-wtheme="life" data-i18n="seg.life">人生</button>
+              <button type="button" class="seg-btn" data-wtheme="work" data-i18n="seg.work">仕事</button>
+              <button type="button" class="seg-btn" data-wtheme="love" data-i18n="seg.love">恋愛</button>
             </div>
           </label>
           <label class="field">
-            <span class="field-label">出生地(任意・上昇星座がわかります)</span>
-            <select name="bp" id="western-place"><option value="">不明・海外</option></select>
+            <span class="field-label" data-i18n="western.place">出生地(任意・上昇星座がわかります)</span>
+            <select name="bp" id="western-place"><option value="" data-i18n="place.unknown">不明・海外</option></select>
           </label>
           <label class="field">
-            <span class="field-label">出生時刻(任意・精度が上がります)</span>
+            <span class="field-label" data-i18n="western.time">出生時刻(任意・精度が上がります)</span>
             <div class="time-select">
               <select name="bh" aria-label="時"><option value="">不明</option><option value="0">0時</option><option value="1">1時</option><option value="2">2時</option><option value="3">3時</option><option value="4">4時</option><option value="5">5時</option><option value="6">6時</option><option value="7">7時</option><option value="8">8時</option><option value="9">9時</option><option value="10">10時</option><option value="11">11時</option><option value="12">12時</option><option value="13">13時</option><option value="14">14時</option><option value="15">15時</option><option value="16">16時</option><option value="17">17時</option><option value="18">18時</option><option value="19">19時</option><option value="20">20時</option><option value="21">21時</option><option value="22">22時</option><option value="23">23時</option></select>
               <select name="bm" aria-label="分"><option value="0">00分</option><option value="10">10分</option><option value="20">20分</option><option value="30">30分</option><option value="40">40分</option><option value="50">50分</option></select>
             </div>
           </label>
         </div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">星を調べる</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" data-i18n="western.submit">星を調べる</button>
       </form>
 
       <div id="western-result" class="result-area" hidden></div>
@@ -214,18 +217,18 @@
     <section class="view" id="view-eastern">
       <div class="view-head">
         <p class="view-eyebrow">FOUR PILLARS</p>
-        <h2>四柱推命</h2>
-        <p class="view-sub">年柱・月柱・日柱と九星気学。生まれ持った器と、運気のリズムを。</p>
+        <h2 data-i18n="eastern.title">四柱推命</h2>
+        <p class="view-sub" data-i18n="eastern.sub">年柱・月柱・日柱と九星気学。生まれ持った器と、運気のリズムを。</p>
       </div>
 
       <form class="panel form" id="eastern-form">
         <div class="form-row">
           <label class="field">
-            <span class="field-label">生年月日 <em>必須</em></span>
+            <span class="field-label"><span data-i18n="form.birthdate">生年月日</span> <em data-i18n="form.required">必須</em></span>
             <div class="bd-select" data-bd="birthdate"></div>
           </label>
         </div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">鑑定する</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" data-i18n="form.submit">鑑定する</button>
       </form>
 
       <div id="eastern-result" class="result-area" hidden></div>
@@ -235,8 +238,8 @@
     <section class="view" id="view-tarot">
       <div class="view-head">
         <p class="view-eyebrow">TAROT READING</p>
-        <h2>タロット</h2>
-        <p class="view-sub">あなたの手が結果を決める、本物の手順で。</p>
+        <h2 data-i18n="tarot.title">タロット</h2>
+        <p class="view-sub" data-i18n="tarot.sub">あなたの手が結果を決める、本物の手順で。</p>
       </div>
 
       <div id="tarot-stage"></div>
@@ -247,32 +250,32 @@
     <section class="view" id="view-aisho">
       <div class="view-head">
         <p class="view-eyebrow">COMPATIBILITY</p>
-        <h2>相性診断</h2>
-        <p class="view-sub">星座 × 五行 × 干支。三つの角度から、二人の縁を。</p>
+        <h2 data-i18n="aisho.title">相性診断</h2>
+        <p class="view-sub" data-i18n="aisho.sub">星座 × 五行 × 干支。三つの角度から、二人の縁を。</p>
       </div>
 
       <form class="panel form" id="aisho-form">
         <div class="form-row">
           <label class="field">
-            <span class="field-label">あなたの名前(任意)</span>
-            <input type="text" name="name1" placeholder="例:ヒナタ" maxlength="20" />
+            <span class="field-label" data-i18n="aisho.name1">あなたの名前(任意)</span>
+            <input type="text" name="name1" placeholder="例:ヒナタ" maxlength="20" data-i18n-ph="ph.name" />
           </label>
           <label class="field">
-            <span class="field-label">あなたの生年月日 <em>必須</em></span>
+            <span class="field-label"><span data-i18n="aisho.bd1">あなたの生年月日</span> <em data-i18n="form.required">必須</em></span>
             <div class="bd-select" data-bd="birthdate1"></div>
           </label>
         </div>
         <div class="form-row">
           <label class="field">
-            <span class="field-label">お相手の名前(任意)</span>
-            <input type="text" name="name2" placeholder="例:ソラ" maxlength="20" />
+            <span class="field-label" data-i18n="aisho.name2">お相手の名前(任意)</span>
+            <input type="text" name="name2" placeholder="例:ソラ" maxlength="20" data-i18n-ph="ph.name2" />
           </label>
           <label class="field">
-            <span class="field-label">お相手の生年月日 <em>必須</em></span>
+            <span class="field-label"><span data-i18n="aisho.bd2">お相手の生年月日</span> <em data-i18n="form.required">必須</em></span>
             <div class="bd-select" data-bd="birthdate2"></div>
           </label>
         </div>
-        <button class="btn btn-primary btn-lg btn-block" type="submit">相性を診断する</button>
+        <button class="btn btn-primary btn-lg btn-block" type="submit" data-i18n="aisho.submit">相性を診断する</button>
       </form>
 
       <div id="aisho-result" class="result-area" hidden></div>
@@ -287,8 +290,8 @@
     <section class="view" id="view-guide">
       <div class="view-head">
         <p class="view-eyebrow">READINGS</p>
-        <h2>占いの手引き</h2>
-        <p class="view-sub">それぞれの占いが、なにを、どう観ているのか。仕組みから思想まで。</p>
+        <h2 data-i18n="guide.title">占いの手引き</h2>
+        <p class="view-sub" data-i18n="guide.sub">それぞれの占いが、なにを、どう観ているのか。仕組みから思想まで。</p>
       </div>
       <div id="guide-root"></div>
     </section>
@@ -299,26 +302,28 @@
     <div class="footer-inner">
       <div class="footer-brand">
         <img class="footer-logo" src="assets/brand/wordmark_footer.png" alt="MYOURISCOPE" />
-        <p class="footer-tagline">この世の理と、あなたの流れを観る。</p>
+        <p class="footer-tagline" data-i18n="footer.tagline">この世の理と、あなたの流れを観る。</p>
       </div>
       <nav class="footer-nav">
-        <button data-nav="today">今日の占い</button>
-        <button data-nav="tarot">タロット</button>
-        <button data-nav="western">ホロスコープ</button>
-        <button data-nav="eastern">四柱推命</button>
-        <button data-nav="aisho">相性診断</button>
-        <button data-nav="integrated">統合鑑定</button>
-        <button data-nav="mypage">マイページ</button>
+        <button data-nav="today" data-i18n="nav.today">今日の占い</button>
+        <button data-nav="tarot" data-i18n="nav.tarot">タロット</button>
+        <button data-nav="western" data-i18n="nav.western">ホロスコープ</button>
+        <button data-nav="eastern" data-i18n="nav.eastern">四柱推命</button>
+        <button data-nav="aisho" data-i18n="nav.aisho">相性診断</button>
+        <button data-nav="integrated" data-i18n="nav.integrated">統合鑑定</button>
+        <button data-nav="mypage" data-i18n="nav.mypage">マイページ</button>
       </nav>
     </div>
-    <p class="footer-note">占い結果はエンターテインメントとしてお楽しみください。 © 2026 MYOURISCOPE</p>
+    <p class="footer-note" data-i18n="footer.note">占い結果はエンターテインメントとしてお楽しみください。 © 2026 MYOURISCOPE</p>
   </footer>
 
   <!-- 儀式の間(タロット用フルスクリーンオーバーレイ) -->
   <div id="ritual-overlay" class="ritual-overlay" hidden></div>
 
+  <script src="js/i18n.js?v=dev"></script>
   <script src="js/data.js?v=dev"></script>
   <script src="js/fortune.js?v=dev"></script>
+  <script>if (window.I18N && I18N.en) document.write('<script src="js/data.en.js?v=dev"><\/script>');</script>
   <script src="js/app.js?v=dev"></script>
 </body>
 </html>

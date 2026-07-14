@@ -2202,3 +2202,22 @@ body.ritual-open { overflow: hidden; }
   .wind-banner::after { animation: none; }
   .breath-guide.breath-in { animation: none; opacity: .8; }
 }
+
+/* ---------- 言語切替(EN/日本語) ---------- */
+.lang-btn {
+  flex: 0 0 auto;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--surface);
+  padding: 6px 13px;
+  font-size: 12.5px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  transition: color .25s ease, border-color .25s ease;
+}
+.lang-btn::after { content: none; }
+.lang-btn:hover { color: var(--indigo); border-color: var(--gold); }
+@media (max-width: 720px) {
+  .lang-btn { order: 1; margin-left: auto; padding: 5px 11px; }
+  .mypage-btn { margin-left: 0; }
+}
