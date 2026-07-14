@@ -449,13 +449,13 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   min-height: 300px;
   background:
     linear-gradient(78deg, rgba(14, 19, 40, 0.97) 38%, rgba(14, 19, 40, 0.72) 64%, rgba(14, 19, 40, 0.18)),
-    url("../images/tarot/tarot_10_wheel_of_fortune.webp") right 24% / cover no-repeat;
+    url("../images/tarot/bg/tarot_10_wheel_of_fortune.webp") right 24% / cover no-repeat;
   border-color: rgba(28, 35, 51, 0.5);
 }
 .bento-art:hover {
   background:
     linear-gradient(78deg, rgba(10, 16, 38, 0.93) 30%, rgba(10, 16, 38, 0.5) 62%, rgba(10, 16, 38, 0.06)),
-    url("../images/tarot/tarot_10_wheel_of_fortune.webp") right 22% / cover no-repeat;
+    url("../images/tarot/bg/tarot_10_wheel_of_fortune.webp") right 22% / cover no-repeat;
 }
 .bento-main { justify-content: flex-end; }
 .bento-art h3 { font-size: 28px; color: var(--chamber-ink); }
@@ -820,7 +820,7 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .spread-opt[data-spread="daily"] {
   background-image:
     linear-gradient(80deg, rgba(10, 16, 38, 0.96) 40%, rgba(10, 16, 38, 0.78) 62%, rgba(10, 16, 38, 0.3)),
-    url("../images/tarot/tarot_19_sun.webp");
+    url("../images/tarot/bg/tarot_19_sun.webp");
   background-position: center, right 20%;
   background-size: cover, cover;
   background-repeat: no-repeat;
@@ -828,7 +828,7 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .spread-opt[data-spread="one"] {
   background-image:
     linear-gradient(80deg, rgba(10, 16, 38, 0.96) 40%, rgba(10, 16, 38, 0.78) 62%, rgba(10, 16, 38, 0.3)),
-    url("../images/tarot/tarot_01_magician.webp");
+    url("../images/tarot/bg/tarot_01_magician.webp");
   background-position: center, right 20%;
   background-size: cover, cover;
   background-repeat: no-repeat;
@@ -836,7 +836,7 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .spread-opt[data-spread="three"] {
   background-image:
     linear-gradient(80deg, rgba(10, 16, 38, 0.96) 40%, rgba(10, 16, 38, 0.78) 62%, rgba(10, 16, 38, 0.3)),
-    url("../images/tarot/tarot_10_wheel_of_fortune.webp");
+    url("../images/tarot/bg/tarot_10_wheel_of_fortune.webp");
   background-position: center, right 24%;
   background-size: cover, cover;
   background-repeat: no-repeat;
@@ -844,7 +844,7 @@ form.form-quiet:hover, form.form-quiet:focus-within { opacity: 1; }
 .spread-opt[data-spread="celtic"] {
   background-image:
     linear-gradient(84deg, rgba(10, 16, 38, 0.97) 44%, rgba(10, 16, 38, 0.84) 68%, rgba(10, 16, 38, 0.32)),
-    url("../images/tarot/tarot_18_moon.webp");
+    url("../images/tarot/bg/tarot_18_moon.webp");
   background-position: center, right 18%;
   background-size: cover, cover;
   background-repeat: no-repeat;
@@ -2051,7 +2051,7 @@ body.ritual-open { overflow: hidden; }
   min-height: 140px;
   background-image:
     linear-gradient(80deg, rgba(10, 16, 38, 0.97) 42%, rgba(10, 16, 38, 0.8) 64%, rgba(10, 16, 38, 0.34)),
-    url("../images/tarot/tarot_00_fool.webp");
+    url("../images/tarot/bg/tarot_00_fool.webp");
   background-position: center, right 22%;
   background-size: cover, cover;
   background-repeat: no-repeat;
@@ -2061,7 +2061,7 @@ body.ritual-open { overflow: hidden; }
 .spread-window[data-window="fullmoon"] {
   background-image:
     linear-gradient(80deg, rgba(10, 16, 38, 0.97) 42%, rgba(10, 16, 38, 0.8) 64%, rgba(10, 16, 38, 0.34)),
-    url("../images/tarot/tarot_20_judgement.webp");
+    url("../images/tarot/bg/tarot_20_judgement.webp");
 }
 .so-window-until {
   font-family: var(--serif); font-size: 12px; font-weight: 700;
@@ -2073,7 +2073,7 @@ body.ritual-open { overflow: hidden; }
   grid-column: 1 / -1; min-height: 140px;
   background-image:
     linear-gradient(80deg, rgba(6, 9, 24, 0.97) 42%, rgba(6, 9, 24, 0.82) 64%, rgba(6, 9, 24, 0.4)),
-    url("../images/tarot/tarot_02_high_priestess.webp");
+    url("../images/tarot/bg/tarot_02_high_priestess.webp");
   background-position: center, right 20%;
   background-size: cover, cover;
   background-repeat: no-repeat;
