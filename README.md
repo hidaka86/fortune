@@ -44,9 +44,16 @@ python3 -m http.server 8000  # → http://localhost:8000
 ```
 index.html      # SPA本体
 css/style.css   # デザインシステム(夜空×金・明朝体)
+css/lp.css      # 検索流入用LPの差分スタイル
 js/data.js      # 占術データ(星座・九星・タロット・通変星・称号)
 js/fortune.js   # 計算ロジック(四柱・九星・月星座・判定エンジン)
 js/app.js       # UI(マイページ・シェア・図鑑・PWA)
+today/ tarot/ horoscope/ shichusuimei/ aisho/ shogo/
+                # 検索流入用の静的ランディングページ(SEOの入口)
+seiza/          # 12星座の一覧+星座別ページ13本(data.jsのZODIACと同値)
+sitemap.xml     # サイトマップ(LP追加時はここに追記)
+robots.txt      # クローラ設定
+404.html        # Not Foundページ
 sw.js           # Service Worker
 manifest.json   # PWAマニフェスト
 icons/          # アプリアイコン

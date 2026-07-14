@@ -1,0 +1,89 @@
+/* MYOURISCOPE — ランディングページ(検索流入の入口)専用スタイル
+   本体のデザインシステム css/style.css を前提に、LPで必要な差分だけを足す */
+
+/* LPのh1は、アプリの見出し(view-head h2)と同じ佇まいで */
+.view-head h1 {
+  font-family: var(--serif); font-weight: 700;
+  font-size: clamp(28px, 4vw, 38px); letter-spacing: .06em;
+  margin-top: 10px; text-wrap: balance; color: var(--indigo);
+}
+.view-head h1::after {
+  content: ""; display: block; width: 190px; height: 42px;
+  background: url("../assets/site/divider.webp") center / contain no-repeat;
+  margin: 14px auto 0; opacity: .85;
+}
+
+/* aタグに.btn系を使えるように */
+a.btn, a.btn-observe { display: inline-block; text-decoration: none; text-align: center; }
+
+/* ヘッダー:リンク版ナビ */
+.lp-nav a {
+  display: inline-block; white-space: nowrap; text-decoration: none;
+  color: var(--muted); font-size: 14px; font-weight: 500; letter-spacing: .04em;
+  padding: 8px 12px; transition: color .25s ease;
+}
+.lp-nav a:hover { color: var(--ink); }
+.lp-nav a[aria-current="page"] { color: var(--indigo); font-weight: 700; box-shadow: inset 0 -1px 0 var(--gold); }
+
+/* パンくず */
+.lp-breadcrumb { font-size: 12.5px; color: var(--muted); letter-spacing: .05em; margin-bottom: 18px; }
+.lp-breadcrumb a { color: inherit; text-decoration: none; }
+.lp-breadcrumb a:hover { color: var(--gold-bright); }
+
+/* 本文(panel + guide-article と併用) */
+.lp-article { margin-top: 30px; }
+.lp-article h2 {
+  font-family: var(--serif); font-size: 18.5px; font-weight: 700; letter-spacing: .05em;
+  color: var(--indigo); margin: 40px 0 12px; padding-bottom: 10px;
+  border-bottom: 1px solid var(--hairline);
+}
+.lp-article h2::before { content: "✦ "; color: var(--gold); font-size: 12px; vertical-align: 2px; }
+.lp-article h2:first-child { margin-top: 0; }
+
+/* CTA */
+.lp-cta { text-align: center; margin: 36px 0; }
+.lp-cta-note { font-size: 12.5px; color: var(--muted); margin-top: 12px; letter-spacing: .04em; }
+
+/* FAQ */
+.lp-faq details { border-bottom: 1px solid var(--hairline); }
+.lp-faq details:last-of-type { border-bottom: none; }
+.lp-faq summary {
+  cursor: pointer; list-style: none; position: relative;
+  font-weight: 700; font-size: 15px; color: var(--indigo);
+  padding: 13px 32px 13px 0; letter-spacing: .03em; line-height: 1.7;
+}
+.lp-faq summary::-webkit-details-marker { display: none; }
+.lp-faq summary::after {
+  content: "+"; position: absolute; right: 4px; top: 11px;
+  color: var(--gold); font-size: 18px; font-weight: 400;
+}
+.lp-faq details[open] summary::after { content: "−"; }
+.lp-faq details > p { padding: 0 0 16px; }
+
+/* 関連ページ */
+.lp-related { max-width: 720px; margin: 44px auto 0; }
+.lp-related-title {
+  text-align: center; font-family: var(--latin);
+  font-size: 13px; font-weight: 600; letter-spacing: .4em;
+  color: var(--gold); text-transform: uppercase; margin-bottom: 16px;
+}
+.lp-related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.lp-related-grid a {
+  display: block; text-decoration: none; text-align: center;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.6);
+  padding: 14px 12px; color: var(--ink); font-size: 14px; letter-spacing: .04em;
+  transition: border-color .2s ease, color .2s ease, transform .15s ease;
+}
+.lp-related-grid a:hover { border-color: rgba(168, 132, 78, 0.5); color: var(--gold-bright); transform: translateY(-1px); }
+.lp-related-grid a small { display: block; color: var(--muted); font-size: 11.5px; margin-top: 3px; letter-spacing: .02em; }
+
+/* タロットLPのカード見本 */
+.lp-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 14px; margin: 18px 0 6px; }
+
+/* 本文中のリンク */
+.guide-article a { color: var(--gold-bright); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: rgba(168, 132, 78, 0.45); }
+.guide-article a:hover { text-decoration-color: currentColor; }
+
+/* 12星座グリッド(項目が多いので少し詰める) */
+.lp-related-signs { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
