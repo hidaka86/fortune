@@ -6,7 +6,18 @@
 ## 公開URL
 
 - 本番: https://myouriscope.com/ (GitHub Pages + 独自ドメイン / pushで自動デプロイ)
+- 英語版: https://myouriscope.com/?lang=en (海外からの流入向け。ブラウザ言語が日本語以外なら自動で英語表示)
 - 旧URL: https://hidaka86.github.io/fortune/ (独自ドメイン有効化後は自動リダイレクト)
+
+## 多言語(日英)
+
+ビルドなしのまま、ランタイムで日英を切り替えます。言語判定は `?lang=en|ja` →
+`localStorage(ms_lang)` → ブラウザ言語(日本語以外はEN)の順。ヘッダー右上のボタンで手動切替も可能。
+実装の詳細と用語の正準訳は [`docs/I18N.md`](docs/I18N.md) を参照。
+
+- `js/i18n.js`: 言語判定・辞書・`L()/NM()/cardName()` などのヘルパー・静的UIの差し替え
+- `js/data.en.js`: 占術データの表示テキストの英語版(英語時のみ読み込み)
+- `js/{app,fortune}.js`: 文中の日本語は `L("日本語", "English")` で二言語化(日本語表示は不変)
 
 ## 主な機能
 
@@ -44,7 +55,9 @@ python3 -m http.server 8000  # → http://localhost:8000
 ```
 index.html      # SPA本体
 css/style.css   # デザインシステム(夜空×金・明朝体)
+js/i18n.js      # 日英切替(言語判定・辞書・L()/NM()ヘルパー・静的UI差し替え)
 js/data.js      # 占術データ(星座・九星・タロット・通変星・称号)
+js/data.en.js   # 占術データの英語版(英語時のみ読み込み)
 js/fortune.js   # 計算ロジック(四柱・九星・月星座・判定エンジン)
 js/app.js       # UI(マイページ・シェア・図鑑・PWA)
 sw.js           # Service Worker
