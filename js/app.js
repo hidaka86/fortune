@@ -3249,39 +3249,39 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
     { name: fd.get("name1")?.trim(), birthdate: fd.get("birthdate1") },
     { name: fd.get("name2")?.trim(), birthdate: fd.get("birthdate2") },
   );
-  const nameA = r.a.name ? esc(r.a.name) : "あなた";
-  const nameB = r.b.name ? esc(r.b.name) : "お相手";
+  const nameA = r.a.name ? esc(r.a.name) : L("あなた", "You");
+  const nameB = r.b.name ? esc(r.b.name) : L("お相手", "Partner");
   const keyword = aishoKeyword(r);
   const fromA = perspectiveCompat(r.a, r.b, nameA, nameB);
   const fromB = perspectiveCompat(r.b, r.a, nameB, nameA);
   const topics = aishoTopics(r);
   const shogoA = fortuneTitle(fd.get("birthdate1"));
   const shogoB = fortuneTitle(fd.get("birthdate2"));
-  addToCollection(shogoA.title, r.a.name || "あなた");
-  addToCollection(shogoB.title, r.b.name || "お相手");
+  addToCollection(shogoA.title, r.a.name || L("あなた", "You"));
+  addToCollection(shogoB.title, r.b.name || L("お相手", "Partner"));
 
   lastShare.aisho = {
     eyebrow: "COMPATIBILITY",
     title: `「${keyword}」`,
     keywords: [`${shogoA.title} × ${shogoB.title}`],
-    score: r.total, scoreLabel: "ふたりの相性", scoreSuffix: "/100",
+    score: r.total, scoreLabel: L("ふたりの相性", "Your compatibility"), scoreSuffix: "/100",
     duo: { nameA, nameB, labelA: fromA.label, labelB: fromB.label },
-    x: `「${shogoA.title}」と「${shogoB.title}」の相性は ${r.total}/100 —「${keyword}」でした ✦ あなたたちは?`,
+    x: L(`「${shogoA.title}」と「${shogoB.title}」の相性は ${r.total}/100 —「${keyword}」でした ✦ あなたたちは?`, `“${shogoA.title}” and “${shogoB.title}” score ${r.total}/100 — “${keyword}” ✦ How about you two?`),
     url: buildInviteUrl(r.a.name, shogoA.title),
   };
-  recordHistory("相性診断", `${nameA} × ${nameB} — ${r.total}/100`, `「${keyword}」(${r.band})。${r.advice}`);
+  recordHistory(L("相性診断", "Compatibility"), `${nameA} × ${nameB} — ${r.total}/100`, L(`「${keyword}」(${r.band})。${r.advice}`, `“${keyword}” (${r.band}). ${r.advice}`));
 
   const breakdown = [
-    { en: "ZODIAC", ja: "星座エレメント", pair: `${r.a.zodiac.name}(${r.a.zodiac.element}) × ${r.b.zodiac.name}(${r.b.zodiac.element})`, ...r.zodiac },
-    { en: "GOGYO", ja: "九星の五行", pair: `${r.a.kyusei.name} × ${r.b.kyusei.name}`, ...r.gogyo },
-    { en: "ETO", ja: "干支の配置", pair: `${r.a.eto.name}(${r.a.eto.animal}) × ${r.b.eto.name}(${r.b.eto.animal})`, ...r.eto },
-    { en: "BOND", ja: "絆の質(日主の対話)", pair: `${r.a.kan} × ${r.b.kan}`, score: r.bond.score, note: `生まれた「日」の気同士の相性です。${nameA}にとって${nameB}は「${r.bond.ab.label}」(${r.bond.ab.star}) — ${r.bond.ab.note} 逆に${nameB}から見た${nameA}は「${r.bond.ba.label}」(${r.bond.ba.star})です。` },
+    { en: "ZODIAC", ja: L("星座エレメント", "Zodiac elements"), pair: `${NM(r.a.zodiac.name)}(${NM(r.a.zodiac.element)}) × ${NM(r.b.zodiac.name)}(${NM(r.b.zodiac.element)})`, ...r.zodiac },
+    { en: "GOGYO", ja: L("九星の五行", "Nine Star elements"), pair: `${NM(r.a.kyusei.name)} × ${NM(r.b.kyusei.name)}`, ...r.gogyo },
+    { en: "ETO", ja: L("干支の配置", "Chinese zodiac"), pair: `${NM(r.a.eto.name)}(${r.a.eto.animal}) × ${NM(r.b.eto.name)}(${r.b.eto.animal})`, ...r.eto },
+    { en: "BOND", ja: L("絆の質(日主の対話)", "Bond quality (day-master dialogue)"), pair: `${NM(r.a.kan)} × ${NM(r.b.kan)}`, score: r.bond.score, note: L(`生まれた「日」の気同士の相性です。${nameA}にとって${nameB}は「${r.bond.ab.label}」(${r.bond.ab.star}) — ${r.bond.ab.note} 逆に${nameB}から見た${nameA}は「${r.bond.ba.label}」(${r.bond.ba.star})です。`, `The affinity between the energies of the “day” you were each born on. To ${nameA}, ${nameB} is “${r.bond.ab.label}” (${NM(r.bond.ab.star)}) — ${r.bond.ab.note} Seen the other way, ${nameA} is “${r.bond.ba.label}” (${NM(r.bond.ba.star)}) to ${nameB}.`) },
   ].map((x) => `
     <div class="result-card">
       ${cardH4(x.en, x.ja)}
       <p><strong>${x.pair}</strong></p>
       <div class="meter" style="margin-top:12px">
-        <span class="meter-label">相性度</span>
+        <span class="meter-label">${L("相性度", "Affinity")}</span>
         <div class="meter-track"><div class="meter-fill" data-w="${x.score}"></div></div>
         <span class="meter-value">${x.score}</span>
       </div>
@@ -3294,28 +3294,28 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <span class="result-symbol">縁</span>
       <p class="result-eyebrow">COMPATIBILITY REPORT</p>
       <h3 class="result-title">${nameA} × ${nameB}</h3>
-      <p class="result-keyword">ふたりの関係を一言でいうと —「${keyword}」</p>
+      <p class="result-keyword">${L(`ふたりの関係を一言でいうと —「${keyword}」`, `Your bond in a word — “${keyword}”`)}</p>
       <p class="shogo-vs">「${shogoA.title}」<span>×</span>「${shogoB.title}」</p>
       <div class="total-score" style="margin-top:14px"><span class="num" data-count="${r.total}">0</span><span class="denom"> / 100</span></div>
-      <p class="result-lead" style="margin-inline:auto">${r.band}。${r.advice}</p>
+      <p class="result-lead" style="margin-inline:auto">${L(`${r.band}。${r.advice}`, `${r.band}. ${r.advice}`)}</p>
       ${shareRowHtml("aisho")}
     </div>
     <div class="result-grid" style="margin-bottom:18px">
       <div class="result-card">
-        ${cardH4("FOR YOU", `${nameA}から見ると`)}
+        ${cardH4("FOR YOU", L(`${nameA}から見ると`, `As ${nameA} sees it`))}
         <p><strong style="color:var(--gold-bright)">「${fromA.label}」</strong></p>
         <div class="meter" style="margin-top:12px">
-          <span class="meter-label">安心度</span>
+          <span class="meter-label">${L("安心度", "Ease")}</span>
           <div class="meter-track"><div class="meter-fill ${fromA.score >= 80 ? "hi" : fromA.score >= 68 ? "mid" : "lo"}" data-w="${fromA.score}"></div></div>
           <span class="meter-value">${fromA.score}</span>
         </div>
         <p class="sub" style="margin-top:12px">${fromA.note}</p>
       </div>
       <div class="result-card">
-        ${cardH4("FOR PARTNER", `${nameB}から見ると`)}
+        ${cardH4("FOR PARTNER", L(`${nameB}から見ると`, `As ${nameB} sees it`))}
         <p><strong style="color:var(--gold-bright)">「${fromB.label}」</strong></p>
         <div class="meter" style="margin-top:12px">
-          <span class="meter-label">安心度</span>
+          <span class="meter-label">${L("安心度", "Ease")}</span>
           <div class="meter-track"><div class="meter-fill ${fromB.score >= 80 ? "hi" : fromB.score >= 68 ? "mid" : "lo"}" data-w="${fromB.score}"></div></div>
           <span class="meter-value">${fromB.score}</span>
         </div>
@@ -3323,24 +3323,24 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       </div>
     </div>
     <div class="result-card span-all" style="margin-bottom:18px">
-      ${cardH4("HANDBOOK", "ふたりの取扱説明書")}
-      <p class="theme-point" style="border-top:none;padding-top:0"><strong>◎ ふたりの遊び方</strong> — ${topics.play}</p>
-      <p class="theme-point"><strong>⚠ ケンカの火種はここ</strong> — ${topics.friction}</p>
-      <p class="theme-point"><strong>✦ ふたりの吉日は ${topics.lucky.m}月${topics.lucky.d}日</strong> — ${topics.lucky.note}遊びの予定・大事な話はこの日に。</p>
+      ${cardH4("HANDBOOK", L("ふたりの取扱説明書", "Your handbook"))}
+      <p class="theme-point" style="border-top:none;padding-top:0"><strong>${L("◎ ふたりの遊び方", "◎ How you play together")}</strong> — ${topics.play}</p>
+      <p class="theme-point"><strong>${L("⚠ ケンカの火種はここ", "⚠ Where sparks fly")}</strong> — ${topics.friction}</p>
+      <p class="theme-point"><strong>${L(`✦ ふたりの吉日は ${topics.lucky.m}月${topics.lucky.d}日`, `✦ Your lucky day is ${fmtMD(topics.lucky.m, topics.lucky.d)}`)}</strong> — ${topics.lucky.note}${L("遊びの予定・大事な話はこの日に。", " Save your outings and big conversations for that day.")}</p>
     </div>
     <div class="result-card span-all" style="margin-bottom:18px">
-      ${cardH4("HOW IT WORKS", "総合スコアの計算式")}
-      <p class="sub" style="margin-bottom:10px">上の「見え方」は九星の五行だけで見た二人の景色。総合スコアは星座・五行・干支・日主の四つの手法を合算するため、見え方と点が違うことがあります。</p>
+      ${cardH4("HOW IT WORKS", L("総合スコアの計算式", "How the total is calculated"))}
+      <p class="sub" style="margin-bottom:10px">${L("上の「見え方」は九星の五行だけで見た二人の景色。総合スコアは星座・五行・干支・日主の四つの手法を合算するため、見え方と点が違うことがあります。", "The “how it looks” panels above read the two of you through the Nine Star elements alone. The total blends four methods — zodiac, Five Elements, Chinese zodiac and day master — so the view and the score can differ.")}</p>
       ${logicFlowHtml([
-        { tag: "星座エレメント", main: String(r.zodiac.score), sub: "× 30%" },
+        { tag: L("星座エレメント", "Zodiac elements"), main: String(r.zodiac.score), sub: "× 30%" },
         "+",
-        { tag: "九星の五行", main: String(r.gogyo.score), sub: "× 25%" },
+        { tag: L("九星の五行", "Nine Star elements"), main: String(r.gogyo.score), sub: "× 25%" },
         "+",
-        { tag: "干支の配置", main: String(r.eto.score), sub: "× 25%" },
+        { tag: L("干支の配置", "Chinese zodiac"), main: String(r.eto.score), sub: "× 25%" },
         "+",
-        { tag: "日主の対話", main: String(r.bond.score), sub: "× 20%" },
+        { tag: L("日主の対話", "Day-master dialogue"), main: String(r.bond.score), sub: "× 20%" },
         "=",
-        { tag: "総合", main: String(r.total), sub: "/ 100", result: true },
+        { tag: L("総合", "Total"), main: String(r.total), sub: "/ 100", result: true },
       ])}
     </div>
     <div class="result-grid">${breakdown}</div>
@@ -3408,9 +3408,16 @@ function renderInviteBanner() {
   const title = q.get("it");
   if (!title || title.length > 40) return;
   const inviter = (q.get("in") || "").slice(0, 20);
-  addToCollection(title, inviter || "友人");
-  const who = inviter ? `${esc(inviter)}さん` : "友人";
-  el.innerHTML = `
+  addToCollection(title, inviter || L("友人", "A friend"));
+  const who = inviter ? whoLabel(esc(inviter)) : L("友人", "A friend");
+  el.innerHTML = I18N.en ? `
+    <div class="invite-card">
+      <p class="invite-seal">✦ Invitation ✦</p>
+      <p class="invite-line">${who}'s destined title is</p>
+      <p class="invite-title">“${esc(title)}”</p>
+      <p class="invite-line">— one of 1,080 types. <strong>What's yours?</strong></p>
+      <button class="btn btn-primary" data-nav="integrated">Discover your title</button>
+    </div>` : `
     <div class="invite-card">
       <p class="invite-seal">✦ 招待状 ✦</p>
       <p class="invite-line">${who}の運命の称号は</p>
@@ -3422,11 +3429,11 @@ function renderInviteBanner() {
 
 /* ---------- 読みもの(占いの手引き) ---------- */
 const GUIDE_ARTICLES = {
-  tarot: { img: "images/tarot/tarot_17_star.webp", title: "タロットとは", lead: "引いた1枚で「いまの空気」がわかる。78枚の意味と、迷わない引き方。", mins: 4 },
-  western: { img: "assets/site/icon_western.webp", title: "ホロスコープとは", lead: "生年月日で「自分の設計図」がわかる。星座占いのその先へ。", mins: 4 },
-  eastern: { img: "assets/site/icon_eastern.webp", title: "<span class=\"nw\">四柱推命と</span><span class=\"nw\">九星気学とは</span>", lead: "生年月日だけで「自分の性質と今日の風向き」がわかる。東洋占い、最初の一歩。", mins: 4 },
-  aisho: { img: "assets/site/icon_aisho.webp", title: "相性診断のしくみ", lead: "なぜ「あなたから」と「相手から」で答えが違うのか。点数の中身、ぜんぶ見せます。", mins: 3 },
-  about: { img: "assets/site/icon_integrated.webp", title: "MYOURISCOPEの思想", lead: "占いは、決定ではなく観測。このサイトが大切にしていることと、鑑定のロジック。", mins: 3 },
+  tarot: { img: "images/tarot/tarot_17_star.webp", title: L("タロットとは", "What is Tarot?"), lead: L("引いた1枚で「いまの空気」がわかる。78枚の意味と、迷わない引き方。", "One card reads the mood of the moment. The meaning of all 78, and how to draw without second-guessing."), mins: 4 },
+  western: { img: "assets/site/icon_western.webp", title: L("ホロスコープとは", "What is a Horoscope?"), lead: L("生年月日で「自分の設計図」がわかる。星座占いのその先へ。", "Your birth date reveals your blueprint. A step beyond sun-sign astrology."), mins: 4 },
+  eastern: { img: "assets/site/icon_eastern.webp", title: L("<span class=\"nw\">四柱推命と</span><span class=\"nw\">九星気学とは</span>", "<span class=\"nw\">Four Pillars &amp;</span> <span class=\"nw\">Nine Star Ki</span>"), lead: L("生年月日だけで「自分の性質と今日の風向き」がわかる。東洋占い、最初の一歩。", "Your birth date alone shows your nature and today's prevailing wind. A first step into Eastern divination."), mins: 4 },
+  aisho: { img: "assets/site/icon_aisho.webp", title: L("相性診断のしくみ", "How Compatibility Works"), lead: L("なぜ「あなたから」と「相手から」で答えが違うのか。点数の中身、ぜんぶ見せます。", "Why the answer differs seen from you and seen from them. We show every part of the score."), mins: 3 },
+  about: { img: "assets/site/icon_integrated.webp", title: L("MYOURISCOPEの思想", "The MYOURISCOPE Philosophy"), lead: L("占いは、決定ではなく観測。このサイトが大切にしていることと、鑑定のロジック。", "Divination as observation, not decree. What this site holds dear, and the logic behind the readings."), mins: 3 },
 };
 
 function guideCardImg(n, cap) {
@@ -3456,8 +3463,38 @@ function aspectFig(deg, label, color, note) {
 function guideArticleHtml(key) {
   if (key === "tarot") {
     const suits = Object.entries(MINOR_SUITS).map(([k, s]) => `
-      <figure class="ga-fig"><img src="images/tarot/tarot_${k}_ace.webp" alt="${s.ja}のエース" loading="lazy" />
-      <figcaption><strong>${s.ja}</strong><br>${s.theme}</figcaption></figure>`).join("");
+      <figure class="ga-fig"><img src="images/tarot/tarot_${k}_ace.webp" alt="${L(`${s.ja}のエース`, `Ace of ${s.en}`)}" loading="lazy" />
+      <figcaption><strong>${I18N.en ? s.en : s.ja}</strong><br>${s.theme}</figcaption></figure>`).join("");
+    if (I18N.en) return `
+      <h3>Tarot — one world in 78 cards</h3>
+      <p>Tarot began as a 15th-century Italian card game and was shaped into a tool for divination from the 18th century onward. A deck holds <strong>22 Major Arcana</strong> and <strong>56 Minor Arcana</strong> — 78 cards in all. “Arcana” is Latin for “secrets.”</p>
+      <h3>The Major Arcana — life's great turning points</h3>
+      <p>The 22 cards from 0 The Fool to 21 The World tell the story of a life, from setting out to arriving. When these cards appear in a reading, it's a sign that a theme larger than the everyday is in motion.</p>
+      <div class="ga-cards">
+        ${guideCardImg(0, "0 The Fool<br>The first step")}
+        ${guideCardImg(6, "VI The Lovers<br>Choice and love")}
+        ${guideCardImg(10, "X Wheel of Fortune<br>A turning point")}
+        ${guideCardImg(16, "XVI The Tower<br>Collapse and renewal")}
+        ${guideCardImg(17, "XVII The Star<br>Hope")}
+        ${guideCardImg(21, "XXI The World<br>Completion")}
+      </div>
+      <h3>The Minor Arcana — the texture of daily life</h3>
+      <p>The remaining 56 cards divide into four suits, each mirroring one area of life. Every suit runs from Ace through Ten, plus the court cards: Page, Knight, Queen and King.</p>
+      <div class="ga-cards">${suits}</div>
+      <h3>Upright and reversed</h3>
+      <p>A card that lands facing up is <strong>upright</strong>; upside down, it's <strong>reversed</strong>. Reversed doesn't mean “bad” — it shows the card's power running <em>excessive, lacking, or turned inward</em>. A reversed Sun, for instance, isn't a light gone out; read it as a light with a cloud passing over it.</p>
+      <h3>Spreads — the layout shapes the question</h3>
+      <p>How many cards you draw, and in what arrangement, is called a “spread.” MYOURISCOPE lets you choose one to fit what you want to know.</p>
+      <ul class="ga-list">
+        <li><strong>Today's Card</strong> — the mood of this single day, in a word. Once a day only, from the home page.</li>
+        <li><strong>One Oracle (1 card)</strong> — one dilemma in front of you, answered on the spot.</li>
+        <li><strong>Three Cards</strong> — past, present, future. For seeing where “now” sits in the current.</li>
+        <li><strong>Celtic Cross (10 cards)</strong> — root cause, present, the unconscious, surroundings, and future possibilities: one theme from many angles. The most famous full spread, used for over a century.</li>
+      </ul>
+      <p class="ga-mid"><button class="linklike" data-nav="today">→ Start with “Today's Card” (it takes 30 seconds)</button></p>
+      <h3>How we draw here — your own hand decides the outcome</h3>
+      <p>MYOURISCOPE's tarot never leaves the randomness to the machine alone. <strong>The instant you lift your finger from the shuffle, the pile you cut, the spot you draw from the fan</strong> — the very motion of your hand is mixed in to decide the card. The same question never meets the same touch twice. That's why the card is yours.</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="tarot">Draw a card</button></p>`;
     return `
       <h3>タロットは、78枚でひとつの世界</h3>
       <p>タロットの起源は15世紀イタリアの札遊びに遡り、18世紀以降に占いの道具として体系化されました。1組は<strong>大アルカナ22枚</strong>と<strong>小アルカナ56枚</strong>、あわせて78枚。「アルカナ」はラテン語で「秘密」という意味です。</p>
@@ -3490,7 +3527,28 @@ function guideArticleHtml(key) {
       <p class="ga-cta"><button class="btn btn-primary" data-nav="tarot">タロットを引いてみる</button></p>`;
   }
   if (key === "western") {
-    const planets = PLANET_BODIES.map((b) => `<li><strong>${b.glyph}︎ ${b.ja}</strong><small>${b.role}${b.gen ? "(世代のテーマ)" : ""}</small></li>`).join("");
+    const planets = PLANET_BODIES.map((b) => `<li><strong>${b.glyph}︎ ${b.ja}</strong><small>${b.role}${b.gen ? L("(世代のテーマ)", " (a generational theme)") : ""}</small></li>`).join("");
+    if (I18N.en) return `
+      <h3>A horoscope is “a photograph of the sky at your birth”</h3>
+      <p>Where the Sun, Moon and planets stood in the sky the moment you were born — drawn onto a single circle — is your <strong>birth chart (natal chart)</strong>. The “sun sign” everyone knows looks only at the Sun's position. The real sky holds nine other bodies, each in charge of a different area of life.</p>
+      <h3>The ten bodies — who handles what</h3>
+      <ul class="ga-planets">${planets}</ul>
+      <h3>Twelve signs and four elements</h3>
+      <p>The twelve signs sort into four temperaments (elements). <strong>Fire</strong> (Aries, Leo, Sagittarius) is instinct and passion; <strong>Earth</strong> (Taurus, Virgo, Capricorn) is the practical and steady; <strong>Air</strong> (Gemini, Libra, Aquarius) is intellect and words; <strong>Water</strong> (Cancer, Scorpio, Pisces) is feeling and empathy. If your “Moon is in a Water sign,” your unguarded emotions are the empathic kind — and so on, reading each body times its sign.</p>
+      <h3>Aspects — conversations between the planets</h3>
+      <p>When bodies form certain angles in the chart, they influence one another. Your natal aspects are a list of the “chemical reactions” that happen often within you.</p>
+      <div class="ga-asps">
+        ${aspectFig(0, "0° Conjunction", "#A8844E", "amplify each other")}
+        ${aspectFig(120, "120° Trine", "#2E8C7E", "an inborn talent")}
+        ${aspectFig(90, "90° Square", "#C05C82", "strength each time you cross it")}
+      </div>
+      <p class="ga-mid"><button class="linklike" data-nav="western">→ See your own ten bodies and aspects</button></p>
+      <h3>The Ascendant — what your birth time and place reveal</h3>
+      <p>The sign rising over the eastern horizon at the moment of your birth is your <strong>Ascendant (rising sign)</strong> — the first impression you give, and the doorway into your life. Because the horizon differs by location, it can only be calculated with <em>both your birth time and your birthplace</em>. Birth records often note the time.</p>
+      <h3>The sky keeps moving — transits</h3>
+      <p>If the birth chart is “the blueprint you were born with,” the current sky (transits) is “today's weather.” The Moon moves to the next sign in about 2.5 days; Jupiter circles the sky in about 12 years, Saturn in about 29.5. The horoscope's “today's sky” reads, day by day, the conversation between today's bodies and your birth chart.</p>
+      <p>And slow-moving Saturn marks a milestone roughly every seven years. The reading's <strong>“five-year current”</strong> uses this Saturn rhythm to read the chapter of life you're now in — good for when you want to sense a larger flow, like a career move or a relocation.</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="western">Chart your own stars</button></p>`;
     return `
       <h3>ホロスコープは「生まれた瞬間の空の写真」</h3>
       <p>あなたが生まれたその時刻、太陽・月・惑星が空のどこにいたか——それを一枚の円に描いたものが<strong>出生図(ネイタルチャート)</strong>です。星占いでおなじみの「◯◯座」は、このうち太陽の位置だけを見たもの。実際の空にはあと9つの天体があり、それぞれが人生の別の領域を担当しています。</p>
@@ -3514,7 +3572,24 @@ function guideArticleHtml(key) {
       <p class="ga-cta"><button class="btn btn-primary" data-nav="western">自分の星を調べる</button></p>`;
   }
   if (key === "eastern") {
-    const stars = Object.entries(TSUHENSEI).map(([name, t]) => `<li><strong>${name}</strong><small>${t.gloss}</small></li>`).join("");
+    const stars = Object.entries(TSUHENSEI).map(([name, t]) => `<li><strong>${NM(name)}</strong><small>${t.gloss}</small></li>`).join("");
+    if (I18N.en) return `
+      <h3>Your birth date is built from four pillars</h3>
+      <p>Four Pillars (Bazi) assigns a stem-and-branch pair to each of your <strong>year, month, day and hour</strong> of birth, reading them as four pillars — the king of Eastern divination. The chart that lays out these four pillars, “your owner's manual,” is called the <strong>meishiki (chart)</strong>. Most important is the <strong>stem of the day pillar — the day master</strong>, which represents you yourself.</p>
+      <h3>The ten stems — you are something in nature</h3>
+      <p>There are ten day masters, each likened to something in nature: Great Tree (Yang Wood), Wildflower (Yin Wood), Sun (Yang Fire), Lantern (Yin Fire), Mountain (Yang Earth), Field (Yin Earth), Steel (Yang Metal), Jewel (Yin Metal), Great River (Yang Water), Gentle Rain (Yin Water). A “Sun person” and a “Lantern person” shine in utterly different ways though both are Fire — that's the resolution at which this tool observes people.</p>
+      <h3>The Ten Gods — ten winds that come around</h3>
+      <p>Reading the relationship between your day master and the stems and branches that circle by each day and month gives the <strong>Ten Gods (tsūhensei)</strong>. On the same day, a different day master meets a different wind — that is what “today's current” really is.</p>
+      <p>There are ten, but <strong>you don't need to memorize them all — just read the ones that appear in your result</strong>. Roughly four types: <strong>winds of holding your own</strong> (Friend, Rob Wealth), <strong>winds of pleasure and expression</strong> (Eating God, Hurting Officer), <strong>winds of money and connection</strong> (Indirect &amp; Direct Wealth), and <strong>winds of trial and learning</strong> (Seven Killings, Direct Officer, Indirect &amp; Direct Resource).</p>
+      <details class="explain"><summary>See all ten</summary>
+        <ul class="ga-stars">${stars}</ul>
+      </details>
+      <p class="ga-mid"><button class="linklike" data-nav="eastern">→ See your day master and today's wind</button></p>
+      <h3>Where daily, monthly and yearly luck overlap</h3>
+      <p>The daily wind blows above the month's whole current, and beneath that lies the terrain of the year. MYOURISCOPE's “today's verdict” adds to these the turning of the Chinese zodiac (triple harmony, branch union, clash) and the phase of the moon, tallying them as “votes” from several calendars.</p>
+      <h3>Nine Star Ki — another Eastern compass</h3>
+      <p>Nine Star Ki reads temperament and cycles from your <strong>natal star</strong> (nine kinds, from One White Water to Nine Purple Fire), fixed by your birth year. The nine stars correspond to the Five Elements (Wood, Fire, Earth, Metal, Water) and travel across a direction board each month — which is how “lucky directions” are found. The compass on your My Page runs on this system.</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="eastern">Cast your chart from your birth date</button></p>`;
     return `
       <h3>生年月日は、4本の柱でできている</h3>
       <p>四柱推命は、生まれた<strong>年・月・日・時</strong>それぞれに干支(十干×十二支)を割り当て、4本の柱として読む東洋占術の王様です。この4本の柱を一覧にした"あなたの取扱説明書"を<strong>命式(めいしき)</strong>と呼びます。なかでも重要なのが<strong>日柱の干=日主(にっしゅ)</strong>で、これがあなた自身を表します。</p>
@@ -3534,6 +3609,26 @@ function guideArticleHtml(key) {
       <p class="ga-cta"><button class="btn btn-primary" data-nav="eastern">生年月日から、自分の命式を出してみる</button></p>`;
   }
   if (key === "aisho") {
+    if (I18N.en) return `
+      <h3>Compatibility can't be measured by one ruler</h3>
+      <p>MYOURISCOPE's compatibility reading layers four independent methods into one total score. A single method too easily throws up a “happens to be good / bad” — the design measures with several rulers, so that what still lines up reveals the real nature of the two of you.</p>
+      <div class="ga-weightbar" aria-hidden="true">
+        <i style="flex-basis:30%" class="wb1"><b>30%</b></i><i style="flex-basis:25%" class="wb2"><b>25%</b></i><i style="flex-basis:25%" class="wb3"><b>25%</b></i><i style="flex-basis:20%" class="wb4"><b>20%</b></i>
+      </div>
+      <ul class="ga-list">
+        <li><strong>Vibe and tempo (30%)</strong> — zodiac elements (Fire, Earth, Air, Water). How everyday talk and fun mesh.</li>
+        <li><strong>Flow of energy (25%)</strong> — the Nine Star elements. Which of you energizes the other (technically: generating and controlling cycles).</li>
+        <li><strong>Turn of the birth years (25%)</strong> — the Chinese-zodiac combination. A pair that naturally draws together, or opposites (technically: triple harmony, branch union, clash).</li>
+        <li><strong>Quality of the bond (20%)</strong> — the dialogue between the “days” you were each born on. The most personal layer, differing even between classmates by their birth day.</li>
+      </ul>
+      <h3>Why the answer differs “from you” and “from them”</h3>
+      <p>The energy of the Five Elements flows with a <em>direction</em>. Water nurtures Wood, but Wood does not nurture Water — so an asymmetry appears: “to you, they are someone who lets you recharge,” while “to them, you are someone who makes them push hard.” This view comes in five relationships × ten stars — <strong>50 kinds</strong>. Show each other yours, and a conversation usually starts.</p>
+      <p class="ga-mid"><button class="linklike" data-nav="aisho">→ Try it with someone on your mind</button></p>
+      <h3>Your lucky day</h3>
+      <p>We actually turn the next 30 days of the calendar, looking for a day whose Chinese-zodiac branch forms a good angle with both of your birth years. It's a feature for bringing divination down to the practical “when should we meet.”</p>
+      <h3>Where sparks fly</h3>
+      <p>From <em>the lowest-scoring of the four layers</em>, we name the friction most likely to arise and how to sidestep it. Naming weaknesses, not only strengths — that, we think, is what makes a compatibility reading trustworthy.</p>
+      <p class="ga-cta"><button class="btn btn-primary" data-nav="aisho">Read it with someone</button></p>`;
     return `
       <h3>相性は、ひとつの物差しでは測れない</h3>
       <p>MYOURISCOPEの相性診断は、独立した4つの手法を重ねて総合スコアを出します。ひとつの占術だけだと「たまたま良い/悪い」が出やすい——複数の物差しで測って、それでも揃うところにふたりの本質が現れる、という設計です。</p>
@@ -3555,6 +3650,22 @@ function guideArticleHtml(key) {
       <p>4つの層のうち<em>いちばん点が低かった層</em>から、起こりやすいすれ違いと回避策を出しています。良いところだけでなく弱点も言う——それが信用できる相性診断だと考えています。</p>
       <p class="ga-cta"><button class="btn btn-primary" data-nav="aisho">誰かと診断してみる</button></p>`;
   }
+  if (I18N.en) return `
+    <h3>MYOURISCOPE — a place to observe the subtle order of things</h3>
+    <p>The name comes from “myōri” (the subtle order beneath things) and “scope” (an instrument of observation). We want this to be a place where you quietly watch the faint order deep within things — as if through a telescope — that words struggle to catch.</p>
+    <h3>Divination as observation, not decree</h3>
+    <p>Divination doesn't decide your future. It observes “the way the wind is blowing now” — the arrangement of the sky, the turning of the calendar — as a reference for how to walk through today. Roam freely on a tailwind day; don't rush on a headwind day. We hope this place can light that kind of small marker in your everyday.</p>
+    <h3>What we hold dear</h3>
+    <ul class="ga-list">
+      <li><strong>Protecting the once-a-day pleasure</strong> — Today's Card is once a day only. Draw it over and over and that one card's meaning thins out.</li>
+      <li><strong>Showing our reasoning</strong> — every score and verdict comes with “how it was calculated.” A reading you can enjoy mechanism and all, rather than a black-box oracle.</li>
+      <li><strong>Your data stays only on your device</strong> — your birth date and history are saved only within your device (browser) and are never sent to our servers.</li>
+    </ul>
+    <h3>The logic of the Full Reading</h3>
+    <p>Western astrology (sun and moon signs), Four Pillars (day master), Nine Star Ki (natal star), tarot — layer onto one person these rulers polished by separate civilizations, and a rounded, three-dimensional outline emerges instead of a flat one. The <strong>destined title</strong> is its summary: day master (10) × sun sign (12) × natal star (9) = <strong>1,080 kinds</strong>. Beneath the title we also note which word came from which method.</p>
+    <h3>The logic of today's verdict</h3>
+    <p>Four Pillars' daily and monthly luck, the turning of the Chinese zodiac, the moon's phase — each independent calendar method scores the day, and we tally them as “votes” to reach a verdict from Excellent to Rest. Days when everything points the same way come only a few times a year. On those days, we say so plainly.</p>
+    <p class="ga-cta"><button class="btn btn-primary" data-nav="integrated">Try a Full Reading</button></p>`;
   return `
     <h3>MYOURISCOPE — 妙なる理(ことわり)を観る場所</h3>
     <p>名前は「妙理(みょうり)」と「scope(観測器)」から。言葉にしがたい、ものごとの奥にあるかすかな理を、望遠鏡を覗くように静かに観る——そんな場所でありたいと思っています。</p>
@@ -3583,16 +3694,16 @@ function renderGuide(articleKey) {
         ${Object.entries(GUIDE_ARTICLES).map(([k, a]) => `
           <button class="guide-card" data-guide="${k}">
             <span class="gc-icon"><img src="${a.img}" alt="" loading="lazy" /></span>
-            <span class="gc-body"><strong>${a.title}</strong><small>${a.lead}</small><em class="gc-meta">読了 約${a.mins}分</em></span>
+            <span class="gc-body"><strong>${a.title}</strong><small>${a.lead}</small><em class="gc-meta">${L(`読了 約${a.mins}分`, `About ${a.mins} min read`)}</em></span>
             <span class="gc-arrow">→</span>
           </button>`).join("")}
       </div>
-      <p class="ga-cta" style="margin-top:30px"><button class="btn btn-primary" data-nav="today">読む前に、まず今日の一枚から</button></p>`;
+      <p class="ga-cta" style="margin-top:30px"><button class="btn btn-primary" data-nav="today">${L("読む前に、まず今日の一枚から", "Before you read — start with today's card")}</button></p>`;
   } else {
     const a = GUIDE_ARTICLES[articleKey];
     root.innerHTML = `
       <article class="guide-article panel">
-        <button class="ga-back" data-guide-back>← 手引きにもどる</button>
+        <button class="ga-back" data-guide-back>${L("← 手引きにもどる", "← Back to the guide")}</button>
         <p class="ritual-eyebrow" style="margin-top:14px">GUIDE</p>
         <h2 class="ga-title">${a.title}</h2>
         ${guideArticleHtml(articleKey)}
@@ -3608,10 +3719,10 @@ function renderGuide(articleKey) {
   const el = document.getElementById("tarot-bento-copy");
   if (!el) return;
   const copies = [
-    "カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。",
-    "言葉にできない迷いは、カードに聞く。あなたの手で引いた1枚だから、意味があります。",
-    "決められない夜に、深呼吸して1枚。78枚のフルデッキが、いまの答えをくれます。",
-    "シャッフルするその指先が、運命の1枚を選びます。答えは、もう78枚の中に。",
+    L("カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。", "The cards have already decided. The shuffle — and the draw — are in your hands."),
+    L("言葉にできない迷いは、カードに聞く。あなたの手で引いた1枚だから、意味があります。", "Ask the cards what words can't pin down. The card means something because your own hand drew it."),
+    L("決められない夜に、深呼吸して1枚。78枚のフルデッキが、いまの答えをくれます。", "On a night you can't decide, take a breath and draw one. A full 78-card deck offers today's answer."),
+    L("シャッフルするその指先が、運命の1枚を選びます。答えは、もう78枚の中に。", "The fingertips that shuffle choose your one card of fate. The answer is already among the 78."),
   ];
   el.textContent = copies[Math.floor(Math.random() * copies.length)];
 })();
