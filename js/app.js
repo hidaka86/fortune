@@ -222,6 +222,11 @@ function luckyHtml(daily) {
 }
 
 function cardH4(en, ja) {
+  // 英語時、装飾の英語見出し(en)と副題(ja→英語)が実質同じなら副題を省く
+  if (I18N.en && ja) {
+    const norm = (s) => String(s).toLowerCase().replace(/[^a-z0-9]/g, "");
+    if (norm(en) === norm(ja)) return `<h4>${en}</h4>`;
+  }
   return `<h4>${en}<span class="h4-ja">${ja}</span></h4>`;
 }
 
