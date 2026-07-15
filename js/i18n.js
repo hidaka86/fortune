@@ -1,5 +1,6 @@
 /* MYOURISCOPE — i18n(日英切替)
-   言語の決め方: ?lang=en|ja → localStorage(ms_lang) → ブラウザ言語(日本語以外はEN)。
+   言語の決め方: ?lang=en|ja → localStorage(ms_lang) → 地域(日本国外はEN)→ ブラウザ言語(日本語以外はEN)。
+   地域はタイムゾーン(Asia/Tokyo か否か)で判定 — 外部APIなし・オフラインでも即時。
    日本語表示は従来と完全に同一。英語時のみ辞書・データ差し替えが働く。 */
 
 (function detectLang() {
@@ -16,8 +17,21 @@
     try { const s = localStorage.getItem(KEY); if (s === "ja" || s === "en") lang = s; } catch { /* noop */ }
   }
   if (!lang) {
-    const nav = (navigator.language || "ja").toLowerCase();
-    lang = nav.startsWith("ja") ? "ja" : "en";
+    // 地域判定: 端末のタイムゾーンが日本以外なら英語。
+    // タイムゾーンが取得できない環境では UTC+9 を日本相当とみなす(保守的に従来挙動へ寄せる)
+    let inJapan = true;
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+      inJapan = tz ? tz === "Asia/Tokyo" : new Date().getTimezoneOffset() === -540;
+    } catch {
+      try { inJapan = new Date().getTimezoneOffset() === -540; } catch { /* noop */ }
+    }
+    if (!inJapan) {
+      lang = "en";
+    } else {
+      const nav = (navigator.language || "ja").toLowerCase();
+      lang = nav.startsWith("ja") ? "ja" : "en";
+    }
   }
   window.I18N = { lang, en: lang === "en" };
 })();

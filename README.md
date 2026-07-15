@@ -6,13 +6,14 @@
 ## 公開URL
 
 - 本番: https://myouriscope.com/ (GitHub Pages + 独自ドメイン / pushで自動デプロイ)
-- 英語版: https://myouriscope.com/?lang=en (海外からの流入向け。ブラウザ言語が日本語以外なら自動で英語表示)
+- 英語版: https://myouriscope.com/?lang=en (海外からの流入向け。日本国外の地域、または日本語以外のブラウザなら自動で英語表示)
 - 旧URL: https://hidaka86.github.io/fortune/ (独自ドメイン有効化後は自動リダイレクト)
 
 ## 多言語(日英)
 
 ビルドなしのまま、ランタイムで日英を切り替えます。言語判定は `?lang=en|ja` →
-`localStorage(ms_lang)` → ブラウザ言語(日本語以外はEN)の順。ヘッダー右上のボタンで手動切替も可能。
+`localStorage(ms_lang)` → 地域(タイムゾーンが日本以外はEN)→ ブラウザ言語(日本語以外はEN)の順。
+ヘッダー右上のボタンで手動切替も可能(選択は記憶され、以後の自動判定より優先)。
 実装の詳細と用語の正準訳は [`docs/I18N.md`](docs/I18N.md) を参照。
 
 - `js/i18n.js`: 言語判定・辞書・`L()/NM()/cardName()` などのヘルパー・静的UIの差し替え
