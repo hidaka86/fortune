@@ -419,13 +419,76 @@ function dailyVerdict(birthdate) {
   return { factors, total, rank, word, advice };
 }
 
-/* ---------- 月相(今日の月) ---------- */
+/* ---------- 月相 ---------- */
+const SYNODIC_MONTH = 29.530588853;
+
+// 正午JST時点の月齢(直近の新月からの経過日数)
+function moonAgeOf(y, m, d) {
+  const jd = toJDN(y, m, d) - 0.375;
+  return (((jd - 2451550.1) % SYNODIC_MONTH) + SYNODIC_MONTH) % SYNODIC_MONTH;
+}
+
+function moonPhaseOf(y, m, d) {
+  const age = moonAgeOf(y, m, d);
+  const idx = Math.floor((age / SYNODIC_MONTH) * 8 + 0.5) % 8;
+  return { ...MOON_PHASES[idx], age };
+}
+
+/* 今日の月 */
 function moonPhaseToday() {
   const now = new Date();
-  const jd = toJDN(now.getFullYear(), now.getMonth() + 1, now.getDate()) - 0.375;
-  const age = (((jd - 2451550.1) % 29.530588853) + 29.530588853) % 29.530588853;
-  const idx = Math.floor((age / 29.530588853) * 8 + 0.5) % 8;
-  return { ...MOON_PHASES[idx], age: Math.round(age) };
+  const p = moonPhaseOf(now.getFullYear(), now.getMonth() + 1, now.getDate());
+  return { ...p, age: Math.round(p.age) };
+}
+
+/* ---------- 月と気の暦(ホームのカレンダー) ----------
+   月齢は1日にちょうど1進むので、正午の月齢が朔・望の瞬間から±半日以内に
+   ある日だけが「新月の日」「満月の日」になる(ひと月にひとつずつ) */
+function isNewMoonDay(age) { return age < 0.5 || age > SYNODIC_MONTH - 0.5; }
+function isFullMoonDay(age) { return Math.abs(age - SYNODIC_MONTH / 2) < 0.5; }
+
+/* その日の気流: 通変星の勢い(日主×日干)+ 生まれ年支×日支の巡りを合算 */
+function dayFlow(myKan, myBranch, y, m, d) {
+  const pillar = dayPillar(y, m, d);
+  const star = tsuhensei(myKan, pillar.kan);
+  const power = Object.values(star.weights).reduce((a, b) => a + b, 0);
+  const diff = ((JUNISHI.indexOf(pillar.shi) - JUNISHI.indexOf(myBranch)) % 12 + 12) % 12;
+  let rel = null, relScore = 0;
+  if (SANGO_GROUPS.some((g) => g.includes(myBranch) && g.includes(pillar.shi)) && myBranch !== pillar.shi) {
+    rel = "sango"; relScore = 1.2;
+  } else if (SHIGOU_PAIRS.some(([a, b]) => (a === myBranch && b === pillar.shi) || (b === myBranch && a === pillar.shi))) {
+    rel = "shigou"; relScore = 1.2;
+  } else if (diff === 6) { rel = "chu"; relScore = -1.5; }
+  else if (diff === 0) { rel = "same"; relScore = 0.4; }
+  const score = power + relScore;
+  // 強い追い風はおおむね10日にひとつ、追い風は3割、凪をボリュームゾーンに
+  const level = score >= 2.6 ? 3 : score >= 1.7 ? 2 : score >= 0.2 ? 1 : 0;
+  return { star, rel, score, level };
+}
+
+/* ひと月分の暦データ。birthdateがなければ月と干支だけの客観的な暦になる */
+function calendarMonth(y, m, birthdate) {
+  let me = null;
+  if (birthdate) {
+    const [by, bm, bd] = birthdate.split("-").map(Number);
+    me = { kan: dayPillar(by, bm, bd).kan, branch: getEto(by, bm, bd).name };
+  }
+  const last = new Date(y, m, 0).getDate();
+  const days = [];
+  for (let d = 1; d <= last; d++) {
+    const age = moonAgeOf(y, m, d);
+    const pillar = dayPillar(y, m, d);
+    days.push({
+      d,
+      age,
+      phase: moonPhaseOf(y, m, d),
+      isNew: isNewMoonDay(age),
+      isFull: isFullMoonDay(age),
+      kanshi: pillar.kan + pillar.shi,
+      flow: me ? dayFlow(me.kan, me.branch, y, m, d) : null,
+    });
+  }
+  return { y, m, firstWd: new Date(y, m - 1, 1).getDay(), days };
 }
 
 /* ---------- 今日の言葉(日替わり) ---------- */

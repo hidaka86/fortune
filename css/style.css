@@ -311,6 +311,115 @@ html, body { overflow-x: hidden; overflow-x: clip; }
 .status-quote::before { content: "「"; color: var(--gold); }
 .status-quote::after { content: "」"; color: var(--gold); }
 
+/* ---------- ホーム:月と気の暦 ---------- */
+.cal-panel {
+  max-width: 720px; margin: 0 auto;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.93), rgba(255, 255, 255, 0.93)),
+    url("../assets/site/card_texture.webp") center / cover;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  padding: 24px 22px 20px;
+  box-shadow: var(--shadow-soft);
+}
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.cal-title {
+  font-family: var(--serif); font-weight: 700; font-size: 21px;
+  color: var(--indigo); letter-spacing: .1em;
+  display: flex; align-items: baseline; gap: 9px;
+}
+.cal-title-y {
+  font-family: var(--latin); font-weight: 600; font-size: 14.5px;
+  color: var(--gold-bright); letter-spacing: .22em;
+}
+.cal-return {
+  border: 1px solid var(--hairline); background: transparent; border-radius: 999px;
+  font-size: 11.5px; color: var(--muted); padding: 2px 11px; margin-left: 4px;
+  align-self: center;
+  transition: color .25s ease, border-color .25s ease;
+}
+.cal-return:hover { color: var(--gold-bright); border-color: var(--gold); }
+.cal-nav {
+  width: 34px; height: 34px; border-radius: 50%; flex: 0 0 34px;
+  border: 1px solid var(--hairline); background: var(--surface);
+  color: var(--muted); display: grid; place-items: center; font-size: 15px; padding: 0;
+  transition: color .25s ease, border-color .25s ease;
+}
+.cal-nav:hover { color: var(--gold-bright); border-color: var(--gold); }
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.cal-wd {
+  text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .14em;
+  color: var(--muted); padding-bottom: 5px;
+}
+.cal-wd-sun { color: var(--rose); }
+.cal-wd-sat { color: var(--violet); }
+.cal-day {
+  position: relative; border: 1px solid transparent; background: transparent;
+  border-radius: 10px; min-height: 63px; padding: 7px 0 8px;
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  transition: background .2s ease, border-color .2s ease;
+}
+.cal-day:hover { background: var(--faint); }
+.cal-day.is-sel { background: var(--gold-wash); border-color: rgba(168, 132, 78, 0.45); }
+.cal-day.is-today { border-color: var(--gold); }
+.cal-day.is-today .cal-num { color: var(--gold-bright); font-weight: 700; }
+.cal-moon { display: block; line-height: 0; }
+.cal-moon svg { width: 20px; height: 20px; display: block; }
+.cal-moon-dark { fill: rgba(28, 35, 51, 0.06); stroke: rgba(28, 35, 51, 0.28); stroke-width: .7; }
+.cal-moon-lit { fill: rgba(168, 132, 78, 0.85); }
+.cal-day.is-fullmoon .cal-moon-lit { fill: var(--gold); filter: drop-shadow(0 0 3px rgba(168, 132, 78, 0.55)); }
+.cal-day.is-newmoon .cal-moon-dark { stroke: var(--gold); stroke-width: 1.1; }
+.cal-num { font-family: var(--latin); font-weight: 600; font-size: 13.5px; line-height: 1.2; color: var(--indigo); }
+.cal-flow { height: 3px; border-radius: 2px; margin-top: 1px; }
+.cal-flow.flow-0 { width: 9px; background: rgba(28, 35, 51, 0.18); }
+.cal-flow.flow-1 { width: 12px; background: rgba(168, 132, 78, 0.30); }
+.cal-flow.flow-2 { width: 17px; background: rgba(168, 132, 78, 0.62); }
+.cal-flow.flow-3 { width: 22px; background: var(--gold-bright); box-shadow: 0 0 6px rgba(168, 132, 78, 0.5); }
+.cal-mark {
+  position: absolute; top: 4px; left: calc(50% + 11px);
+  font-size: 9px; font-weight: 700; color: var(--gold-bright);
+}
+.cal-mark.is-chu { color: var(--muted); }
+.cal-detail { border-top: 1px solid var(--hairline); margin-top: 14px; padding-top: 16px; }
+.cal-detail-head { display: flex; align-items: center; gap: 13px; }
+.cal-detail-moon { line-height: 0; }
+.cal-detail-moon svg { width: 36px; height: 36px; display: block; }
+.cal-detail-date {
+  font-family: var(--serif); font-weight: 700; font-size: 17px;
+  color: var(--indigo); letter-spacing: .04em; line-height: 1.5;
+}
+.cal-detail-kanshi { font-size: 12.5px; font-weight: 500; color: var(--gold-bright); margin-left: 10px; letter-spacing: .08em; }
+.cal-detail-phase { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.cal-detail-special { margin-top: 12px; font-size: 14px; color: var(--gold-bright); line-height: 1.7; }
+.cal-detail-flow { margin-top: 12px; font-size: 14.5px; line-height: 1.9; color: var(--ink); }
+.cal-flow-chip {
+  display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .1em;
+  border: 1px solid var(--hairline); border-radius: 999px; padding: 1px 10px;
+  margin-right: 9px; vertical-align: 2px; color: var(--muted); line-height: 1.8;
+}
+.cal-flow-chip.flow-2 { color: var(--gold-bright); border-color: rgba(168, 132, 78, 0.55); }
+.cal-flow-chip.flow-3 { color: #F6F1E6; background: var(--gold-bright); border-color: var(--gold-bright); }
+.cal-detail-note { margin-top: 2px; font-size: 13px; color: var(--muted); line-height: 1.8; }
+.cal-detail-rel { margin-top: 7px; font-size: 13.5px; color: var(--muted); line-height: 1.8; }
+.cal-detail-rel strong { color: var(--gold-bright); font-weight: 700; }
+.cal-detail-cta { margin-top: 12px; font-size: 13.5px; color: var(--muted); line-height: 1.9; }
+.cal-cta {
+  border: none; background: none; padding: 0; margin-left: 6px;
+  color: var(--gold-bright); font-size: 13.5px; font-weight: 700;
+  border-bottom: 1px solid rgba(168, 132, 78, 0.5);
+}
+.cal-cta:hover { border-bottom-color: var(--gold-bright); }
+.cal-legend { margin-top: 14px; font-size: 11.5px; color: var(--muted); text-align: center; line-height: 1.9; }
+.cal-legend-mark { color: var(--gold-bright); font-weight: 700; }
+.cal-legend-mark.is-chu { color: var(--muted); }
+@media (max-width: 560px) {
+  .cal-panel { padding: 18px 8px 16px; }
+  .cal-day { min-height: 56px; padding: 6px 0 7px; }
+  .cal-moon svg { width: 17px; height: 17px; }
+  .cal-num { font-size: 12.5px; }
+  .cal-mark { top: 2px; right: 3px; font-size: 8.5px; }
+  .cal-detail, .cal-legend { padding-inline: 8px; }
+}
+
 /* ---------- ボタン ---------- */
 .btn {
   border: 1px solid transparent; border-radius: 3px;

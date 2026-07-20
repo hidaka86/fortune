@@ -454,6 +454,7 @@ function renderHomeDaily() {
   const p = loadProfile();
   orderNav();
   document.getElementById("home-daily").innerHTML = "";
+  renderHomeCalendar();
   if (!heroContentEl) return;
 
   if (!p?.birthdate) {
@@ -504,6 +505,136 @@ function renderHomeDaily() {
     </div>`;
   heroContentEl.querySelectorAll("[data-count]").forEach(countUp);
 }
+
+/* ---------- ホーム:月と気の暦 ----------
+   月の満ち欠けをそのままの形で描き、生年月日があれば
+   その日に巡る気流(通変星の勢い+年支との巡り)を金の帯で重ねる */
+const CAL_WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
+const CAL_FLOW_TEXT = [
+  { label: "整えの日", note: "攻めるより整える巡り。片付け・振り返り・仕込みが、のちの追い風になります。" },
+  { label: "凪の日", note: "大きな追い風も向かい風もない巡り。いつものルーティンを丁寧に。" },
+  { label: "追い風の日", note: "流れが味方する巡り。準備してきたことを一歩、形にするのに向いています。" },
+  { label: "強い追い風の日", note: "暦が重なって押してくれる、めったにない巡り。大事な一歩はこの日に。" },
+];
+const CAL_REL_TEXT = {
+  sango: { mark: "合", label: "三合の吉日", note: "生まれ年の支と強く引き合う日。人に頼ること・共同作業がスムーズに進みます。" },
+  shigou: { mark: "合", label: "支合の吉日", note: "ご縁がぴたりとまとまりやすい日。約束・契約・仲直りに向いています。" },
+  chu: { mark: "冲", label: "冲の日", note: "予定が揺れやすい巡り。大事な決断はずらして、確認をいつもより丁寧に。" },
+  same: { mark: "", label: "同支の日", note: "生まれ年と同じ支が巡る、ホームグラウンドのような日。" },
+};
+
+/* 月齢からその日の月の形をSVGで描く(右から満ちて右から欠ける・北半球の見え方) */
+function moonSvg(age) {
+  const phase = (age / SYNODIC_MONTH) * Math.PI * 2; // 0=新月, π=満月
+  const lit = (1 - Math.cos(phase)) / 2;             // 照らされている割合
+  const r = 7, c = 10;
+  let bright = "";
+  if (lit > 0.985) {
+    bright = `<circle cx="${c}" cy="${c}" r="${r}" class="cal-moon-lit"/>`;
+  } else if (lit > 0.015) {
+    const waxing = age < SYNODIC_MONTH / 2;
+    const rx = (Math.abs(Math.cos(phase)) * r).toFixed(2);
+    const outer = waxing ? 1 : 0;                    // 明るい側の外周(満ちる=右)
+    const back = lit < 0.5 ? 1 - outer : outer;      // 明暗の境界線のふくらむ向き
+    bright = `<path d="M ${c} ${c - r} A ${r} ${r} 0 0 ${outer} ${c} ${c + r} A ${rx} ${r} 0 0 ${back} ${c} ${c - r}" class="cal-moon-lit"/>`;
+  }
+  return `<svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="${c}" cy="${c}" r="${r}" class="cal-moon-dark"/>${bright}</svg>`;
+}
+
+let calView = null;   // 表示中の月 {y, m}
+let calSelDay = null; // 選択中の日
+
+function calDetailHtml(day, cal, p) {
+  const wd = CAL_WEEKDAYS[(cal.firstWd + day.d - 1) % 7];
+  const special = day.isNew
+    ? '<p class="cal-detail-special">🌑 この日は新月 — 願いを立て、種を蒔く日です。</p>'
+    : day.isFull
+      ? '<p class="cal-detail-special">🌕 この日は満月 — 実りを受け取り、手放す日です。</p>'
+      : "";
+  let flowPart;
+  if (day.flow) {
+    const f = day.flow;
+    const ft = CAL_FLOW_TEXT[f.level];
+    const rel = f.rel ? CAL_REL_TEXT[f.rel] : null;
+    flowPart = `
+      <p class="cal-detail-flow"><span class="cal-flow-chip flow-${f.level}">${ft.label}</span>「${f.star.name}」が巡る日 — ${f.star.gloss}。</p>
+      <p class="cal-detail-note">${ft.note}</p>
+      ${rel ? `<p class="cal-detail-rel"><strong>${rel.label}</strong> — ${rel.note}</p>` : ""}`;
+  } else {
+    flowPart = '<p class="cal-detail-cta">生年月日を登録すると、この暦にあなただけの気流(追い風・整えの日)が重なります。<button class="cal-cta" data-nav="today">今日の占いから、はじめる</button></p>';
+  }
+  return `
+    <div class="cal-detail">
+      <div class="cal-detail-head">
+        <span class="cal-detail-moon">${moonSvg(day.age)}</span>
+        <div>
+          <p class="cal-detail-date">${cal.m}月${day.d}日(${wd})<span class="cal-detail-kanshi">${day.kanshi}の日</span></p>
+          <p class="cal-detail-phase">月齢${Math.round(day.age)}・${day.phase.name} — ${day.phase.note}</p>
+        </div>
+      </div>
+      ${special}${flowPart}
+    </div>`;
+}
+
+function renderHomeCalendar() {
+  const root = document.getElementById("home-calendar");
+  if (!root) return;
+  const now = new Date();
+  const cur = { y: now.getFullYear(), m: now.getMonth() + 1 };
+  if (!calView) calView = { ...cur };
+  const p = loadProfile();
+  const cal = calendarMonth(calView.y, calView.m, p?.birthdate);
+  const isCurMonth = calView.y === cur.y && calView.m === cur.m;
+  if (calSelDay == null || calSelDay > cal.days.length) calSelDay = isCurMonth ? now.getDate() : 1;
+
+  const wdHead = CAL_WEEKDAYS.map((w, i) =>
+    `<span class="cal-wd${i === 0 ? " cal-wd-sun" : i === 6 ? " cal-wd-sat" : ""}">${w}</span>`).join("");
+  const blanks = Array.from({ length: cal.firstWd }, () => '<span class="cal-blank"></span>').join("");
+  const cells = cal.days.map((day) => {
+    const today = isCurMonth && day.d === now.getDate();
+    const rel = day.flow?.rel ? CAL_REL_TEXT[day.flow.rel] : null;
+    const cls = `cal-day${today ? " is-today" : ""}${day.d === calSelDay ? " is-sel" : ""}${day.isNew ? " is-newmoon" : ""}${day.isFull ? " is-fullmoon" : ""}`;
+    return `
+      <button class="${cls}" data-cal-day="${day.d}" aria-label="${cal.m}月${day.d}日 ${day.phase.name}">
+        <span class="cal-moon">${moonSvg(day.age)}</span>
+        <span class="cal-num">${day.d}</span>
+        ${day.flow ? `<span class="cal-flow flow-${day.flow.level}"></span>` : ""}
+        ${rel?.mark ? `<span class="cal-mark${day.flow.rel === "chu" ? " is-chu" : ""}">${rel.mark}</span>` : ""}
+      </button>`;
+  }).join("");
+
+  root.innerHTML = `
+    <div class="cal-panel">
+      <div class="cal-head">
+        <button class="cal-nav" data-cal-shift="-1" aria-label="前の月">←</button>
+        <p class="cal-title"><span class="cal-title-y">${cal.y}</span>${cal.m}月${isCurMonth ? "" : '<button class="cal-return" data-cal-now>今月へ</button>'}</p>
+        <button class="cal-nav" data-cal-shift="1" aria-label="次の月">→</button>
+      </div>
+      <div class="cal-grid">${wdHead}${blanks}${cells}</div>
+      ${calDetailHtml(cal.days[calSelDay - 1], cal, p)}
+      <p class="cal-legend">${p?.birthdate
+        ? '日の下の金の帯は、その日にあなたへ巡る気流の強さ。<span class="cal-legend-mark">合</span>=縁が結ばれやすい吉日 / <span class="cal-legend-mark is-chu">冲</span>=ぶつかりやすい日。'
+        : "月の満ち欠けと、日々の干支の暦です。"}</p>
+    </div>`;
+}
+
+document.getElementById("home-calendar")?.addEventListener("click", (e) => {
+  const shiftBtn = e.target.closest("[data-cal-shift]");
+  const dayBtn = e.target.closest("[data-cal-day]");
+  if (shiftBtn) {
+    const t = new Date(calView.y, calView.m - 1 + Number(shiftBtn.dataset.calShift), 1);
+    calView = { y: t.getFullYear(), m: t.getMonth() + 1 };
+    calSelDay = null;
+    renderHomeCalendar();
+  } else if (e.target.closest("[data-cal-now]")) {
+    calView = null;
+    calSelDay = null;
+    renderHomeCalendar();
+  } else if (dayBtn) {
+    calSelDay = Number(dayBtn.dataset.calDay);
+    renderHomeCalendar();
+  }
+});
 
 /* ---------- 今日の占い(朝の羅針盤:結論=マインドは最後に) ---------- */
 const MIND_HISTORY_KEY = "ms_mind_history";
