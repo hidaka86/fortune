@@ -349,8 +349,19 @@ function setupBirthdateSelects() {
   const thisYear = new Date().getFullYear();
   document.querySelectorAll(".bd-select").forEach((box) => {
     const name = box.dataset.bd;
+    // 先頭は今年-10(それ以下の年齢の利用は実態上ほぼない)。年代グループでスクロールの手がかりを作る
     let opts = "";
-    for (let y = thisYear; y >= 1920; y--) opts += `<option value="${y}">${y}</option>`;
+    let decade = null;
+    for (let y = thisYear - 10; y >= 1920; y--) {
+      const dec = Math.floor(y / 10) * 10;
+      if (dec !== decade) {
+        if (decade !== null) opts += "</optgroup>";
+        opts += `<optgroup label="${dec}年代">`;
+        decade = dec;
+      }
+      opts += `<option value="${y}">${y}</option>`;
+    }
+    if (decade !== null) opts += "</optgroup>";
     let mopts = "";
     for (let m = 1; m <= 12; m++) mopts += `<option value="${m}">${m}</option>`;
     box.innerHTML = `
@@ -3037,7 +3048,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
   const breakdown = [
     { en: "ZODIAC", ja: "星座エレメント", pair: `${r.a.zodiac.name}(${r.a.zodiac.element}) × ${r.b.zodiac.name}(${r.b.zodiac.element})`, ...r.zodiac },
     { en: "GOGYO", ja: "九星の五行", pair: `${r.a.kyusei.name} × ${r.b.kyusei.name}`, ...r.gogyo },
-    { en: "ETO", ja: "干支の配置", pair: `${r.a.eto.name}(${r.a.eto.animal}) × ${r.b.eto.name}(${r.b.eto.animal})`, ...r.eto },
+    { en: "ETO", ja: "干支の巡り", pair: `${r.a.eto.name}(${r.a.eto.animal}) × ${r.b.eto.name}(${r.b.eto.animal})`, ...r.eto },
     { en: "BOND", ja: "絆の質(日主の対話)", pair: `${r.a.kan} × ${r.b.kan}`, score: r.bond.score, note: `生まれた「日」の気同士の相性です。${nameA}にとって${nameB}は「${r.bond.ab.label}」(${r.bond.ab.star}) — ${r.bond.ab.note} 逆に${nameB}から見た${nameA}は「${r.bond.ba.label}」(${r.bond.ba.star})です。` },
   ].map((x) => `
     <div class="result-card">
@@ -3099,7 +3110,7 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
         "+",
         { tag: "九星の五行", main: String(r.gogyo.score), sub: "× 25%" },
         "+",
-        { tag: "干支の配置", main: String(r.eto.score), sub: "× 25%" },
+        { tag: "干支の巡り", main: String(r.eto.score), sub: "× 25%" },
         "+",
         { tag: "日主の対話", main: String(r.bond.score), sub: "× 20%" },
         "=",
@@ -3306,7 +3317,7 @@ function guideArticleHtml(key) {
       <ul class="ga-list">
         <li><strong>ノリとテンポの相性(30%)</strong> — 星座のエレメント(火・地・風・水)。日々の会話や遊びの噛み合わせを見ます。</li>
         <li><strong>エネルギーの流れ(25%)</strong> — 九星の五行。どちらがどちらを元気にする関係かを見ます(専門的には相生・相剋)。</li>
-        <li><strong>生まれ年の巡り(25%)</strong> — 十二支の組み合わせ。自然と引き合う組か、正反対の組か(専門的には三合・支合・冲)。</li>
+        <li><strong>干支の巡り(25%)</strong> — 生まれ年の十二支の組み合わせ。自然と引き合う組か、正反対の組か(専門的には三合・支合・冲)。</li>
         <li><strong>絆の質(20%)</strong> — 生まれた「日」同士の対話。同学年でも生まれ日で変わる、いちばん個人的な層です。</li>
       </ul>
       <h3>なぜ「あなたから」と「相手から」で答えが違うのか</h3>

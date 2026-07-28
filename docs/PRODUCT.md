@@ -178,8 +178,11 @@
 
 - **CSSの装飾背景は軽量版を使う**: `.bento-art` や `.spread-opt` 等の背景に使う絵札は
   `images/tarot/bg/`(560px幅・quality50)を参照する。原寸(`images/tarot/*.webp`)は
-  カードの絵札そのもの(儀式のリビール・/tarot/cards/ ページ)専用。
+  カードの絵札そのもの(儀式のリビール)専用。
   新しく絵札をCSS背景に使うときも必ずbg版を作ること(原寸は1枚260〜320KBある)。
+- **/tarot/cards/ の絵札は中間サイズを使う**: `images/tarot/mid/`(480px幅・quality60・1枚約64KB)。
+  カードページの img は `src=mid + srcset(mid 480w, 原寸)` + `fetchpriority="high"`(LCP要素)。
+  絵札を追加したら mid/ と bg/ の両方を生成すること。
 - **カード裏面画像のプローブは遅延**: `tarot_back.webp`(164KB)の存在確認は
   `probeTarotBack()`(app.js)で、load後のアイドル時 or 裏面が実際に描画される瞬間に実行。
   起動時の同期ダウンロードに戻さないこと。
