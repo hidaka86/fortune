@@ -651,7 +651,7 @@ function renderToday() {
       <p class="result-lead" style="margin-inline:auto">${skyLineForToday(verdict, daily.scores)}</p>
       ${scoreRingHtml(daily.score100)}
       <div class="chip-row" style="justify-content:center">
-        <span class="chip">「${daily.dayStar.name}」の日</span>
+        <span class="chip">「${daily.dayStar.name}」の日${(m => m ? ` — ${m[0]}` : "")((daily.dayStar.gloss || "").match(/「([^」]+)」の星/))}</span>
         <span class="chip">ラッキーカラー <strong>${daily.luckyColor}</strong></span>
       </div>
     </div>
