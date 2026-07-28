@@ -238,6 +238,10 @@ html, body { overflow-x: hidden; overflow-x: clip; }
   font-size: clamp(14.5px, 1.9vw, 16.5px); letter-spacing: .05em; line-height: 2.1;
 }
 .hero-cta { display: flex; gap: 14px; justify-content: center; margin-top: 44px; flex-wrap: wrap; }
+.hero-note {
+  margin-top: 22px; font-size: 12.5px; letter-spacing: .06em;
+  color: var(--muted); line-height: 1.9;
+}
 
 /* FVのカード扇(言葉を削いだぶん、カードが主役) */
 .hero-fan { display: flex; justify-content: center; margin: 40px 0 6px; }

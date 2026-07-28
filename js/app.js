@@ -22,6 +22,7 @@ const navBtns = document.querySelectorAll(".nav-btn");
 
 function navigate(target, push = true) {
   if (!document.getElementById(`view-${target}`)) target = "home";
+  if (target === "home") renderHomeDaily();
   if (target === "mypage") renderMypage();
   if (target === "today") renderToday();
   if (target === "guide") renderGuide();
