@@ -3,7 +3,7 @@
 > 妙理(みょうり)= 言葉にしがたい、ものごとの奥にある理 × scope(観測器)。
 > 本番: https://myouriscope.com/ (GitHub Pages / 純粋な静的サイト・サーバーなし)
 
-最終更新: 2026-07-14
+最終更新: 2026-08-19
 
 ---
 
@@ -170,9 +170,39 @@
 - **サイト全体のSEO**: `robots.txt`(tarot-debug.html除外)/ `sitemap.xml`(LP追加時はここに追記)/ `404.html`(noindex・主要ページへの導線)。
   トップは canonical+WebSite/Organization/WebApplication の構造化データ。
 - **内部リンク**: トップのfooterに「Guide」リンク列(クローラが辿れる実アンカー)。LP側はヘッダー/フッター/関連グリッドで相互リンク。
+- **星座 × 星座の相性ページ**: `/aisho/seiza/`(一覧ハブ・ItemList)+ `/aisho/seiza/{a}-{b}/` の78本。
+  組み合わせは**順不同**(144通りにすると裏返しが重複コンテンツになる)。タイトル・descriptionには
+  両方の並び順とかな表記(おひつじ座/しし座)を含め、どちらの語順の検索でも拾う。
+  本文は `ZODIAC` / `zodiacCompatScore` / `AISHO_PLAY` から生成(`scripts/gen-pages.mjs`)。
+- **九星気学ページ**: `/kyusei/`(一覧ハブ)+ `/kyusei/{slug}/` の9本。
+  気質は `KYUSEI`、星どうしの相性は `GOGYO_RELATION` から計算。立春が年の変わり目である点を全ページのFAQに置く。
+- **ページ生成スクリプト**: `scripts/gen-pages.mjs`(相性・九星)/ `scripts/gen-sitemap.mjs`(sitemap再生成)/
+  `scripts/link-clusters.mjs`(新クラスタへの内部リンク)/ `scripts/inject-lp-scripts.mjs`(共通スクリプトの差し込み)。
+  すべて冪等。**ページを足したら gen-sitemap と inject-lp-scripts を実行すること。**
 - **シェア計測**: 招待URL(`buildInviteUrl`)に `utm_source=invite&utm_medium=share` を付与。GA4で友達招待経由の流入を区別できる。
 - **キャッシュバスト**: workflowの置換対象は全HTML(`find . -name "*.html" ... sed`)。LPを足すときは `?v=dev` を付けてCSS/JSを参照する。
 - **文言ルール**: LPでも「無料」等の商業的な煽り表現は使わない。「登録不要」「データは端末の中だけ」は事実の説明としてOK。
+
+## 12.5 計測とLPの入口フォーム
+
+> 詳細は `docs/GROWTH.md`。ここでは実装上の約束だけ。
+
+- **共通計測レイヤー `js/analytics.js`**: SPA本体・全LPが読む。GA4に送る全イベントに
+  `page_kind` / `page_id` / `entry_page` / `visitor` / `has_profile` を自動で添付する。
+  gtag自体の読み込みは各ページのheadが担当し、このファイルはイベントの語彙を揃える層。
+  **生年月日・名前は絶対に送らない**(送るのは「入力済みか否か」まで)。
+- **ファネル**: 占術ごとに `reading_form_view` → `reading_submit` → `reading_view` の3点。
+  `reading_view` は `observeThen()` と今日の結果描画から発火し、1ページロードにつき1回に間引く
+  (観測演出→再描画の二重計上を防ぐ `_funnelSeen`)。
+- **LPの入口フォーム `js/lp-form.js`**: LPの最初の `.lp-cta` に生年月日フォームを差し込む。
+  対象は生年月日が要る行き先のみ(`#today` `#western` `#eastern` `#integrated`)。
+  タロットは入力不要、相性はふたり分必要なので対象外。JS無効時は既存のリンクCTAが残る。
+- **LP→アプリの引き継ぎ**: LPで `fortuna:profile` に書いてから `/?ms=go#western` へ遷移。
+  `app.js` の `handoffFromLp()` が受けて、到着と同時に対象フォームを `requestSubmit()` する
+  (todayは `renderToday` がプロフィールから直接描くので対象外)。フラグはreplaceStateでURLから消す。
+- **GA4側の設定は手作業が要る**: カスタムディメンション(`page_kind` `page_id` `entry_page`
+  `visitor` `has_profile` `reading` `link_group`)を登録しないとレポートで使えない。
+  登録日以降のデータにしか効かないので、施策より先にやること。
 
 ## 13. パフォーマンス
 

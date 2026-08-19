@@ -15,6 +15,8 @@
 
 /* aタグに.btn系を使えるように */
 a.btn, a.btn-observe { display: inline-block; text-decoration: none; text-align: center; }
+/* display指定が[hidden]のUAスタイルに勝ってしまうので明示的に消す(LPフォーム差し込み時) */
+a.btn[hidden], a.btn-observe[hidden] { display: none; }
 
 /* ヘッダー:リンク版ナビ */
 .lp-nav a {
@@ -137,3 +139,51 @@ a.btn, a.btn-observe { display: inline-block; text-decoration: none; text-align:
 .lp-related-cards { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
 .lp-related-cards a { padding: 10px 10px; font-size: 13.5px; }
 .lp-related-cards a small { font-family: var(--latin); font-style: italic; }
+
+/* ---------- LPの入口フォーム(js/lp-form.js が差し込む) ---------- */
+.lp-form {
+  max-width: 420px; margin: 0 auto; text-align: center;
+  border: 1px solid var(--hairline); border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.62);
+  padding: 22px 20px 18px;
+}
+.lp-form-title {
+  font-family: var(--serif); font-size: 15px; font-weight: 700;
+  color: var(--indigo); letter-spacing: .05em; margin: 0 0 14px; line-height: 1.7;
+}
+.lp-form .bd-select { margin-bottom: 16px; }
+.lp-form .bd-select select {
+  width: 100%; min-width: 0;
+  background: var(--bg); border: 1px solid var(--hairline);
+  border-radius: 6px; padding: 13px 10px; color: var(--ink);
+  font-size: 16px; font-family: inherit; outline: none;
+  transition: border-color .25s ease;
+  color-scheme: light;
+}
+.lp-form .bd-select select:focus { border-color: var(--gold); }
+.lp-form .bd-select.bd-invalid select { border-color: #B4483C; }
+.lp-form .btn-observe { width: 100%; }
+.lp-cta:has(.lp-form) > .lp-cta-note { display: none; }
+.lp-form-note { font-size: 12px; color: var(--muted); margin: 12px 0 0; letter-spacing: .03em; line-height: 1.8; }
+.lp-form-known {
+  font-size: 13.5px; color: var(--muted); letter-spacing: .04em; margin: 0 0 14px;
+}
+.lp-form-known strong {
+  display: block; margin-top: 4px;
+  font-family: var(--serif); font-size: 19px; color: var(--indigo); letter-spacing: .08em;
+}
+.lp-form-edit {
+  display: block; margin: 12px auto 0; padding: 4px 8px;
+  background: none; border: none; cursor: pointer;
+  font-size: 12.5px; color: var(--muted); letter-spacing: .04em;
+  text-decoration: underline; text-underline-offset: 3px;
+}
+.lp-form-edit:hover { color: var(--gold-bright); }
+
+/* 一覧ハブの中見出し(星座別のセクション見出し) */
+.lp-sec-h {
+  font-family: var(--serif); font-size: 15px; font-weight: 700; letter-spacing: .06em;
+  color: var(--indigo); margin: 26px 0 10px; padding-bottom: 8px;
+  border-bottom: 1px solid var(--hairline);
+}
+.lp-sec-h:first-of-type { margin-top: 0; }

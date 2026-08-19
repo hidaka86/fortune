@@ -48,11 +48,16 @@ css/lp.css      # 検索流入用LPの差分スタイル
 js/data.js      # 占術データ(星座・九星・タロット・通変星・称号)
 js/fortune.js   # 計算ロジック(四柱・九星・月星座・判定エンジン)
 js/app.js       # UI(マイページ・シェア・図鑑・PWA)
+js/analytics.js # GA4共通計測(体験フローのファネル・スクロール・CTA)
+js/lp-form.js   # LPの入口に置く生年月日フォーム(導線の短縮)
 today/ tarot/ horoscope/ shichusuimei/ aisho/ shogo/
                 # 検索流入用の静的ランディングページ(SEOの入口)
 seiza/          # 12星座の一覧+星座別ページ13本(data.jsのZODIACと同値)
 tarot/cards/    # タロット78枚の意味ページ+一覧(本文はdata.jsから抽出)
-sitemap.xml     # サイトマップ(LP追加時はここに追記)
+aisho/seiza/    # 星座 × 星座の相性78ページ+一覧(順不同の組み合わせ)
+kyusei/         # 九星気学の本命星9ページ+一覧
+scripts/        # ページ生成・sitemap再生成・内部リンク・計測差し込み(すべて冪等)
+sitemap.xml     # サイトマップ(node scripts/gen-sitemap.mjs で再生成)
 robots.txt      # クローラ設定
 404.html        # Not Foundページ
 sw.js           # Service Worker
@@ -61,5 +66,16 @@ icons/          # アプリアイコン
 ```
 
 デプロイはpushで自動(GitHub Actions → GitHub Pages)。CSS/JSはコミットSHAでキャッシュバスティングされます。
+
+## ページを追加したら
+
+```bash
+node scripts/gen-pages.mjs        # 相性・九星ページの再生成(data.jsを変えたとき)
+node scripts/inject-lp-scripts.mjs # 新しいLPに計測スクリプトを差し込む
+node scripts/link-clusters.mjs     # 新クラスタへの内部リンクを張る
+node scripts/gen-sitemap.mjs       # sitemap.xml を作り直す
+```
+
+流入と体験フローの設計は `docs/GROWTH.md`。
 
 > 占い結果はエンターテインメントとしてお楽しみください。

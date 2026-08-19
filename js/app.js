@@ -2,9 +2,22 @@
 
 const REDUCED_MOTION = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-/* ---------- アクセス解析(GA4) ---------- */
+/* ---------- アクセス解析(GA4) ----------
+   共通パラメータ(入口のLP・新規/再訪・生年月日の有無)は js/analytics.js が付ける。
+   ここでは「体験フローのどこまで進んだか」だけを送る。個人情報は送らない。 */
 function gaEvent(name, params = {}) {
+  if (window.ms && typeof window.ms.track === "function") { window.ms.track(name, params); return; }
   if (typeof window.gtag === "function") window.gtag("event", name, params);
+}
+
+/* ファネル: 入力フォームを見た → 送信した → 結果が出た、の3点を占術ごとに */
+function funnelFormView(reading) { gaEvent("reading_form_view", { reading }); }
+function funnelSubmit(reading, first) { gaEvent("reading_submit", { reading, first_time: first ? "yes" : "no" }); }
+const _funnelSeen = new Set();
+function funnelResult(reading, extra = {}) {
+  if (_funnelSeen.has(reading)) return; // 観測演出→再描画の二重計上を防ぐ
+  _funnelSeen.add(reading);
+  gaEvent("reading_view", { reading, ...extra });
 }
 
 function gaPageView(target) {
@@ -266,6 +279,7 @@ const OBS_STEPS = {
 };
 
 function observeThen(kind, reveal, after) {
+  funnelResult(kind); // 結果が実際に描画された瞬間 = ファネルの最終地点
   if (REDUCED_MOTION) { reveal(); after?.(); return; }
   const steps = OBS_STEPS[kind] || ["観測しています……"];
   const ov = document.createElement("div");
@@ -581,10 +595,12 @@ function renderToday() {
         <button class="btn btn-primary btn-lg btn-block" type="submit">今日の占いをみる</button>
       </form>`;
     setupBirthdateSelects();
+    funnelFormView("today");
     document.getElementById("today-form").addEventListener("submit", (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);
       if (!fd.get("birthdate")) return;
+      funnelSubmit("today", true);
       saveProfile({ name: fd.get("name")?.trim(), birthdate: fd.get("birthdate"), theme: "total" });
       prefillForms(loadProfile());
       renderHomeDaily();
@@ -611,6 +627,7 @@ function renderToday() {
     return;
   }
 
+  funnelResult("today");
   const daily = dailyFortune(p.birthdate);
   const verdict = dailyVerdict(p.birthdate);
   const dc = loadDailyCard();
@@ -1008,6 +1025,7 @@ function buildShareText(r) {
 document.addEventListener("click", async (e) => {
   const btn = e.target.closest("[data-copy]");
   if (!btn) return;
+  gaEvent("share_click", { method: "copy", label: (btn.textContent || "").trim().slice(0, 40) });
   try {
     await navigator.clipboard.writeText(btn.dataset.copy);
     const orig = btn.textContent;
@@ -1338,6 +1356,7 @@ function journalReflectQuestion(e) {
 /* ---------- 統合鑑定 ---------- *//* ---------- 統合鑑定 ---------- */
 document.getElementById("integrated-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  funnelSubmit("integrated", !loadProfile()?.birthdate);
   const fd = new FormData(e.target);
   const r = integratedReading({
     name: fd.get("name")?.trim(),
@@ -1494,6 +1513,7 @@ document.querySelectorAll("#western-theme [data-wtheme]").forEach((b) => {
 
 document.getElementById("western-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  funnelSubmit("western", !loadProfile()?.birthdate);
   const fd = new FormData(e.target);
   const birthdate = fd.get("birthdate");
   const [y, m, d] = birthdate.split("-").map(Number);
@@ -1657,6 +1677,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
 /* ---------- 四柱推命(× 九星気学) ---------- */
 document.getElementById("eastern-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  funnelSubmit("eastern", !loadProfile()?.birthdate);
   const birthdate = new FormData(e.target).get("birthdate");
   const [y, m, d] = birthdate.split("-").map(Number);
   const eto = getEto(y, m, d);
@@ -2080,6 +2101,7 @@ function renderAsk() {
     b.addEventListener("click", () => {
       if (!b.dataset.spread || b.disabled) return;
       ritual.spread = b.dataset.spread;
+      gaEvent("tarot_ritual_start", { spread: ritual.spread, genre: ritual.genre || "", has_question: document.getElementById("tarot-question").value.trim() ? "yes" : "no" });
       tarotStage.querySelectorAll(".spread-opt").forEach((x) => x.classList.toggle("active", x === b));
       ritual.question = document.getElementById("tarot-question").value.trim();
       try { localStorage.setItem(QUESTION_KEY, ritual.question); } catch { /* noop */ }
@@ -2648,6 +2670,12 @@ function renderReveal() {
   }
 
   function finish() {
+    gaEvent("tarot_ritual_complete", {
+      spread: ritual.spread,
+      cards: ritual.cards.length,
+      deep_shuffle: ritual.deepShuffle ? "yes" : "no",
+      genre: ritual.genre || "",
+    });
     closeChamber();
     if (ritual.returnTo === "today") {
       ritual.returnTo = null;
@@ -3006,6 +3034,7 @@ renderAsk();
 /* ---------- 相性診断 ---------- */
 document.getElementById("aisho-form").addEventListener("submit", (e) => {
   e.preventDefault();
+  funnelSubmit("aisho", !loadProfile()?.birthdate);
   const fd = new FormData(e.target);
   const r = compatibilityReading(
     { name: fd.get("name1")?.trim(), birthdate: fd.get("birthdate1") },
@@ -3385,3 +3414,26 @@ renderInviteBanner();
 updateStreak();
 if (location.hash.length > 1) navigate(location.hash.slice(1), false);
 else gaPageView("home");
+
+/* ---------- LPからの引き継ぎ(?ms=go#western 等) ----------
+   LPで生年月日を入れた人を、アプリ側のフォームで足止めしない。
+   プロフィールは既にlocalStorageにあるので、到着と同時に結果まで進める。 */
+(function handoffFromLp() {
+  const params = new URLSearchParams(location.search);
+  if (params.get("ms") !== "go") return;
+  const target = location.hash.slice(1) || "today";
+  gaEvent("lp_handoff", { to: target, has_profile: loadProfile()?.birthdate ? "yes" : "no" });
+  // URLから引き継ぎフラグを消す(共有・リロードで再送信しないように)
+  params.delete("ms");
+  const q = params.toString();
+  try { history.replaceState(null, "", location.pathname + (q ? "?" + q : "") + location.hash); } catch { /* noop */ }
+  if (!loadProfile()?.birthdate) return;
+  const form = { western: "western-form", eastern: "eastern-form", integrated: "integrated-form" }[target];
+  if (!form) return; // today は renderToday がプロフィールから直接描く
+  const el = document.getElementById(form);
+  if (!el) return;
+  requestAnimationFrame(() => {
+    if (typeof el.requestSubmit === "function") el.requestSubmit();
+    else el.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+  });
+})();
