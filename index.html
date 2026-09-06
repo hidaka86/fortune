@@ -149,31 +149,31 @@
       </div>
 
       <div class="bento">
-        <button class="bento-card bento-main bento-art" data-nav="tarot" style="--hue:#d4af37" data-glyph="☽">
+        <button class="bento-card bento-main bento-art" data-nav="tarot" data-icon="moon" style="--hue:#d4af37" data-glyph="☽">
           <span class="bento-tag">いちばん人気</span>
           <h3>タロット</h3>
           <p id="tarot-bento-copy">カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。</p>
           <span class="bento-link">今日の一枚を引く</span>
         </button>
-        <button class="bento-card" data-nav="western" style="--hue:#9b7cc4" data-glyph="☉">
+        <button class="bento-card" data-nav="western" data-icon="sun" style="--hue:#9b7cc4" data-glyph="☉">
           <img class="bento-icon" src="assets/site/icon_western.webp" alt="" loading="lazy" />
           <h3>ホロスコープ</h3>
           <p>10天体の出生図から、5年周期の流れを読む。</p>
           <span class="bento-link">観測する</span>
         </button>
-        <button class="bento-card" data-nav="eastern" style="--hue:#d4af37" data-glyph="☿">
+        <button class="bento-card" data-nav="eastern" data-icon="saturn" style="--hue:#d4af37" data-glyph="☿">
           <img class="bento-icon" src="assets/site/icon_eastern.webp" alt="" loading="lazy" />
           <h3>四柱推命</h3>
           <p>九星気学とあわせて、生まれ持った器を知る。</p>
           <span class="bento-link">観測する</span>
         </button>
-        <button class="bento-card" data-nav="aisho" style="--hue:#d98bb0" data-glyph="♀♂">
+        <button class="bento-card" data-nav="aisho" data-icon="venus" style="--hue:#d98bb0" data-glyph="♀♂">
           <img class="bento-icon" src="assets/site/icon_aisho.webp" alt="" loading="lazy" />
           <h3>相性診断</h3>
           <p>星座 × 五行 × 干支。三つの角度から二人の縁を。</p>
           <span class="bento-link">観測する</span>
         </button>
-        <button class="bento-card" data-nav="integrated" style="--hue:#d4af37" data-glyph="✦">
+        <button class="bento-card" data-nav="integrated" data-icon="jupiter" style="--hue:#d4af37" data-glyph="✦">
           <img class="bento-icon" src="assets/site/icon_integrated.webp" alt="" loading="lazy" />
           <h3>統合鑑定</h3>
           <p>占術を横断して、運命の称号と今日の答えを。</p>
@@ -181,7 +181,7 @@
         </button>
       </div>
 
-      <div class="ornament-divider" aria-hidden="true"></div>
+      <div class="ornament-divider" data-variant="divider-moon" aria-hidden="true"></div>
 
       <div class="home-guide">
         <div class="section-head" style="margin-top:0">
@@ -403,6 +403,7 @@
 
   <script src="js/data.js?v=dev"></script>
   <script src="js/fortune.js?v=dev"></script>
+  <script src="js/icons.js?v=dev"></script>
   <script src="js/mystic.js?v=dev"></script>
   <script src="js/app.js?v=dev"></script>
 </body>

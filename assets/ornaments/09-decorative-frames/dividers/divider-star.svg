@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 40" role="img" aria-label="区切り(星)" style="color:#c8d4e8"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 20h150" stroke-opacity=".8"/><path d="M238 20h150" stroke-opacity=".8"/>
+<path d="M6 20l6-3v6zM394 20l-6-3v6z" fill="currentColor"/>
+<path d="M168 20l6-5 6 5-6 5zM226 20l-6-5-6 5 6 5z" fill="currentColor" fill-opacity=".85"/>
+<path d="M90 20l3-2 3 2-3 2zM304 20l3-2 3 2-3 2z" fill="currentColor" fill-opacity=".6"/>
+</g>
+<defs><filter id="dvg" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2"/></filter></defs>
+<path d="M200 6l3 11 11 3-11 3-3 11-3-11-11-3 11-3z" fill="currentColor" opacity=".5" filter="url(#dvg)"/>
+<path d="M200 6l3 11 11 3-11 3-3 11-3-11-11-3 11-3z" fill="currentColor"/>
+<g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M184 20c4-8 28-8 32 0M184 20c4 8 28 8 32 0" stroke-opacity=".6"/></g></svg>

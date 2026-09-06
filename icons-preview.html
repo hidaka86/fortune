@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>Mystic Icons 一覧 — MYOURISCOPE(確認用)</title>
+  <meta name="theme-color" content="#0a0e27" />
+  <link rel="stylesheet" href="css/style.css?v=dev" />
+  <style>
+    .ip-main { max-width: 1120px; margin: 0 auto; padding: 48px 24px 96px; }
+    .ip-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 14px; margin: 18px 0 40px; }
+    .ip-cell { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 16px 8px; border: 1px solid var(--hairline); border-radius: 10px; background: rgba(18, 24, 56, 0.5); color: var(--moonlight-silver); }
+    .ip-cell.gold { color: var(--divine-gold); }
+    .ip-cell code { font-size: 10.5px; color: var(--muted); letter-spacing: 0; }
+    .ip-cell b { font-size: 12px; font-weight: 500; color: var(--star-white); }
+    .ip-wide { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+    .ip-wide .mystic-icon { width: 100%; height: auto; }
+    .ip-h { font-family: var(--latin); letter-spacing: .3em; text-transform: uppercase; color: var(--divine-gold); font-size: 13px; margin-top: 36px; }
+    .ip-h + p { color: var(--muted); font-size: 13.5px; }
+    .ip-tools { display: flex; gap: 10px; flex-wrap: wrap; margin: 10px 0 0; }
+    .ip-tools button { font-size: 12.5px; padding: 6px 14px; border-radius: 999px; border: 1px solid var(--hairline); background: rgba(5,8,23,.5); color: var(--moonlight-silver); }
+    .ip-tools button.active { border-color: var(--divine-gold); color: var(--gold-bright); }
+  </style>
+</head>
+<body>
+  <div class="bg-wash" aria-hidden="true"></div>
+  <main class="ip-main">
+    <div class="view-head">
+      <p class="view-eyebrow">MYSTIC ICONS</p>
+      <h2>SVGアイコン一覧</h2>
+      <p class="view-sub">js/icons.js の定義から描画。色は親要素の color(currentColor)で制御できます。</p>
+    </div>
+    <div class="ip-tools">
+      <button data-color="" class="active">月光シルバー</button>
+      <button data-color="#d4af37">金</button>
+      <button data-color="#9b7cc4">紫</button>
+      <button data-color="#f5f7ff">白</button>
+      <button data-glow="1">glow</button>
+      <button data-anim="1">animate</button>
+    </div>
+    <div id="ip-root"></div>
+  </main>
+  <script src="js/icons.js?v=dev"></script>
+  <script>
+    const GROUPS = [
+      ["elements", "五行(素材06)", "viewBox 100 / 線画。五行バランスの五角形配置で使用"],
+      ["moon", "月相(素材07)", "viewBox 64 / 満ちる部分は --moonlight-silver、クレーターは clipPath で明部にだけ描画"],
+      ["planets", "天体(素材08)", "viewBox 48 / ホロスコープの天体一覧・チャート"],
+      ["zodiac", "星座(素材08)", "viewBox 48 / 相性診断・12ハウス"],
+      ["corners", "角飾り(素材09)", "viewBox 80 / 鑑定結果・入力パネルの四隅"],
+      ["dividers", "区切り(素材09)", "viewBox 400x40 / 見出し下・段落間"],
+      ["frames", "フレーム(素材09)", "カード・モーダルの外枠(縦横比固定)"],
+    ];
+    let color = "", glow = false, anim = false;
+    function render() {
+      const { CATALOG, mysticIcon } = window.MysticIcons;
+      document.getElementById("ip-root").innerHTML = GROUPS.map(([g, title, note]) => {
+        const wide = ["dividers", "frames"].includes(g);
+        const cells = Object.entries(CATALOG).filter(([, d]) => d.group === g).map(([k, d]) =>
+          `<div class="ip-cell" ${color ? `style="color:${color}"` : ""}>${mysticIcon(k, { size: wide ? undefined : 56, width: wide ? 320 : undefined, glow, animate: anim })}<b>${d.label}</b><code>${k}.svg</code></div>`).join("");
+        return `<p class="ip-h">${title}</p><p>${note}</p><div class="ip-grid ${wide ? "ip-wide" : ""}">${cells}</div>`;
+      }).join("");
+    }
+    document.querySelectorAll(".ip-tools button").forEach((b) => b.addEventListener("click", () => {
+      if (b.dataset.color !== undefined) { color = b.dataset.color; document.querySelectorAll("[data-color]").forEach((x) => x.classList.toggle("active", x === b)); }
+      if (b.dataset.glow) { glow = !glow; b.classList.toggle("active", glow); }
+      if (b.dataset.anim) { anim = !anim; b.classList.toggle("active", anim); }
+      render();
+    }));
+    render();
+  </script>
+</body>
+</html>

@@ -154,17 +154,61 @@
     }, { passive: true });
   }
 
-  /* ---------- 月相の装飾(フッター・スクロール誘導) ---------- */
+  /* ---------- 月相の装飾(ヒーロー・フッター・スクロール誘導) ---------- */
   function initMoons() {
+    const MI = window.MysticIcons;
     const rows = [document.getElementById("footer-moons"), document.getElementById("hero-moons")].filter(Boolean);
+    let today = 0.5;
+    try { if (typeof moonPhaseToday === "function") { const mp = moonPhaseToday(); if (typeof mp.age === "number") today = mp.age / 29.53; } } catch { /* noop */ }
+    const todayKey = MI ? MI.moonPhaseKey(today) : null;
     for (const row of rows) {
-      let today = 0.5;
-      try { if (typeof moonPhaseToday === "function") { const mp = moonPhaseToday(); if (typeof mp.age === "number") today = mp.age / 29.53; else if (typeof mp.phase === "number") today = mp.phase; } } catch { /* noop */ }
-      const idx = Math.round(today * 8) % 8;
-      row.innerHTML = Array.from({ length: 8 }, (_, i) => `<span class="${i === idx ? "is-today" : ""}"><img class="moon-img" src="assets/icons/moon/moon-${i}.png" alt="" onerror="this.outerHTML=window.moonSVG(${i / 8}, 18)" /></span>`).join("");
+      row.innerHTML = (MI ? MI.MOON_ORDER : []).map((k) =>
+        `<span class="${k === todayKey ? "is-today" : ""}" title="${MI.CATALOG[k].label}">${MI.mysticIcon(k, { size: 26, label: MI.CATALOG[k].label })}</span>`).join("")
+        || Array.from({ length: 8 }, (_, i) => moonSVG(i / 8, 18)).join("");
     }
     const cue = document.getElementById("hero-scroll-moon");
-    if (cue) cue.innerHTML = `<img class="moon-img" src="assets/icons/moon/moon-0.png" alt="" onerror="this.outerHTML=window.moonSVG(0, 22)" />`;
+    if (cue) cue.innerHTML = MI ? MI.mysticIcon("new-moon", { size: 26, label: "" }) : moonSVG(0, 22);
+  }
+
+  /* ---------- 装飾(素材09のSVG化):見出し下のディバイダー、カードの四隅 ---------- */
+  function initOrnaments() {
+    const MI = window.MysticIcons;
+    if (!MI) return;
+    function decorate(root) {
+      // 見出し下のディバイダー(大見出し=星、記事見出し=月)
+      const heads = root.matches?.(".section-title, .view-head h2, .view-head h1") ? [root] : [...(root.querySelectorAll?.(".section-title, .view-head h2, .view-head h1") || [])];
+      heads.forEach((h) => {
+        if (h.dataset.ornament) return; h.dataset.ornament = "1";
+        const d = document.createElement("span"); d.className = "divider-svg"; d.setAttribute("aria-hidden", "true");
+        d.innerHTML = MI.mysticIcon("divider-star", { width: 320, height: 32, label: "" });
+        h.insertAdjacentElement("afterend", d);
+      });
+      // 四隅(鑑定結果のヒーロー・入力パネル・招待状)
+      const cards = root.matches?.(".result-hero, .panel.form, .invite-card, .guide-article") ? [root] : [...(root.querySelectorAll?.(".result-hero, .panel.form, .invite-card, .guide-article") || [])];
+      cards.forEach((c) => {
+        if (c.dataset.ornament) return; c.dataset.ornament = "1";
+        const box = document.createElement("span"); box.className = "corner-svgs"; box.setAttribute("aria-hidden", "true");
+        box.innerHTML = ["corner-top-left", "corner-top-right", "corner-bottom-left", "corner-bottom-right"].map((k) => MI.mysticIcon(k, { size: 72, label: "", className: k })).join("");
+        c.appendChild(box);
+      });
+      // 汎用ディバイダー(.ornament-divider)
+      const divs = root.matches?.(".ornament-divider") ? [root] : [...(root.querySelectorAll?.(".ornament-divider") || [])];
+      divs.forEach((d) => {
+        if (d.dataset.ornament) return; d.dataset.ornament = "1";
+        d.innerHTML = MI.mysticIcon(d.dataset.variant || "divider-moon", { width: 480, height: 48, label: "" });
+      });
+      // 五つの観測カード:ホバーで浮かぶ天体グリフ
+      const bentos = root.matches?.(".bento-card[data-icon]") ? [root] : [...(root.querySelectorAll?.(".bento-card[data-icon]") || [])];
+      bentos.forEach((b) => {
+        if (b.dataset.ornament) return; b.dataset.ornament = "1";
+        const g = document.createElement("span"); g.className = "bento-glyph-svg"; g.setAttribute("aria-hidden", "true");
+        g.innerHTML = MI.mysticIcon(b.dataset.icon, { size: 84, label: "" });
+        b.appendChild(g);
+      });
+    }
+    decorate(document.body);
+    new MutationObserver((muts) => muts.forEach((m) => m.addedNodes.forEach((n) => { if (n.nodeType === 1) decorate(n); })))
+      .observe(document.body, { childList: true, subtree: true });
   }
 
   /* ---------- 観測演出の相(app.js の obs-overlay を拡張) ---------- */
@@ -188,7 +232,7 @@
       ov.querySelector(".obs-core")?.appendChild(elements);
       const moon = document.createElement("div");
       moon.className = "obs-moon";
-      moon.innerHTML = `<img class="moon-img moon-big" src="assets/icons/moon/moon-4.png" alt="" onerror="this.outerHTML=window.moonSVG(0.5, 120, 'moon-big')" />`;
+      moon.innerHTML = window.MysticIcons ? window.MysticIcons.mysticIcon("full-moon", { size: 120, label: "", className: "moon-big", glow: true }) : moonSVG(0.5, 120, "moon-big");
       ov.querySelector(".obs-core")?.appendChild(moon);
       const sub = document.createElement("p");
       sub.className = "obs-sub";
@@ -363,6 +407,7 @@
     initReveal();
     initParallax();
     initMoons();
+    initOrnaments();
     initObservationPhases();
     initTarotHooks();
     Sound.init();

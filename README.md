@@ -47,9 +47,12 @@ css/style.css   # デザインシステム「月光ミスティック」(深紺�
 css/lp.css      # 検索流入用LPの差分スタイル
 js/data.js      # 占術データ(星座・九星・タロット・通変星・称号)
 js/fortune.js   # 計算ロジック(四柱・九星・月星座・判定エンジン)
+js/icons.js     # SVGアイコン定義(五行・月相・天体・星座・装飾、currentColor)
 js/mystic.js    # 演出レイヤー(粒子・スクロール出現・観測演出・月相SVG・環境音)
 js/app.js       # UI(マイページ・シェア・図鑑・PWA)
 assets/         # 素材(配置場所は assets/README.md を参照)
+scripts/build-icons.mjs  # js/icons.js から単体SVGを書き出す
+icons-preview.html       # SVGアイコン一覧(確認用・noindex)
 today/ tarot/ horoscope/ shichusuimei/ aisho/ shogo/
                 # 検索流入用の静的ランディングページ(SEOの入口)
 seiza/          # 12星座の一覧+星座別ページ13本(data.jsのZODIACと同値)

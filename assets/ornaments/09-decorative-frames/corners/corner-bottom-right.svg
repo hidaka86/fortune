@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" role="img" aria-label="角飾り(右下)" style="color:#c8d4e8"><g transform="matrix(-1 0 0 -1 80 80)">
+<g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M2 78V22C2 10 10 2 22 2h56"/>
+<path d="M8 78V24c0-9 7-16 16-16h54" stroke-opacity=".55"/>
+<path d="M14 40c-6 0-8-8-2-10 6-2 8 6 2 8M40 14c0-6-8-8-10-2-2 6 6 8 8 2"/>
+<path d="M22 60v-8M18 56h8M62 22h-8M58 18v8" stroke-opacity=".7"/>
+<circle cx="30" cy="30" r="9" stroke-opacity=".5"/>
+</g>
+<path d="M30 22l1.8 6.2L38 30l-6.2 1.8L30 38l-1.8-6.2L22 30l6.2-1.8z" fill="currentColor"/>
+<path d="M14 14a6 6 0 1 0 8 8 7 7 0 0 1-8-8z" fill="currentColor" opacity=".8"/></g></svg>

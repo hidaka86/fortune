@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="有明月" style="color:#c8d4e8"><defs>
+<filter id="mp7g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+<clipPath id="mp7c"><path d="M32,8A24,24 0 0,0 32,56A16.970562748477136,24 0 0,1 32,8Z"/></clipPath>
+</defs>
+<circle cx="32" cy="32" r="24" fill="var(--midnight-navy, #0a0e27)" stroke="currentColor" stroke-opacity=".45" stroke-width="1"/>
+<path d="M32,8A24,24 0 0,0 32,56A16.970562748477136,24 0 0,1 32,8Z" fill="currentColor" opacity=".35" filter="url(#mp7g)"/><path d="M32,8A24,24 0 0,0 32,56A16.970562748477136,24 0 0,1 32,8Z" fill="var(--moonlight-silver, currentColor)"/>
+<g clip-path="url(#mp7c)" fill="var(--midnight-navy, #0a0e27)" opacity=".22">
+<circle cx="24" cy="26" r="3.2"/><circle cx="38" cy="22" r="2.2"/><circle cx="34" cy="40" r="4"/><circle cx="22" cy="40" r="1.8"/>
+</g></svg>

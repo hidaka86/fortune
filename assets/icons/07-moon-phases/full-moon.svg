@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="満月" style="color:#c8d4e8"><defs>
+<filter id="mp4g" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="2"/></filter>
+<clipPath id="mp4c"><path d="M8,32a24,24 0 1,0 48,0a24,24 0 1,0 -48,0"/></clipPath>
+</defs>
+<circle cx="32" cy="32" r="24" fill="var(--midnight-navy, #0a0e27)" stroke="currentColor" stroke-opacity=".45" stroke-width="1"/>
+<path d="M8,32a24,24 0 1,0 48,0a24,24 0 1,0 -48,0" fill="currentColor" opacity=".35" filter="url(#mp4g)"/><path d="M8,32a24,24 0 1,0 48,0a24,24 0 1,0 -48,0" fill="var(--moonlight-silver, currentColor)"/>
+<g clip-path="url(#mp4c)" fill="var(--midnight-navy, #0a0e27)" opacity=".22">
+<circle cx="24" cy="26" r="3.2"/><circle cx="38" cy="22" r="2.2"/><circle cx="34" cy="40" r="4"/><circle cx="22" cy="40" r="1.8"/>
+</g></svg>

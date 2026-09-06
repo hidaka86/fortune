@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 40" role="img" aria-label="区切り(点)" style="color:#c8d4e8"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 20h150" stroke-opacity=".8"/><path d="M238 20h150" stroke-opacity=".8"/>
+<path d="M6 20l6-3v6zM394 20l-6-3v6z" fill="currentColor"/>
+<path d="M168 20l6-5 6 5-6 5zM226 20l-6-5-6 5 6 5z" fill="currentColor" fill-opacity=".85"/>
+<path d="M90 20l3-2 3 2-3 2zM304 20l3-2 3 2-3 2z" fill="currentColor" fill-opacity=".6"/>
+</g>
+<circle cx="188" cy="20" r="2" fill="currentColor" opacity=".7"/><circle cx="200" cy="20" r="3" fill="currentColor"/><circle cx="212" cy="20" r="2" fill="currentColor" opacity=".7"/></svg>

@@ -20,7 +20,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 構成 | `index.html` + `css/style.css` + `js/{data,fortune,mystic,app}.js`(フレームワークなし) |
+| 構成 | `index.html` + `css/style.css` + `js/{data,fortune,icons,mystic,app}.js`(フレームワークなし) |
 | ルーティング | ハッシュ(`#tarot` 等)+ pushState/popstate。リロード・戻るで画面保持 |
 | ホスティング | GitHub Pages。`.github/workflows/deploy-pages.yml` がプッシュごとにデプロイ |
 | キャッシュ | ワークフローが `?v=dev` をコミットSHAに置換(キャッシュバスト)。SWはネットワーク優先 |
@@ -136,7 +136,9 @@
 | モーション | 600〜1200ms、`--ease-expo cubic-bezier(.19,1,.22,1)`。ホバーは purple glow がゆっくり広がる |
 
 - 既存部品が参照する旧トークン(`--bg` `--ink` `--indigo` `--gold-bright` 等)は `:root` で新パレットへ再割当してある。新規CSSは新トークン名を使うこと。
-- `css/style.css` 末尾の「月光ミスティック層」が後勝ちで部品を再着色する。素材は `--asset-*` トークン経由で参照(`assets/README.md`)。
+- `css/style.css` 末尾の「月光ミスティック層」が後勝ちで部品を再着色する。画像素材は `--asset-*` トークン経由で参照(`assets/README.md`)。
+- **素材06〜09はすべてオリジナルSVG**(`js/icons.js` の `MysticIcons`、44種)。`mysticIcon(type, opts)` でインライン描画し currentColor で着色。`scripts/build-icons.mjs` が単体 .svg を `assets/` に書き出す。一覧は `/icons-preview.html`(noindex)。
+  月相8(`moonPhaseKey()`)/ 天体10 / 星座12(`zodiacKey(month, day)`)/ 五行5 / 角飾り4 / 区切り3 / フレーム2。
 - `js/mystic.js`(app.jsより先に読み込む): 金の粒子(canvas)/ カーソルの光 / スクロール出現(`.reveal` → `.in-view`、動的DOMにも MutationObserver で適用)/ ヒーロー視差 / 月相SVG `moonSVG()` / 観測演出の相(`.obs-overlay[data-phase]` = stars → elements → moon)/ タロット表示時の金の粒子 `goldDust()` / 環境音(WebAudio合成・デフォルトOFF・右上トグル・`myouriscope:sound`)。
 - 観測演出(`observeThen`)は1相 2.1秒 × 最大3相 = 約6〜7秒。完了時に `myouriscope:chime` イベント。
 - 四柱推命の結果に「五行のバランス」(`gogyoBalanceHtml`: 三柱の干支6文字+本命星の五行を集計、光の強さで表示、中央に日主)。

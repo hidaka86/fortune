@@ -1470,7 +1470,11 @@ function horoscopeWheelSvg(h) {
     const [x1, y1] = pt(i * 30, rSignIn), [x2, y2] = pt(i * 30, rOuter);
     out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(200,212,232,.25)" pointer-events="none"/>`;
     const [gx, gy] = pt(i * 30 + 15, (rOuter + rSignIn) / 2);
-    out += `<text x="${gx}" y="${gy + 5}" text-anchor="middle" font-size="15" fill="#e6c968" pointer-events="none">${SIGN_GLYPHS[i]}\uFE0E</text>`;
+    const zKey = ["aries","taurus","gemini","cancer","leo","virgo","libra","scorpio","sagittarius","capricorn","aquarius","pisces"][i];
+    const zBody = window.MysticIcons?.CATALOG[zKey]?.body;
+    out += zBody
+      ? `<g transform="translate(${gx - 9} ${gy - 9}) scale(${18 / 48})" color="#e6c968" pointer-events="none">${zBody}</g>`
+      : `<text x="${gx}" y="${gy + 5}" text-anchor="middle" font-size="15" fill="#e6c968" pointer-events="none">${SIGN_GLYPHS[i]}\uFE0E</text>`;
   }
   // アスペクト線(天体の内側)
   for (const asp of h.aspects) {
@@ -1488,7 +1492,9 @@ function horoscopeWheelSvg(h) {
     const [tx, ty] = pt(pl.lon, rAspect);
     out += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="rgba(200,212,232,.2)"/>
       <circle cx="${px}" cy="${py}" r="11" fill="rgba(5,8,23,.9)" stroke="rgba(212,175,55,.7)"/>
-      <text x="${px}" y="${py + 4.5}" text-anchor="middle" font-size="13" fill="#f5f7ff">${pl.glyph}\uFE0E</text>`;
+      ${window.MysticIcons?.CATALOG[pl.key]?.body
+        ? `<g transform="translate(${px - 7} ${py - 7}) scale(${14 / 48})" color="#f5f7ff"><title>${pl.ja}</title>${window.MysticIcons.CATALOG[pl.key].body}</g>`
+        : `<text x="${px}" y="${py + 4.5}" text-anchor="middle" font-size="13" fill="#f5f7ff">${pl.glyph}\uFE0E</text>`}`;
   }
   return `<svg viewBox="0 0 ${size} ${size}" class="horo-svg" role="img" aria-label="出生図">${out}</svg>`;
 }
@@ -1646,7 +1652,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
           <div class="planet-list" style="padding:0 16px 14px">
             ${horo.planets.map((pl) => `
               <div class="planet-row">
-                <span class="pr-glyph"><img src="assets/icons/glyphs/${pl.key}.png" alt="" class="glyph-img" onerror="this.remove()" />${pl.glyph}</span>
+                <span class="pr-glyph">${typeof mysticIcon === "function" ? mysticIcon(pl.key, { size: 26, label: pl.ja }) : pl.glyph}</span>
                 <span class="pr-name">${pl.ja}<small>${pl.role}</small></span>
                 <span class="pr-sign">${pl.sign.symbol}︎ ${pl.sign.name}<small>${pl.deg}°${pl.gen ? " ・世代" : ""}</small></span>
                 <span class="pr-note">${ELEMENT_STYLE[pl.sign.element]}、${pl.sign.element}のサイン</span>
@@ -1698,11 +1704,23 @@ function gogyoBalanceHtml(pillars, kyusei) {
   const total = Object.values(count).reduce((a, b) => a + b, 0) || 1;
   const max = Math.max(...Object.values(count)) || 1;
   const dayEl = kanEl(pillars.day.kan) || "";
-  const order = ["木", "火", "土", "金", "水"];
+  const order = ["木", "火", "土", "金", "水"]; // 五角形を時計回り(木→火→土→金→水=相生の順)
+  const MI = window.MysticIcons;
   const nodes = order.map((k, i) => {
     const s = (count[k] / max).toFixed(2);
-    return `<div class="gogyo-node" tabindex="0" style="--a:${i * 72 - 90}deg;--s:${s};--ec:${GOGYO_META[k].ec}" data-tip="${GOGYO_META[k].tip}">${k}<small>${count[k] % 1 ? count[k].toFixed(1) : count[k]}</small></div>`;
+    const icon = MI ? mysticIcon(MI.ELEMENT_KEY[k], { size: 30, label: "" }) : "";
+    return `<div class="gogyo-node ${k === dayEl ? "is-day" : ""}" tabindex="0" style="--a:${i * 72 - 90}deg;--s:${s};--ec:${GOGYO_META[k].ec}" data-tip="${GOGYO_META[k].tip}"><span class="gn-icon">${icon}</span><span class="gn-k">${k}</span><small>${count[k] % 1 ? count[k].toFixed(1) : count[k]}</small></div>`;
   }).join("");
+  // 相生(隣同士・金の実線)と相剋(ひとつ飛ばし・紫の破線)を五角形の SVG で描く
+  const R = 100, C = 150;
+  const pt = (i) => { const a = (i * 72 - 90) * Math.PI / 180; return [C + Math.cos(a) * R, C + Math.sin(a) * R]; };
+  const seg = (i, j, cls) => { const [x1, y1] = pt(i), [x2, y2] = pt(j); return `<line class="${cls}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`; };
+  const pentagon = `<svg class="gogyo-lines" viewBox="0 0 300 300" aria-hidden="true">
+    <defs><marker id="gogyoArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5 0 10z" fill="#d4af37"/></marker></defs>
+    <circle cx="150" cy="150" r="100" class="gl-ring"/>
+    ${order.map((_, i) => seg(i, (i + 1) % 5, "gl-sei")).join("")}
+    ${order.map((_, i) => seg(i, (i + 2) % 5, "gl-koku")).join("")}
+  </svg>`;
   const rows = order.map((k) => `
     <div class="gogyo-row" style="--ec:${GOGYO_META[k].ec}">
       <b>${k}</b>
@@ -1714,13 +1732,14 @@ function gogyoBalanceHtml(pillars, kyusei) {
   return `
     <div class="gogyo-wrap">
       <div class="gogyo-wheel" aria-label="五行のバランス">
-        <div class="gogyo-ring"></div>
+        ${pentagon}
         ${nodes}
         <div class="gogyo-center"><b>${dayEl}</b><small>日主</small></div>
       </div>
       <div>
         <div class="gogyo-list">${rows}</div>
         <p class="gogyo-note">中央はあなたの日主の五行「${dayEl}」。光が強い元素ほど命式に多く、いちばん強いのは<strong style="color:var(--gold-bright)">${strongest}</strong>、いちばん少ないのは<strong style="color:var(--gold-bright)">${weakest}</strong>。各元素にカーソルを重ねると意味が出ます。</p>
+        <p class="gogyo-legend"><span class="gl-key gl-key-sei"></span>相生(隣を育てる巡り)<span class="gl-key gl-key-koku"></span>相剋(向かいを抑える巡り)</p>
       </div>
     </div>`;
 }
@@ -3078,11 +3097,11 @@ function showTarotSummary(restored) {
 renderAsk();
 
 /* ---------- 相性診断 ---------- */
-/* 星座グリフ:素材08の切り出し画像があればそれを、なければUnicode記号 */
+/* 星座グリフ:素材08をSVG化した MysticIcons を使う(未読込時はUnicode記号) */
 function zodiacGlyphHtml(z) {
   if (!z) return "✦";
-  const slug = (z.en || "").toLowerCase();
-  return `<img src="assets/icons/glyphs/${slug}.png" alt="" class="glyph-img" onerror="this.remove()" />${z.symbol}\uFE0E`;
+  const key = window.MysticIcons?.ZODIAC_EN[z.name];
+  return key ? mysticIcon(key, { size: 56, label: z.name, glow: true }) : `${z.symbol}\uFE0E`;
 }
 
 document.getElementById("aisho-form").addEventListener("submit", (e) => {

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 260" role="img" aria-label="カード用フレーム" style="color:#c8d4e8"><g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="398" height="258" rx="4" stroke-opacity=".9"/><rect x="7" y="7" width="386" height="246" rx="2" stroke-opacity=".45"/></g>
+<g transform="translate(0 0) ">
+<g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M2 78V22C2 10 10 2 22 2h56"/>
+<path d="M8 78V24c0-9 7-16 16-16h54" stroke-opacity=".55"/>
+<path d="M14 40c-6 0-8-8-2-10 6-2 8 6 2 8M40 14c0-6-8-8-10-2-2 6 6 8 8 2"/>
+<path d="M22 60v-8M18 56h8M62 22h-8M58 18v8" stroke-opacity=".7"/>
+<circle cx="30" cy="30" r="9" stroke-opacity=".5"/>
+</g>
+<path d="M30 22l1.8 6.2L38 30l-6.2 1.8L30 38l-1.8-6.2L22 30l6.2-1.8z" fill="currentColor"/>
+<path d="M14 14a6 6 0 1 0 8 8 7 7 0 0 1-8-8z" fill="currentColor" opacity=".8"/></g><g transform="translate(400 0) scale(-1 1)">
+<g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M2 78V22C2 10 10 2 22 2h56"/>
+<path d="M8 78V24c0-9 7-16 16-16h54" stroke-opacity=".55"/>
+<path d="M14 40c-6 0-8-8-2-10 6-2 8 6 2 8M40 14c0-6-8-8-10-2-2 6 6 8 8 2"/>
+<path d="M22 60v-8M18 56h8M62 22h-8M58 18v8" stroke-opacity=".7"/>
+<circle cx="30" cy="30" r="9" stroke-opacity=".5"/>
+</g>
+<path d="M30 22l1.8 6.2L38 30l-6.2 1.8L30 38l-1.8-6.2L22 30l6.2-1.8z" fill="currentColor"/>
+<path d="M14 14a6 6 0 1 0 8 8 7 7 0 0 1-8-8z" fill="currentColor" opacity=".8"/></g><g transform="translate(0 260) scale(1 -1)">
+<g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M2 78V22C2 10 10 2 22 2h56"/>
+<path d="M8 78V24c0-9 7-16 16-16h54" stroke-opacity=".55"/>
+<path d="M14 40c-6 0-8-8-2-10 6-2 8 6 2 8M40 14c0-6-8-8-10-2-2 6 6 8 8 2"/>
+<path d="M22 60v-8M18 56h8M62 22h-8M58 18v8" stroke-opacity=".7"/>
+<circle cx="30" cy="30" r="9" stroke-opacity=".5"/>
+</g>
+<path d="M30 22l1.8 6.2L38 30l-6.2 1.8L30 38l-1.8-6.2L22 30l6.2-1.8z" fill="currentColor"/>
+<path d="M14 14a6 6 0 1 0 8 8 7 7 0 0 1-8-8z" fill="currentColor" opacity=".8"/></g><g transform="translate(400 260) scale(-1 -1)">
+<g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+<path d="M2 78V22C2 10 10 2 22 2h56"/>
+<path d="M8 78V24c0-9 7-16 16-16h54" stroke-opacity=".55"/>
+<path d="M14 40c-6 0-8-8-2-10 6-2 8 6 2 8M40 14c0-6-8-8-10-2-2 6 6 8 8 2"/>
+<path d="M22 60v-8M18 56h8M62 22h-8M58 18v8" stroke-opacity=".7"/>
+<circle cx="30" cy="30" r="9" stroke-opacity=".5"/>
+</g>
+<path d="M30 22l1.8 6.2L38 30l-6.2 1.8L30 38l-1.8-6.2L22 30l6.2-1.8z" fill="currentColor"/>
+<path d="M14 14a6 6 0 1 0 8 8 7 7 0 0 1-8-8z" fill="currentColor" opacity=".8"/></g>
+<g fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><path d="M120 1h160M120 259h160" stroke-opacity=".2"/></g>
+<path d="M200 1l2 4 4 2-4 2-2 4-2-4-4-2 4-2z" fill="currentColor"/></svg>
