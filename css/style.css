@@ -2818,9 +2818,9 @@ a, button, .chip, .nav-btn, .spread-opt, .guide-card, .bento-card { transition-t
 /* 五行:ペンタゴン配置(相生=金の実線、相剋=紫の破線) */
 .gogyo-wheel { background: radial-gradient(circle, rgba(107, 74, 140, 0.22), transparent 70%); }
 .gogyo-lines { position: absolute; inset: 0; width: 100%; height: 100%; }
-.gogyo-lines .gl-ring { fill: none; stroke: rgba(212, 175, 55, 0.22); stroke-width: 1; }
-.gogyo-lines .gl-sei { stroke: rgba(212, 175, 55, 0.7); stroke-width: 1.2; marker-end: url(#gogyoArrow); }
-.gogyo-lines .gl-koku { stroke: rgba(155, 124, 196, 0.7); stroke-width: 1; stroke-dasharray: 4 4; }
+.gogyo-lines .gl-ring { fill: none; stroke: rgba(200, 212, 232, 0.12); stroke-width: 1; }
+.gogyo-lines .gl-sei { fill: none; stroke: rgba(212, 175, 55, 0.85); stroke-width: 1.4; marker-end: url(#gogyoArrowSei); }
+.gogyo-lines .gl-koku { stroke: rgba(200, 212, 232, 0.55); stroke-width: 1; stroke-dasharray: 4 4; marker-end: url(#gogyoArrowKoku); }
 .gogyo-node { width: 66px; height: 66px; margin: -33px 0 0 -33px; --r: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0; }
 .gogyo-node .gn-icon { display: block; line-height: 0; color: var(--star-white); opacity: calc(.45 + .55 * var(--s, 0)); }
 .gogyo-node .gn-icon .mystic-icon { width: 26px; height: 26px; }
@@ -2829,7 +2829,7 @@ a, button, .chip, .nav-btn, .spread-opt, .guide-card, .bento-card { transition-t
 .gogyo-node.is-day { border-color: rgba(212, 175, 55, 0.85); }
 .gogyo-legend { display: flex; align-items: center; gap: 8px 10px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 8px; }
 .gl-key { display: inline-block; width: 26px; height: 0; border-top: 2px solid rgba(212, 175, 55, 0.8); }
-.gl-key-koku { border-top: 2px dashed rgba(155, 124, 196, 0.8); }
+.gl-key-koku { border-top: 2px dashed rgba(200, 212, 232, 0.7); }
 @media (max-width: 720px) {
   .moon-phases .mystic-icon { width: 20px; height: 20px; }
   .hero-moons .mystic-icon { width: 24px; height: 24px; }

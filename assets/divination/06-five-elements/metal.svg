@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="金" style="color:#c8d4e8"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-<path d="M50 12L82 30v40L50 88 18 70V30z"/>
-<path d="M50 12v76M18 30l32 18 32-18M50 48L18 70M50 48l32 22"/>
-<path d="M28 36l10 6M62 24l10 6" stroke-width="1"/>
+<path d="M50 10L80 28v40L50 90 20 68V28z"/>
+<path d="M50 10v80M20 28l30 18 30-18M50 46L20 68M50 46l30 22"/>
+<path d="M66 22v12M60 28h12" stroke-width="1"/>
 </g></svg>

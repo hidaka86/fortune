@@ -1713,13 +1713,27 @@ function gogyoBalanceHtml(pillars, kyusei) {
   }).join("");
   // 相生(隣同士・金の実線)と相剋(ひとつ飛ばし・紫の破線)を五角形の SVG で描く
   const R = 100, C = 150;
-  const pt = (i) => { const a = (i * 72 - 90) * Math.PI / 180; return [C + Math.cos(a) * R, C + Math.sin(a) * R]; };
-  const seg = (i, j, cls) => { const [x1, y1] = pt(i), [x2, y2] = pt(j); return `<line class="${cls}" x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}"/>`; };
+  const pt = (i, r = R) => { const a = (i * 72 - 90) * Math.PI / 180; return [C + Math.cos(a) * r, C + Math.sin(a) * r]; };
+  const f = (n) => n.toFixed(1);
+  // 相生:円周に沿った弧(ノードの外縁から次のノードの手前まで)
+  const arc = (i) => {
+    const a0 = (i * 72 - 90 + 20) * Math.PI / 180, a1 = ((i + 1) * 72 - 90 - 20) * Math.PI / 180;
+    return `<path class="gl-sei" d="M${f(C + Math.cos(a0) * R)} ${f(C + Math.sin(a0) * R)}A${R} ${R} 0 0 1 ${f(C + Math.cos(a1) * R)} ${f(C + Math.sin(a1) * R)}"/>`;
+  };
+  // 相剋:ひとつ飛ばしへの破線の直線(ノードの縁で止める)
+  const chord = (i) => {
+    const [x1, y1] = pt(i), [x2, y2] = pt((i + 2) % 5);
+    const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy), ux = dx / L, uy = dy / L, m = 36;
+    return `<line class="gl-koku" x1="${f(x1 + ux * m)}" y1="${f(y1 + uy * m)}" x2="${f(x2 - ux * m)}" y2="${f(y2 - uy * m)}"/>`;
+  };
   const pentagon = `<svg class="gogyo-lines" viewBox="0 0 300 300" aria-hidden="true">
-    <defs><marker id="gogyoArrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5 0 10z" fill="#d4af37"/></marker></defs>
+    <defs>
+      <marker id="gogyoArrowSei" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1L9 5 0 9z" fill="#d4af37"/></marker>
+      <marker id="gogyoArrowKoku" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 1L9 5 0 9z" fill="#c8d4e8"/></marker>
+    </defs>
     <circle cx="150" cy="150" r="100" class="gl-ring"/>
-    ${order.map((_, i) => seg(i, (i + 1) % 5, "gl-sei")).join("")}
-    ${order.map((_, i) => seg(i, (i + 2) % 5, "gl-koku")).join("")}
+    ${order.map((_, i) => arc(i)).join("")}
+    ${order.map((_, i) => chord(i)).join("")}
   </svg>`;
   const rows = order.map((k) => `
     <div class="gogyo-row" style="--ec:${GOGYO_META[k].ec}">

@@ -1,8 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="木" style="color:#c8d4e8"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-<path d="M50 88V46"/>
-<path d="M50 62C50 50 40 46 30 38"/>
-<path d="M50 54C50 42 62 38 72 28"/>
-<path d="M50 70C46 64 40 62 34 58"/>
-<path d="M30 38c-2-6 2-10 6-9M72 28c3-5 0-9-4-8M34 58c-3-4-1-8 3-7M40 46c-1-6 3-8 6-6M60 42c0-6 5-8 8-6M50 46c-2-8 3-12 8-10"/>
-<path d="M32 92h36"/>
+<path d="M50 90V30"/>
+<path d="M50 50c-8-2-16-8-20-18M50 50c8-2 16-8 20-18M50 66c-6-2-12-6-16-12M50 66c6-2 12-6 16-12"/>
+<path d="M30 32c-4-6 0-12 6-10s4 10-6 10zM70 32c4-6 0-12-6-10s-4 10 6 10zM34 54c-3-5 0-9 5-8s3 8-5 8zM66 54c3-5 0-9-5-8s-3 8 5 8zM50 30c-5-6-2-14 4-16s8 8-4 16z"/>
+<path d="M36 92c6-4 22-4 28 0"/>
 </g></svg>

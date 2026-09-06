@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="水" style="color:#c8d4e8"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-<path d="M10 38c10-10 20-10 30 0s20 10 30 0 15-6 20 0"/>
-<path d="M10 54c10-10 20-10 30 0s20 10 30 0 15-6 20 0"/>
-<path d="M10 70c10-10 20-10 30 0s20 10 30 0 15-6 20 0"/>
-<circle cx="30" cy="84" r="2"/><circle cx="50" cy="88" r="2.5"/><circle cx="70" cy="84" r="2"/>
+<path d="M12 34c9-9 19-9 28 0s19 9 28 0 14-6 20 0"/>
+<path d="M12 48c9-9 19-9 28 0s19 9 28 0 14-6 20 0"/>
+<path d="M12 62c9-9 19-9 28 0s19 9 28 0 14-6 20 0"/>
+<path d="M50 72c-6 8-8 12-8 16a8 8 0 0 0 16 0c0-4-2-8-8-16z"/>
 </g></svg>
