@@ -102,6 +102,8 @@
         <button class="nav-btn" data-nav="western">ホロスコープ</button>
         <button class="nav-btn" data-nav="eastern">四柱推命</button>
         <button class="nav-btn" data-nav="aisho">相性診断</button>
+        <button class="nav-btn" data-nav="astrodice">アストロダイス</button>
+        <button class="nav-btn" data-nav="maya">マヤ暦</button>
         <button class="nav-btn" data-nav="guide">読みもの</button>
         <button class="nav-btn" data-nav="integrated">統合鑑定</button>
       </nav>
@@ -178,6 +180,18 @@
           <h3>統合鑑定</h3>
           <p>占術を横断して、運命の称号と今日の答えを。</p>
           <span class="bento-link">観測する</span>
+        </button>
+        <button class="bento-card bento-dice" data-nav="astrodice" data-icon="mars" style="--hue:#9b7cc4" data-glyph="⚄">
+          <span class="bento-icon bento-icon-svg" aria-hidden="true"></span>
+          <h3>アストロダイス</h3>
+          <p>天体・星座・ハウスの三つのサイコロを振って、いまの問いに答えを。</p>
+          <span class="bento-link">サイコロを振る</span>
+        </button>
+        <button class="bento-card bento-maya" data-nav="maya" data-icon="sun" style="--hue:#d4af37" data-glyph="☉">
+          <span class="bento-icon bento-icon-svg" aria-hidden="true"></span>
+          <h3>マヤ暦</h3>
+          <p>260日の暦から、あなたのKIN・太陽の紋章・銀河の音を。</p>
+          <span class="bento-link">KINを調べる</span>
         </button>
       </div>
 
@@ -348,6 +362,46 @@
       <div id="aisho-result" class="result-area" hidden></div>
     </section>
 
+    <!-- ============ ASTRO DICE ============ -->
+    <section class="view" id="view-astrodice">
+      <div class="view-head">
+        <p class="view-eyebrow">ASTRO DICE</p>
+        <h2>アストロダイス</h2>
+        <p class="view-sub">天体・星座・ハウス。三つの12面体が「なにが・どのように・どこで」を告げます。</p>
+      </div>
+      <div class="panel form dice-panel">
+        <label class="field">
+          <span class="field-label">いまの問い(任意)</span>
+          <input type="text" id="dice-question" placeholder="例:転職の話、進めていい?" maxlength="60" />
+        </label>
+      </div>
+      <div id="dice-stage"></div>
+      <div id="astrodice-result" class="result-area" hidden></div>
+    </section>
+
+    <!-- ============ MAYA ============ -->
+    <section class="view" id="view-maya">
+      <div class="view-head">
+        <p class="view-eyebrow">MAYAN CALENDAR</p>
+        <h2>マヤ暦</h2>
+        <p class="view-sub">260日の暦ツォルキンから、あなたのKIN・太陽の紋章・銀河の音・ウェイブスペルを読みます。</p>
+      </div>
+      <form class="panel form" id="maya-form">
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">生年月日 <em>必須</em></span>
+            <div class="bd-select" data-bd="birthdate"></div>
+          </label>
+          <label class="field">
+            <span class="field-label">お相手の生年月日(任意・関係を見ます)</span>
+            <div class="bd-select bd-optional" data-bd="birthdate2"></div>
+          </label>
+        </div>
+        <button class="btn btn-primary btn-lg btn-block" type="submit">KINを調べる</button>
+      </form>
+      <div id="maya-result" class="result-area" hidden></div>
+    </section>
+
     <!-- ============ MYPAGE ============ -->
     <section class="view" id="view-mypage">
       <div id="mypage-root"></div>
@@ -379,6 +433,8 @@
           <button data-nav="western">ホロスコープ</button>
           <button data-nav="eastern">四柱推命</button>
           <button data-nav="aisho">相性診断</button>
+          <button data-nav="astrodice">アストロダイス</button>
+          <button data-nav="maya">マヤ暦</button>
           <button data-nav="integrated">統合鑑定</button>
           <button data-nav="mypage">マイページ</button>
         </nav>
@@ -406,5 +462,6 @@
   <script src="js/icons.js?v=dev"></script>
   <script src="js/mystic.js?v=dev"></script>
   <script src="js/app.js?v=dev"></script>
+  <script src="js/extra.js?v=dev"></script>
 </body>
 </html>

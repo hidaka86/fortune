@@ -2845,3 +2845,145 @@ a, button, .chip, .nav-btn, .spread-opt, .guide-card, .bento-card { transition-t
   .panel { padding: 28px 22px; }
   .result-hero { padding: 40px 26px; }
 }
+
+/* ============================================================
+   追加占術:アストロダイス / マヤ暦
+   ============================================================ */
+.bento-icon-svg { display: block; height: 54px; width: 54px; color: var(--gold-bright); filter: drop-shadow(0 0 10px rgba(212, 175, 55, 0.35)); margin-bottom: 14px; }
+.bento-icon-svg .mystic-icon { width: 54px; height: 54px; }
+
+/* --- アストロダイス:3つの12面体 --- */
+.dice-panel { padding: 22px 28px; margin-bottom: 8px; }
+.dice-table {
+  display: flex; justify-content: center; align-items: center; gap: clamp(28px, 8vw, 90px);
+  min-height: 300px; margin: 26px auto 0; perspective: 1100px; perspective-origin: 50% 35%;
+  max-width: 880px;
+}
+.die-wrap { position: relative; width: 150px; height: 190px; cursor: pointer; }
+.die-wrap::before { /* 卓上のほのかな光 */
+  content: ""; position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px;
+  background: radial-gradient(circle, rgba(107, 74, 140, 0.28), transparent 65%); pointer-events: none; z-index: -1;
+}
+.die {
+  position: absolute; left: 50%; top: 45%; width: 0; height: 0;
+  transform-style: preserve-3d;
+  transform: rotateX(0deg) rotateY(0deg);
+  transition: transform 2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.die-face {
+  position: absolute; left: 0; top: 0;
+  clip-path: polygon(50% 0%, 97.55% 34.55%, 79.39% 90.45%, 20.61% 90.45%, 2.45% 34.55%);
+  background:
+    radial-gradient(circle at 50% 40%, rgba(107, 74, 140, calc(0.55 * var(--shade))), transparent 65%),
+    linear-gradient(160deg, rgba(38, 46, 96, var(--shade)), rgba(10, 14, 39, 1));
+  backface-visibility: hidden;
+  display: grid; place-items: center;
+  box-shadow: inset 0 0 0 2px rgba(212, 175, 55, calc(0.35 + 0.4 * var(--shade)));
+  filter: brightness(calc(0.55 + 0.6 * var(--shade)));
+}
+.die-face::before { /* 面の縁の金の線(二重) */
+  content: ""; position: absolute; inset: 7px;
+  clip-path: polygon(50% 0%, 97.55% 34.55%, 79.39% 90.45%, 20.61% 90.45%, 2.45% 34.55%);
+  background: rgba(212, 175, 55, 0.12); pointer-events: none;
+}
+.die-face::after {
+  content: ""; position: absolute; inset: 9px;
+  clip-path: polygon(50% 0%, 97.55% 34.55%, 79.39% 90.45%, 20.61% 90.45%, 2.45% 34.55%);
+  background: linear-gradient(160deg, rgba(30, 38, 84, 1), rgba(12, 16, 44, 1)); pointer-events: none;
+}
+.die-label { position: relative; z-index: 1; display: grid; place-items: center; color: var(--gold-bright); line-height: 0; margin-top: 12px; }
+.die-label .mystic-icon { width: 34px; height: 34px; color: var(--gold-bright); filter: drop-shadow(0 0 6px rgba(212, 175, 55, 0.5)); }
+.die-num { font-family: var(--num-display); font-size: 30px; font-weight: 600; line-height: 1; color: var(--gold-bright); text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); }
+.die-glyph { font-size: 26px; line-height: 1; color: var(--gold-bright); }
+.die-shadow {
+  position: absolute; left: 50%; bottom: 8px; width: 120px; height: 22px; margin-left: -60px; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(3, 5, 18, 0.7), transparent 70%);
+  transition: transform .4s ease, opacity .4s ease;
+}
+.die-wrap.is-rolling .die { animation: dieBounce 2.2s var(--ease-expo) var(--delay, 0ms) both; }
+.die-wrap.is-rolling .die-shadow { animation: shadowBounce 2.2s var(--ease-expo) var(--delay, 0ms) both; }
+@keyframes dieBounce {
+  0% { translate: 0 0; }
+  18% { translate: 0 -110px; }
+  42% { translate: 0 6px; }
+  58% { translate: 0 -34px; }
+  74% { translate: 0 2px; }
+  86% { translate: 0 -10px; }
+  100% { translate: 0 0; }
+}
+@keyframes shadowBounce {
+  0% { transform: scale(1); opacity: 1; }
+  18% { transform: scale(.55); opacity: .35; }
+  42% { transform: scale(1.05); opacity: 1; }
+  58% { transform: scale(.8); opacity: .6; }
+  100% { transform: scale(1); opacity: 1; }
+}
+.die-wrap:hover .die { filter: drop-shadow(0 0 22px var(--glow-purple)); }
+.dice-caption { display: flex; justify-content: center; gap: clamp(28px, 8vw, 90px); max-width: 880px; margin: 4px auto 0; }
+.dice-caption span { width: 150px; text-align: center; font-family: var(--latin); font-size: 11px; letter-spacing: .4em; text-transform: uppercase; color: var(--divine-gold); }
+.dice-cta { text-align: center; margin-top: 26px; }
+.dice-cta .ritual-hint { max-width: 46ch; margin-inline: auto; }
+.dice-q { font-family: var(--serif); color: var(--moonlight-silver); letter-spacing: .1em; margin-bottom: 10px; }
+.dice-triplet { display: flex; align-items: center; justify-content: center; gap: 14px 18px; flex-wrap: wrap; margin: 22px auto 6px; }
+.dt-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 120px; text-align: center; }
+.dt-icon { display: grid; place-items: center; width: 74px; height: 74px; border-radius: 50%; color: var(--gold-bright); border: 1px solid rgba(212, 175, 55, 0.5); background: rgba(5, 8, 23, 0.6); box-shadow: 0 0 28px var(--glow-purple); font-size: 30px; }
+.dt-icon .mystic-icon { width: 40px; height: 40px; }
+.dt-num { font-family: var(--num-display); font-size: 34px; font-weight: 600; }
+.dt-cell b { font-family: var(--serif); font-weight: 500; color: var(--star-white); letter-spacing: .1em; margin-top: 4px; }
+.dt-cell small { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+.dt-x { font-family: var(--latin); font-size: 24px; color: var(--divine-gold); opacity: .8; }
+@media (max-width: 720px) {
+  .dice-table { gap: 8px; min-height: 230px; perspective: 800px; }
+  .die-wrap { width: 108px; height: 150px; transform: scale(.78); transform-origin: center; }
+  .dice-caption { gap: 8px; }
+  .dice-caption span { width: 108px; }
+  .dt-x { display: none; }
+  .dt-cell { min-width: 90px; }
+}
+
+/* --- マヤ暦 --- */
+.maya-kin { display: flex; align-items: baseline; justify-content: center; gap: 8px; margin: 6px 0 10px; }
+.maya-kin small { font-family: var(--latin); letter-spacing: .4em; color: var(--divine-gold); font-size: 14px; }
+.maya-kin b { font-family: var(--num-display); font-size: clamp(56px, 10vw, 84px); font-weight: 600; line-height: 1; color: var(--star-white); text-shadow: 0 0 30px var(--ec, rgba(212, 175, 55, 0.5)); font-variant-numeric: lining-nums; }
+.maya-hero { text-align: center; }
+.maya-hero .result-symbol { font-family: var(--num-display); font-size: 220px; }
+.maya-seal { display: inline-flex; align-items: center; gap: 6px; }
+.maya-seal i { width: 9px; height: 9px; border-radius: 50%; background: var(--ec); box-shadow: 0 0 8px var(--ec); }
+.maya-oracle {
+  display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-areas: ". top ." "left center right" ". bottom .";
+  gap: 12px; max-width: 560px; margin: 8px auto 18px;
+}
+.mo-cell {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-align: center;
+  padding: 14px 10px; border-radius: 12px; border: 1px solid var(--hairline); background: rgba(5, 8, 23, 0.45);
+  box-shadow: inset 0 0 0 1px rgba(5, 8, 23, 0.4), 0 0 18px color-mix(in srgb, var(--ec) 25%, transparent);
+  border-top: 2px solid var(--ec);
+}
+.mo-top { grid-area: top; } .mo-left { grid-area: left; } .mo-right { grid-area: right; } .mo-bottom { grid-area: bottom; }
+.mo-center { grid-area: center; border: 1px solid var(--ec); background: color-mix(in srgb, var(--ec) 14%, rgba(5, 8, 23, 0.7)); box-shadow: 0 0 34px color-mix(in srgb, var(--ec) 40%, transparent); }
+.mo-label { font-family: var(--latin); font-size: 10px; letter-spacing: .3em; text-transform: uppercase; color: var(--muted); }
+.mo-cell b { font-family: var(--serif); font-weight: 500; font-size: 15px; letter-spacing: .06em; color: var(--star-white); line-height: 1.5; }
+.mo-cell small { font-size: 11.5px; color: var(--muted); line-height: 1.5; }
+.maya-oracle-notes p { font-size: 14.5px; line-height: 1.9; }
+.maya-oracle-notes strong { color: var(--gold-bright); font-weight: 500; }
+.maya-pair { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 6px auto 16px; }
+.mp-side { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 14px 20px; border-radius: 12px; border: 1px solid var(--ec); background: color-mix(in srgb, var(--ec) 12%, rgba(5, 8, 23, 0.7)); box-shadow: 0 0 24px color-mix(in srgb, var(--ec) 30%, transparent); min-width: 140px; }
+.mp-side b { font-family: var(--num-display); font-size: 24px; font-weight: 600; color: var(--star-white); }
+.mp-side small { font-size: 12px; color: var(--moonlight-silver); }
+@media (max-width: 560px) {
+  .maya-oracle { gap: 8px; }
+  .mo-cell { padding: 10px 6px; }
+  .mo-cell b { font-size: 13px; }
+  .mo-cell small { font-size: 10.5px; }
+}
+/* ナビ項目が10個になったため、1行に収まるよう詰める(720px以下は横スクロール) */
+.header-inner { max-width: 1200px; }
+.nav-btn { font-size: 13.5px; padding: 8px 9px; letter-spacing: .06em; }
+.nav-btn::after { left: 9px; right: 9px; }
+@media (max-width: 1080px) and (min-width: 721px) {
+  .header-inner .nav { order: 2; margin-left: 0; width: 100%; overflow-x: auto; flex-wrap: nowrap; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .nav-btn { white-space: nowrap; }
+  .sound-toggle, .mypage-btn { order: 1; }
+  .sound-toggle { margin-left: auto; }
+}
