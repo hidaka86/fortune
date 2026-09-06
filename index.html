@@ -6,7 +6,7 @@
   <title>MYOURISCOPE — この世の理と、あなたの流れを観る。</title>
   <meta name="description" content="西洋占星術・四柱推命・九星気学・タロット・相性。複数の占術をひとつの流れとして統合し、過去・現在・未来を静かに観測する占いサービス。" />
   <link rel="canonical" href="https://myouriscope.com/" />
-  <meta name="theme-color" content="#F3EEE5" />
+  <meta name="theme-color" content="#0a0e27" />
   <meta property="og:title" content="MYOURISCOPE — この世の理と、あなたの流れを観る。" />
   <meta property="og:description" content="過去・現在・未来を、ひとつの流れとして読む。複数の占術を統合した、静かな観測のための占い体験。" />
   <meta property="og:type" content="website" />
@@ -80,11 +80,11 @@
   <link rel="apple-touch-icon" href="icons/icon-180.png" />
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="MYOURISCOPE" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Cormorant+Garamond:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@400;500;600;700https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Cormorant+Garamond:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swapfamily=Noto+Serif+JP:wght@400;500;600https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Cormorant+Garamond:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swapfamily=Cormorant+Garamond:wght@400;500;600;700https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Cormorant+Garamond:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swapfamily=Cinzel:wght@400;500;600https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@500;700;900&family=Cormorant+Garamond:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swapdisplay=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css?v=dev" />
 </head>
 <body>
@@ -105,6 +105,10 @@
         <button class="nav-btn" data-nav="guide">読みもの</button>
         <button class="nav-btn" data-nav="integrated">統合鑑定</button>
       </nav>
+      <button class="sound-toggle" type="button" aria-label="環境音の切替" aria-pressed="false" title="環境音(鈴と静寂)をON/OFF">
+        <svg class="st-off" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M16 9l4 6M20 9l-4 6"/></svg>
+        <svg class="st-on" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5v5h3.5L12 18.5v-13L7.5 9.5H4z"/><path d="M15.5 9.2a4 4 0 0 1 0 5.6M18.2 6.6a7.5 7.5 0 0 1 0 10.8"/></svg>
+      </button>
       <button class="nav-btn mypage-btn" data-nav="mypage" aria-label="マイページ" title="マイページ">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
           <circle cx="12" cy="8.2" r="3.4" />
@@ -122,54 +126,75 @@
       <div class="hero">
         <canvas id="sky" aria-hidden="true"></canvas>
         <div class="hero-content">
-          <p class="hero-eyebrow">MYOURISCOPE</p>
+          <p class="hero-eyebrow">Midnight Observatory</p>
+          <h1 class="hero-wordmark">Myouriscope</h1>
+          <p class="hero-kicker">五つの観測</p>
+          <p class="hero-tagline">深夜、静かに宇宙が語りかける。</p>
           <p class="hero-date" id="hero-date"></p>
           <div class="hero-cta">
-            <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今日の占いをはじめる</button>
+            <button class="btn-observe" data-nav="today"><span class="bo-mark" aria-hidden="true">◉</span>今宵、あなたを観測する</button>
           </div>
         </div>
+        <a class="hero-scroll" href="#divinations" aria-label="下へスクロール"><span id="hero-scroll-moon" aria-hidden="true"></span><span>Scroll</span></a>
       </div>
 
       <div class="status-bar" id="status-bar"></div>
 
       <div id="home-daily"></div>
 
-      <div class="section-head">
+      <div class="section-head" id="divinations">
         <p class="section-eyebrow">DIVINATIONS</p>
         <h2 class="section-title">五つの観測</h2>
       </div>
 
       <div class="bento">
-        <button class="bento-card bento-main bento-art" data-nav="tarot" style="--hue:#A8844E">
+        <button class="bento-card bento-main bento-art" data-nav="tarot" style="--hue:#d4af37" data-glyph="☽">
           <span class="bento-tag">いちばん人気</span>
           <h3>タロット</h3>
           <p id="tarot-bento-copy">カードはもう、答えを決めています。シャッフルも、引くのも、あなたの手で。</p>
           <span class="bento-link">今日の一枚を引く</span>
         </button>
-        <button class="bento-card" data-nav="western" style="--hue:#6D5FC9">
+        <button class="bento-card" data-nav="western" style="--hue:#9b7cc4" data-glyph="☉">
           <img class="bento-icon" src="assets/site/icon_western.webp" alt="" loading="lazy" />
           <h3>ホロスコープ</h3>
           <p>10天体の出生図から、5年周期の流れを読む。</p>
           <span class="bento-link">観測する</span>
         </button>
-        <button class="bento-card" data-nav="eastern" style="--hue:#A8844E">
+        <button class="bento-card" data-nav="eastern" style="--hue:#d4af37" data-glyph="☿">
           <img class="bento-icon" src="assets/site/icon_eastern.webp" alt="" loading="lazy" />
           <h3>四柱推命</h3>
           <p>九星気学とあわせて、生まれ持った器を知る。</p>
           <span class="bento-link">観測する</span>
         </button>
-        <button class="bento-card" data-nav="aisho" style="--hue:#C05C82">
+        <button class="bento-card" data-nav="aisho" style="--hue:#d98bb0" data-glyph="♀♂">
           <img class="bento-icon" src="assets/site/icon_aisho.webp" alt="" loading="lazy" />
           <h3>相性診断</h3>
           <p>星座 × 五行 × 干支。三つの角度から二人の縁を。</p>
           <span class="bento-link">観測する</span>
         </button>
-        <button class="bento-card" data-nav="integrated" style="--hue:#A8844E">
+        <button class="bento-card" data-nav="integrated" style="--hue:#d4af37" data-glyph="✦">
           <img class="bento-icon" src="assets/site/icon_integrated.webp" alt="" loading="lazy" />
           <h3>統合鑑定</h3>
           <p>占術を横断して、運命の称号と今日の答えを。</p>
           <span class="bento-link">観測する</span>
         </button>
+      </div>
+
+      <div class="ornament-divider" aria-hidden="true"></div>
+
+      <div class="home-guide">
+        <div class="section-head" style="margin-top:0">
+          <p class="section-eyebrow">READINGS</p>
+          <h2 class="section-title">占いの手引き</h2>
+          <p class="view-sub">それぞれの占いが、なにを、どう観ているのか。仕組みから思想まで。</p>
+        </div>
+        <div class="guide-grid">
+          <button class="guide-card" data-guide-open="tarot"><span class="gc-icon">☽</span><span class="gc-body"><strong>タロットの読み方</strong><small>78枚のフルデッキ、正位置と逆位置、あなたの手が結果を決める理由。</small></span><span class="gc-arrow">→</span></button>
+          <button class="guide-card" data-guide-open="western"><span class="gc-icon">☉</span><span class="gc-body"><strong>ホロスコープのしくみ</strong><small>10天体の配置とアスペクト。出生図が語る、あなたの章。</small></span><span class="gc-arrow">→</span></button>
+          <button class="guide-card" data-guide-open="eastern"><span class="gc-icon">☿</span><span class="gc-body"><strong>四柱推命と九星気学</strong><small>年柱・月柱・日柱と五行のバランス。生まれ持った器と、運気のリズム。</small></span><span class="gc-arrow">→</span></button>
+          <button class="guide-card" data-guide-open="aisho"><span class="gc-icon">♀♂</span><span class="gc-body"><strong>相性のみかた</strong><small>星座 × 五行 × 干支。三つの角度が交わる場所に、縁の形が見える。</small></span><span class="gc-arrow">→</span></button>
+          <button class="guide-card" data-guide-open="about"><span class="gc-icon">✦</span><span class="gc-body"><strong>MYOURISCOPEの思想</strong><small>占いは決定ではなく、観測。断定せず、脅かさず、静かに背中を押す。</small></span><span class="gc-arrow">→</span></button>
+        </div>
       </div>
 
     </section>
@@ -340,6 +365,7 @@
   </main>
 
   <footer class="footer">
+    <div class="moon-phases" id="footer-moons" aria-hidden="true"></div>
     <div class="footer-inner">
       <div class="footer-brand">
         <img class="footer-logo" src="assets/brand/wordmark_footer.png" alt="MYOURISCOPE" />
@@ -376,6 +402,7 @@
 
   <script src="js/data.js?v=dev"></script>
   <script src="js/fortune.js?v=dev"></script>
+  <script src="js/mystic.js?v=dev"></script>
   <script src="js/app.js?v=dev"></script>
 </body>
 </html>

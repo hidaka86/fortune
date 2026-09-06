@@ -43,6 +43,15 @@ function navigate(target, push = true) {
 
 window.addEventListener("popstate", () => navigate(location.hash.slice(1) || "home", false));
 
+// トップの手引きカード:該当記事をひらく
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-guide-open]");
+  if (!el) return;
+  e.preventDefault();
+  navigate("guide");
+  renderGuide(el.dataset.guideOpen);
+});
+
 document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-nav]");
   if (el) {
@@ -265,11 +274,16 @@ const OBS_STEPS = {
   aisho: ["二人の暦を並べています……", "星・五行・干支を照合しています……", "縁の形を観測しています……"],
 };
 
+const OBS_STEP_MS = 2100;             // 1相あたりの長さ(3相で約6.3秒+余韻)
+const OBS_PHASES = ["stars", "elements", "moon"]; // 星が流れる → 五行が回る → 月光の粒子が集まる
+
 function observeThen(kind, reveal, after) {
   if (REDUCED_MOTION) { reveal(); after?.(); return; }
   const steps = OBS_STEPS[kind] || ["観測しています……"];
+  const phases = steps.length >= 3 ? OBS_PHASES : steps.length === 2 ? ["stars", "moon"] : ["moon"];
   const ov = document.createElement("div");
   ov.className = "obs-overlay";
+  ov.dataset.phase = phases[0];
   ov.innerHTML = `
     <div class="obs-core">
       <div class="obs-rings" aria-hidden="true"><i></i><i></i><i></i><span class="obs-dot"></span></div>
@@ -283,15 +297,17 @@ function observeThen(kind, reveal, after) {
     textEl.classList.remove("obs-in");
     void textEl.offsetWidth; // アニメーション再始動
     textEl.classList.add("obs-in");
+    ov.dataset.phase = phases[Math.min(i, phases.length - 1)];
     vibrate(8);
-  }, i * 900));
+  }, i * OBS_STEP_MS));
   setTimeout(() => {
     reveal();
     after?.();
+    document.dispatchEvent(new CustomEvent("myouriscope:chime"));
     ov.classList.add("obs-done");
     document.body.classList.remove("ritual-open");
-    setTimeout(() => ov.remove(), 500);
-  }, steps.length * 900 + 500);
+    setTimeout(() => ov.remove(), 900);
+  }, steps.length * OBS_STEP_MS + 700);
 }
 
 /* 回遊導線:結果の下に「次の扉」を提示 */
@@ -332,8 +348,11 @@ function showResult(el, html) {
     n.classList.add("reveal-item");
   });
   requestAnimationFrame(() => {
-    el.querySelectorAll(".meter-fill").forEach((m) => {
+    el.querySelectorAll(".meter-fill, .gogyo-bar i, .pair-progress i").forEach((m) => {
       requestAnimationFrame(() => { m.style.width = `${m.dataset.w}%`; });
+    });
+    el.querySelectorAll(".pair-progress .moon-svg").forEach((m) => {
+      requestAnimationFrame(() => { m.style.setProperty("--x", `${m.dataset.x}%`); });
     });
     el.querySelectorAll(".sr-fill").forEach((m) => {
       requestAnimationFrame(() => { m.style.strokeDashoffset = m.dataset.ring; });
@@ -1437,22 +1456,26 @@ function horoscopeWheelSvg(h) {
     const a = (180 - lon) * Math.PI / 180;
     return [cx + r * Math.cos(a), cy - r * Math.sin(a)];
   };
-  let out = `<circle cx="${cx}" cy="${cy}" r="${rOuter}" fill="#FDFBF6" stroke="rgba(28,35,51,.28)" stroke-width="1.2"/>
-    <circle cx="${cx}" cy="${cy}" r="${rSignIn}" fill="none" stroke="rgba(28,35,51,.2)"/>
-    <circle cx="${cx}" cy="${cy}" r="${rAspect}" fill="none" stroke="rgba(28,35,51,.1)"/>
-    <circle cx="${cx}" cy="${cy}" r="2.5" fill="#A8844E"/>`;
-  // 12サインの仕切りとグリフ
+  let out = `<circle cx="${cx}" cy="${cy}" r="${rOuter}" fill="rgba(10,14,39,.55)" stroke="rgba(212,175,55,.55)" stroke-width="1.2"/>
+    <circle cx="${cx}" cy="${cy}" r="${rSignIn}" fill="none" stroke="rgba(200,212,232,.28)"/>
+    <circle cx="${cx}" cy="${cy}" r="${rAspect}" fill="none" stroke="rgba(200,212,232,.14)"/>
+    <circle cx="${cx}" cy="${cy}" r="2.5" fill="#d4af37"/>`;
+  // 12サインの仕切りとグリフ(各領域はホバーでハイライト)
   const SIGN_GLYPHS = ["♈","♉","♊","♋","♌","♍","♎","♏","♐","♑","♒","♓"];
+  const SIGN_NAMES = ["牡羊座","牡牛座","双子座","蟹座","獅子座","乙女座","天秤座","蠍座","射手座","山羊座","水瓶座","魚座"];
   for (let i = 0; i < 12; i++) {
+    const [ax, ay] = pt(i * 30, rOuter), [bx, by] = pt(i * 30 + 30, rOuter);
+    const [cx2, cy2] = pt(i * 30 + 30, rSignIn), [dx, dy] = pt(i * 30, rSignIn);
+    out += `<path class="house-seg" d="M${ax},${ay}A${rOuter},${rOuter} 0 0,1 ${bx},${by}L${cx2},${cy2}A${rSignIn},${rSignIn} 0 0,0 ${dx},${dy}Z"><title>${SIGN_NAMES[i]}</title></path>`;
     const [x1, y1] = pt(i * 30, rSignIn), [x2, y2] = pt(i * 30, rOuter);
-    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(28,35,51,.2)"/>`;
+    out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="rgba(200,212,232,.25)" pointer-events="none"/>`;
     const [gx, gy] = pt(i * 30 + 15, (rOuter + rSignIn) / 2);
-    out += `<text x="${gx}" y="${gy + 5}" text-anchor="middle" font-size="15" fill="#8F6C38">${SIGN_GLYPHS[i]}\uFE0E</text>`;
+    out += `<text x="${gx}" y="${gy + 5}" text-anchor="middle" font-size="15" fill="#e6c968" pointer-events="none">${SIGN_GLYPHS[i]}\uFE0E</text>`;
   }
   // アスペクト線(天体の内側)
   for (const asp of h.aspects) {
     const [x1, y1] = pt(asp.a.lon, rAspect), [x2, y2] = pt(asp.b.lon, rAspect);
-    const color = asp.type.tone === "soft" ? "rgba(46,140,126,.55)" : asp.type.tone === "hard" ? "rgba(192,92,130,.5)" : "rgba(168,132,78,.6)";
+    const color = asp.type.tone === "soft" ? "rgba(111,203,187,.6)" : asp.type.tone === "hard" ? "rgba(217,139,176,.55)" : "rgba(212,175,55,.65)";
     out += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" stroke-width="1.3"/>`;
   }
   // 天体グリフ(近接時は半径を互い違いに)
@@ -1463,9 +1486,9 @@ function horoscopeWheelSvg(h) {
     prevLon = pl.lon;
     const [px, py] = pt(pl.lon, rPlanet - (flip ? 22 : 0));
     const [tx, ty] = pt(pl.lon, rAspect);
-    out += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="rgba(28,35,51,.15)"/>
-      <circle cx="${px}" cy="${py}" r="11" fill="#FDFBF6" stroke="rgba(168,132,78,.5)"/>
-      <text x="${px}" y="${py + 4.5}" text-anchor="middle" font-size="13" fill="#1C2333">${pl.glyph}\uFE0E</text>`;
+    out += `<line x1="${px}" y1="${py}" x2="${tx}" y2="${ty}" stroke="rgba(200,212,232,.2)"/>
+      <circle cx="${px}" cy="${py}" r="11" fill="rgba(5,8,23,.9)" stroke="rgba(212,175,55,.7)"/>
+      <text x="${px}" y="${py + 4.5}" text-anchor="middle" font-size="13" fill="#f5f7ff">${pl.glyph}\uFE0E</text>`;
   }
   return `<svg viewBox="0 0 ${size} ${size}" class="horo-svg" role="img" aria-label="出生図">${out}</svg>`;
 }
@@ -1655,6 +1678,53 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
 });
 
 /* ---------- 四柱推命(× 九星気学) ---------- */
+/* 五行バランス:三柱の干支(6文字)+本命星の五行を数え、光の強さで示す */
+const SHI_ELEMENT = { "子": "水", "丑": "土", "寅": "木", "卯": "木", "辰": "土", "巳": "火", "午": "火", "未": "土", "申": "金", "酉": "金", "戌": "土", "亥": "水" };
+const GOGYO_META = {
+  "木": { ec: "rgba(111,203,187,.75)", tip: "木 — 成長・伸びる力・始める勇気。多いほど前へ進む推進力が強い。" },
+  "火": { ec: "rgba(224,144,111,.8)", tip: "火 — 情熱・表現・照らす力。多いほど人を惹きつけ、燃え尽きにも注意。" },
+  "土": { ec: "rgba(212,175,55,.8)", tip: "土 — 安定・受け止める力・信頼。多いほど揺るがず、動き出しはゆっくり。" },
+  "金": { ec: "rgba(200,212,232,.8)", tip: "金 — 決断・研ぎ澄ます力・けじめ。多いほど筋を通し、硬さも出る。" },
+  "水": { ec: "rgba(155,124,196,.85)", tip: "水 — 知恵・流れる力・柔軟さ。多いほど深く考え、流されやすさも。" },
+};
+function gogyoBalanceHtml(pillars, kyusei) {
+  const count = { "木": 0, "火": 0, "土": 0, "金": 0, "水": 0 };
+  const kanEl = (k) => (typeof KAN_INFO !== "undefined" && KAN_INFO[k]) ? KAN_INFO[k].element : null;
+  [pillars.year, pillars.month, pillars.day].forEach((p) => {
+    const ke = kanEl(p.kan); if (ke) count[ke]++;
+    const se = SHI_ELEMENT[p.shi]; if (se) count[se]++;
+  });
+  if (kyusei?.element && count[kyusei.element] !== undefined) count[kyusei.element] += 0.5;
+  const total = Object.values(count).reduce((a, b) => a + b, 0) || 1;
+  const max = Math.max(...Object.values(count)) || 1;
+  const dayEl = kanEl(pillars.day.kan) || "";
+  const order = ["木", "火", "土", "金", "水"];
+  const nodes = order.map((k, i) => {
+    const s = (count[k] / max).toFixed(2);
+    return `<div class="gogyo-node" tabindex="0" style="--a:${i * 72 - 90}deg;--s:${s};--ec:${GOGYO_META[k].ec}" data-tip="${GOGYO_META[k].tip}">${k}<small>${count[k] % 1 ? count[k].toFixed(1) : count[k]}</small></div>`;
+  }).join("");
+  const rows = order.map((k) => `
+    <div class="gogyo-row" style="--ec:${GOGYO_META[k].ec}">
+      <b>${k}</b>
+      <div class="gogyo-bar"><i data-w="${Math.round((count[k] / total) * 100)}"></i></div>
+      <small>${Math.round((count[k] / total) * 100)}%</small>
+    </div>`).join("");
+  const strongest = order.reduce((a, b) => (count[b] > count[a] ? b : a));
+  const weakest = order.reduce((a, b) => (count[b] < count[a] ? b : a));
+  return `
+    <div class="gogyo-wrap">
+      <div class="gogyo-wheel" aria-label="五行のバランス">
+        <div class="gogyo-ring"></div>
+        ${nodes}
+        <div class="gogyo-center"><b>${dayEl}</b><small>日主</small></div>
+      </div>
+      <div>
+        <div class="gogyo-list">${rows}</div>
+        <p class="gogyo-note">中央はあなたの日主の五行「${dayEl}」。光が強い元素ほど命式に多く、いちばん強いのは<strong style="color:var(--gold-bright)">${strongest}</strong>、いちばん少ないのは<strong style="color:var(--gold-bright)">${weakest}</strong>。各元素にカーソルを重ねると意味が出ます。</p>
+      </div>
+    </div>`;
+}
+
 document.getElementById("eastern-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const birthdate = new FormData(e.target).get("birthdate");
@@ -1723,6 +1793,10 @@ document.getElementById("eastern-form").addEventListener("submit", (e) => {
         ${cardH4("NINE STARS", "本命星の気質")}
         <p><strong style="color:var(--gold-bright)">${kyusei.name}(五行は${kyusei.element})</strong></p>
         <p style="margin-top:8px">${kyusei.trait}</p>
+      </div>
+      <div class="result-card span-all">
+        ${cardH4("FIVE ELEMENTS", "五行のバランス")}
+        ${gogyoBalanceHtml(pillars, kyusei)}
       </div>
       <div class="result-card span-all">
         ${cardH4("TODAY", `今日の気流 — ${now.getMonth() + 1}月${now.getDate()}日`)}
@@ -3058,6 +3132,12 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <h3 class="result-title">${nameA} × ${nameB}</h3>
       <p class="result-keyword">ふたりの関係を一言でいうと —「${keyword}」</p>
       <p class="shogo-vs">「${shogoA.title}」<span>×</span>「${shogoB.title}」</p>
+      <div class="pair-glyphs" aria-hidden="true">
+        <div class="pair-glyph">${r.a.zodiac?.symbol || "✦"}\uFE0E<small>${nameA}・${r.a.zodiac?.name || ""}</small></div>
+        <span class="pair-x">×</span>
+        <div class="pair-glyph">${r.b.zodiac?.symbol || "✦"}\uFE0E<small>${nameB}・${r.b.zodiac?.name || ""}</small></div>
+      </div>
+      <div class="pair-progress" aria-hidden="true"><i data-w="${r.total}"></i>${typeof moonSVG === "function" ? moonSVG(Math.min(0.5, r.total / 200), 22).replace('class="moon-svg"', `class="moon-svg" data-x="${r.total}"`) : ""}</div>
       <div class="total-score" style="margin-top:14px"><span class="num" data-count="${r.total}">0</span><span class="denom"> / 100</span></div>
       <p class="result-lead" style="margin-inline:auto">${r.band}。${r.advice}</p>
       ${shareRowHtml("aisho")}

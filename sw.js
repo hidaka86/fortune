@@ -1,5 +1,5 @@
 /* MYOURISCOPE Service Worker — ネットワーク優先+オフラインフォールバック */
-const CACHE = "myouriscope-v2";
+const CACHE = "myouriscope-v3";
 
 self.addEventListener("install", () => {
   self.skipWaiting();

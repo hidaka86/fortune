@@ -3,7 +3,7 @@
 > 妙理(みょうり)= 言葉にしがたい、ものごとの奥にある理 × scope(観測器)。
 > 本番: https://myouriscope.com/ (GitHub Pages / 純粋な静的サイト・サーバーなし)
 
-最終更新: 2026-07-14
+最終更新: 2026-09-06
 
 ---
 
@@ -20,7 +20,7 @@
 
 | 項目 | 内容 |
 |---|---|
-| 構成 | `index.html` + `css/style.css` + `js/{data,fortune,app}.js`(フレームワークなし) |
+| 構成 | `index.html` + `css/style.css` + `js/{data,fortune,mystic,app}.js`(フレームワークなし) |
 | ルーティング | ハッシュ(`#tarot` 等)+ pushState/popstate。リロード・戻るで画面保持 |
 | ホスティング | GitHub Pages。`.github/workflows/deploy-pages.yml` がプッシュごとにデプロイ |
 | キャッシュ | ワークフローが `?v=dev` をコミットSHAに置換(キャッシュバスト)。SWはネットワーク優先 |
@@ -122,19 +122,27 @@
 - 称号の下に**由来分解カード**(言葉←占術←意味)を表示。
 - 称号図鑑(コレクション)・招待リンク(シェアURL経由で相手の図鑑に登録)。
 
-## 10. デザインシステム
+## 10. デザインシステム — 「月光ミスティック」(2026-09 全面刷新)
+
+> コンセプト: 深夜の天体観測所。静謐で厳かな神秘体験。「本物の占い師に鑑定してもらっている」没入感。
 
 | トークン | 値 |
 |---|---|
-| 地色 | `--bg #F3EEE5`(象牙)/ 夜 `--chamber #0A1026` |
-| 藍 | `--indigo #1C2333` |
-| 金 | `--gold #A8844E` / `--gold-bright #8F6C38` / 夜金 `#D9C08A` |
-| 書体 | 見出し: Zen Old Mincho / 欧文: Cormorant Garamond / 本文数字: Zen Kaku Gothic New / **大きな数字**: Cormorant Garamond(`--num-display`) |
+| 背景 | `--midnight-navy #0a0e27`(メイン)/ `--deep-navy #050817`(より深い) |
+| 紫 | `--nebula-purple #6b4a8c`(アクセント)/ `--mystic-violet #4a3a6b`(サブ)/ `--glow-purple rgba(107,74,140,.4)`(ホバーグロー) |
+| 光 | `--moonlight-silver #c8d4e8`(本文)/ `--star-white #f5f7ff`(見出し)/ `--divine-gold #d4af37` / `--soft-gold #b8941f` |
+| 境界 | `--hairline rgba(200,212,232,.15)` |
+| 書体 | 見出し(日本語): Shippori Mincho B1 / 欧文見出し: Cormorant Garamond, Cinzel(大文字・字間 .3em)/ 本文: Noto Serif JP(行間1.9・字間.08em) |
+| モーション | 600〜1200ms、`--ease-expo cubic-bezier(.19,1,.22,1)`。ホバーは purple glow がゆっくり広がる |
 
-- 禁止: ネオン宇宙・紫グラデ・水晶玉・星座記号乱用・安っぽいスピリチュアル表現。テキスト可読性最優先。
-- CTA: 「生きた空」(ドリフトする星空+ctaSweep)。btn-observe は静的金リング+ハローパルス(回転棒は不可)。
-- 結果カード: `card_texture.webp` を白93%で敷く。結論系カードは夜の紺(CSSファイル末尾の night ブロックで上書き)。
-- 横幅は必ず端末幅以内(`html,body { overflow-x: clip }`)。横スクロールはカルーセル内のみ。
+- 既存部品が参照する旧トークン(`--bg` `--ink` `--indigo` `--gold-bright` 等)は `:root` で新パレットへ再割当してある。新規CSSは新トークン名を使うこと。
+- `css/style.css` 末尾の「月光ミスティック層」が後勝ちで部品を再着色する。素材は `--asset-*` トークン経由で参照(`assets/README.md`)。
+- `js/mystic.js`(app.jsより先に読み込む): 金の粒子(canvas)/ カーソルの光 / スクロール出現(`.reveal` → `.in-view`、動的DOMにも MutationObserver で適用)/ ヒーロー視差 / 月相SVG `moonSVG()` / 観測演出の相(`.obs-overlay[data-phase]` = stars → elements → moon)/ タロット表示時の金の粒子 `goldDust()` / 環境音(WebAudio合成・デフォルトOFF・右上トグル・`myouriscope:sound`)。
+- 観測演出(`observeThen`)は1相 2.1秒 × 最大3相 = 約6〜7秒。完了時に `myouriscope:chime` イベント。
+- 四柱推命の結果に「五行のバランス」(`gogyoBalanceHtml`: 三柱の干支6文字+本命星の五行を集計、光の強さで表示、中央に日主)。
+- 相性診断の結果に二人の星座グリフと月相プログレス。ホロスコープの出生図SVGは各サイン領域がホバーでハイライト。
+- 禁止(継続): 断定・脅し・商業的な煽り。テキスト可読性最優先(本文は必ず `--moonlight-silver` 以上の明度)。
+- 横幅は必ず端末幅以内(`html,body { overflow-x: clip }`)。ヒーローのみ `100vw` で全幅。
 
 ## 11. localStorage キー
 
