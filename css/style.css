@@ -2247,8 +2247,8 @@ body.ritual-open { overflow: hidden; }
 :root {
   --asset-bg-texture: url("../assets/bg/01-background-texture.jpg");
   --asset-hero: url("../assets/bg/02-hero-visual.jpg");
-  --asset-horoscope-wheel: url("../assets/divination/03-horoscope-wheel.png");
-  --asset-tarot-back: url("../assets/divination/04-tarot-back.png");
+  --asset-horoscope-wheel: url("../assets/divination/03-horoscope-wheel.jpg");
+  --asset-tarot-back: url("../assets/divination/04-tarot-back.jpg");
   --asset-five-elements: url("../assets/divination/06-five-elements.png");
   --asset-frames: url("../assets/ornaments/09-decorative-frames.png");
   /* 素材未配置時のフォールバック(SVGで生成した装飾) */
@@ -2621,7 +2621,7 @@ h1, h2, h3, .hero-title, .view-head h2, .section-title, .result-title, .ritual-t
   content: ""; position: absolute; inset: 0; margin: auto;
   width: min(100%, 420px); aspect-ratio: 1; border-radius: 50%;
   background: var(--asset-horoscope-wheel) center / contain no-repeat;
-  opacity: .55; pointer-events: none;
+  opacity: .42; pointer-events: none;
   animation: wheelIn 3s var(--ease-expo) both, wheelSpin 240s linear 3s infinite;
 }
 .horo-wheel::after {
@@ -2766,3 +2766,5 @@ a, button, .chip, .nav-btn, .spread-opt, .guide-card, .bento-card { transition-t
 .bento-icon { filter: invert(1) sepia(1) saturate(2.6) hue-rotate(8deg) brightness(.95) drop-shadow(0 0 10px rgba(212, 175, 55, 0.35)); opacity: .9; }
 .bento-card:hover .bento-icon { filter: invert(1) sepia(1) saturate(2.6) hue-rotate(8deg) brightness(1.05) drop-shadow(0 0 18px rgba(212, 175, 55, 0.6)); }
 #view-home { padding-top: 0; }
+.hero-moons { margin: 40px auto 0; gap: 16px; opacity: .8; }
+.hero-moons .moon-svg { width: 16px; height: 16px; }

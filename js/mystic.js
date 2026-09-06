@@ -156,8 +156,8 @@
 
   /* ---------- 月相の装飾(フッター・スクロール誘導) ---------- */
   function initMoons() {
-    const row = document.getElementById("footer-moons");
-    if (row) {
+    const rows = [document.getElementById("footer-moons"), document.getElementById("hero-moons")].filter(Boolean);
+    for (const row of rows) {
       let today = 0.5;
       try { if (typeof moonPhaseToday === "function") { const mp = moonPhaseToday(); if (typeof mp.age === "number") today = mp.age / 29.53; else if (typeof mp.phase === "number") today = mp.phase; } } catch { /* noop */ }
       const idx = Math.round(today * 8) % 8;
