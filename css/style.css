@@ -2250,7 +2250,13 @@ body.ritual-open { overflow: hidden; }
   --asset-horoscope-wheel: url("../assets/divination/03-horoscope-wheel.jpg");
   --asset-tarot-back: url("../assets/divination/04-tarot-back.jpg");
   --asset-five-elements: url("../assets/divination/06-five-elements.png");
-  --asset-frames: url("../assets/ornaments/09-decorative-frames.png");
+  --asset-frames: url("../assets/ornaments/09-decorative-frames.jpg");
+  --asset-divider: url("../assets/ornaments/divider-top.png");
+  --asset-divider-sm: url("../assets/ornaments/divider-bottom.png");
+  --asset-corner-tl: url("../assets/ornaments/corner-tl.png");
+  --asset-corner-tr: url("../assets/ornaments/corner-tr.png");
+  --asset-corner-bl: url("../assets/ornaments/corner-bl.png");
+  --asset-corner-br: url("../assets/ornaments/corner-br.png");
   /* 素材未配置時のフォールバック(SVGで生成した装飾) */
   --ornament-divider: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 24'><g fill='none' stroke='%23d4af37' stroke-width='1'><path d='M4 12h86M150 12h86' opacity='.7'/><path d='M96 12l10-6 10 6-10 6z' opacity='.9'/><path d='M124 12l10-6 10 6-10 6z' opacity='.9'/></g><circle cx='120' cy='12' r='2.2' fill='%23d4af37'/><circle cx='92' cy='12' r='1.2' fill='%23d4af37' opacity='.7'/><circle cx='148' cy='12' r='1.2' fill='%23d4af37' opacity='.7'/></svg>");
 }
@@ -2768,3 +2774,74 @@ a, button, .chip, .nav-btn, .spread-opt, .guide-card, .bento-card { transition-t
 #view-home { padding-top: 0; }
 .hero-moons { margin: 40px auto 0; gap: 16px; opacity: .8; }
 .hero-moons .moon-svg { width: 16px; height: 16px; }
+
+/* ---------- 素材07/08/09の組み込み(紺地の画像は screen 合成で地色を消す) ---------- */
+.moon-img, .glyph-img {
+  display: inline-block; width: 1em; height: 1em; object-fit: cover; vertical-align: -0.15em;
+  border-radius: 50%;
+}
+.moon-phases .moon-img { width: 26px; height: 26px; }
+.moon-phases .moon-svg { width: 26px; height: 26px; }
+.hero-moons .moon-img, .hero-moons .moon-svg { width: 30px; height: 30px; }
+.moon-phases .is-today { transform: scale(1.3); filter: drop-shadow(0 0 12px rgba(200, 212, 232, 0.8)); }
+.moon-phases .is-today .moon-img { filter: brightness(1.15); }
+.hero-scroll .moon-img { width: 26px; height: 26px; }
+.obs-moon .moon-big { width: 120px; height: 120px; filter: drop-shadow(0 0 26px rgba(200, 212, 232, 0.6)); border-radius: 50%; }
+.pr-glyph { display: grid; place-items: center; }
+.pr-glyph .glyph-img { width: 30px; height: 30px; border-radius: 0; }
+.pr-glyph .glyph-img + * { display: none; }
+.pr-glyph:has(.glyph-img) { font-size: 0; }
+.pair-glyph .glyph-img { width: 64px; height: 64px; border-radius: 0; }
+.pair-glyph:has(.glyph-img) { font-size: 0; }
+.pair-glyph:has(.glyph-img) small { font-size: 10.5px; }
+/* 五つの観測カード:ホバーで浮かぶグリフを素材08に */
+.bento-card[data-nav="western"]::after, .bento-card[data-nav="eastern"]::after,
+.bento-card[data-nav="aisho"]::after, .bento-card[data-nav="tarot"]::after, .bento-card[data-nav="integrated"]::after {
+  content: ""; width: 84px; height: 84px; right: 14px; top: 12px;
+  background-size: contain; background-repeat: no-repeat; opacity: 0;
+  transition: opacity var(--dur-3) var(--ease-expo), transform var(--dur-3) var(--ease-expo);
+}
+.bento-card[data-nav="western"]::after { background-image: url("../assets/icons/glyphs/sun.png"); }
+.bento-card[data-nav="eastern"]::after { background-image: url("../assets/icons/glyphs/saturn.png"); }
+.bento-card[data-nav="aisho"]::after { background-image: url("../assets/icons/glyphs/venus.png"); }
+.bento-card[data-nav="tarot"]::after { background-image: url("../assets/icons/glyphs/moon.png"); }
+.bento-card[data-nav="integrated"]::after { background-image: url("../assets/icons/glyphs/jupiter.png"); }
+.bento-card:hover::after { opacity: .85; transform: translateY(0) scale(1); }
+/* ディバイダー(素材09) */
+.section-head .section-title::after, .view-head h2::after, .view-head h1::after {
+  width: 320px; height: 38px; margin-top: 12px;
+  background: var(--asset-divider) center / contain no-repeat, var(--ornament-divider) center / contain no-repeat;
+  opacity: .95;
+}
+.ornament-divider {
+  width: min(560px, 80%); height: 48px; margin: 56px auto;
+  background: var(--asset-divider) center / contain no-repeat; opacity: .95;
+}
+.result-card h4::after, .footer .moon-phases::before { content: none; }
+/* 鑑定結果と入力パネルの四隅に装飾(素材09の角) */
+.result-hero::after, .panel::before {
+  inset: 0; border: none; border-radius: var(--radius);
+  background:
+    var(--asset-corner-tl) left top / 96px 96px no-repeat,
+    var(--asset-corner-tr) right top / 96px 96px no-repeat,
+    var(--asset-corner-bl) left bottom / 96px 96px no-repeat,
+    var(--asset-corner-br) right bottom / 96px 96px no-repeat;
+  opacity: .85; overflow: hidden;
+}
+.result-hero { overflow: hidden; }
+@media (max-width: 720px) {
+  .result-hero::after, .panel::before { background-size: 64px 64px; }
+  .moon-phases .moon-img, .moon-phases .moon-svg { width: 20px; height: 20px; }
+  .hero-moons .moon-img, .hero-moons .moon-svg { width: 24px; height: 24px; }
+}
+/* 四隅装飾が中身に重ならないよう調整 */
+.panel::before { background-size: 70px 70px; opacity: .55; }
+.panel { padding: 34px 36px; }
+.result-hero { padding: 52px 60px; }
+.result-hero::after { background-size: 88px 88px; opacity: .8; }
+@media (max-width: 720px) {
+  .panel { padding: 28px 22px; }
+  .result-hero { padding: 40px 26px; }
+  .panel::before { background-size: 48px 48px; opacity: .45; }
+  .result-hero::after { background-size: 60px 60px; }
+}

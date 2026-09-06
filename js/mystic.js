@@ -161,10 +161,10 @@
       let today = 0.5;
       try { if (typeof moonPhaseToday === "function") { const mp = moonPhaseToday(); if (typeof mp.age === "number") today = mp.age / 29.53; else if (typeof mp.phase === "number") today = mp.phase; } } catch { /* noop */ }
       const idx = Math.round(today * 8) % 8;
-      row.innerHTML = Array.from({ length: 8 }, (_, i) => `<span class="${i === idx ? "is-today" : ""}">${moonSVG(i / 8, 18)}</span>`).join("");
+      row.innerHTML = Array.from({ length: 8 }, (_, i) => `<span class="${i === idx ? "is-today" : ""}"><img class="moon-img" src="assets/icons/moon/moon-${i}.png" alt="" onerror="this.outerHTML=window.moonSVG(${i / 8}, 18)" /></span>`).join("");
     }
     const cue = document.getElementById("hero-scroll-moon");
-    if (cue) cue.innerHTML = moonSVG(0.0, 22);
+    if (cue) cue.innerHTML = `<img class="moon-img" src="assets/icons/moon/moon-0.png" alt="" onerror="this.outerHTML=window.moonSVG(0, 22)" />`;
   }
 
   /* ---------- 観測演出の相(app.js の obs-overlay を拡張) ---------- */
@@ -188,7 +188,7 @@
       ov.querySelector(".obs-core")?.appendChild(elements);
       const moon = document.createElement("div");
       moon.className = "obs-moon";
-      moon.innerHTML = moonSVG(0.5, 120, "moon-big");
+      moon.innerHTML = `<img class="moon-img moon-big" src="assets/icons/moon/moon-4.png" alt="" onerror="this.outerHTML=window.moonSVG(0.5, 120, 'moon-big')" />`;
       ov.querySelector(".obs-core")?.appendChild(moon);
       const sub = document.createElement("p");
       sub.className = "obs-sub";

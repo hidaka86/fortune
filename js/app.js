@@ -1646,7 +1646,7 @@ document.getElementById("western-form").addEventListener("submit", (e) => {
           <div class="planet-list" style="padding:0 16px 14px">
             ${horo.planets.map((pl) => `
               <div class="planet-row">
-                <span class="pr-glyph">${pl.glyph}</span>
+                <span class="pr-glyph"><img src="assets/icons/glyphs/${pl.key}.png" alt="" class="glyph-img" onerror="this.remove()" />${pl.glyph}</span>
                 <span class="pr-name">${pl.ja}<small>${pl.role}</small></span>
                 <span class="pr-sign">${pl.sign.symbol}︎ ${pl.sign.name}<small>${pl.deg}°${pl.gen ? " ・世代" : ""}</small></span>
                 <span class="pr-note">${ELEMENT_STYLE[pl.sign.element]}、${pl.sign.element}のサイン</span>
@@ -3078,6 +3078,13 @@ function showTarotSummary(restored) {
 renderAsk();
 
 /* ---------- 相性診断 ---------- */
+/* 星座グリフ:素材08の切り出し画像があればそれを、なければUnicode記号 */
+function zodiacGlyphHtml(z) {
+  if (!z) return "✦";
+  const slug = (z.en || "").toLowerCase();
+  return `<img src="assets/icons/glyphs/${slug}.png" alt="" class="glyph-img" onerror="this.remove()" />${z.symbol}\uFE0E`;
+}
+
 document.getElementById("aisho-form").addEventListener("submit", (e) => {
   e.preventDefault();
   const fd = new FormData(e.target);
@@ -3133,9 +3140,9 @@ document.getElementById("aisho-form").addEventListener("submit", (e) => {
       <p class="result-keyword">ふたりの関係を一言でいうと —「${keyword}」</p>
       <p class="shogo-vs">「${shogoA.title}」<span>×</span>「${shogoB.title}」</p>
       <div class="pair-glyphs" aria-hidden="true">
-        <div class="pair-glyph">${r.a.zodiac?.symbol || "✦"}\uFE0E<small>${nameA}・${r.a.zodiac?.name || ""}</small></div>
+        <div class="pair-glyph">${zodiacGlyphHtml(r.a.zodiac)}<small>${nameA}・${r.a.zodiac?.name || ""}</small></div>
         <span class="pair-x">×</span>
-        <div class="pair-glyph">${r.b.zodiac?.symbol || "✦"}\uFE0E<small>${nameB}・${r.b.zodiac?.name || ""}</small></div>
+        <div class="pair-glyph">${zodiacGlyphHtml(r.b.zodiac)}<small>${nameB}・${r.b.zodiac?.name || ""}</small></div>
       </div>
       <div class="pair-progress" aria-hidden="true"><i data-w="${r.total}"></i>${typeof moonSVG === "function" ? moonSVG(Math.min(0.5, r.total / 200), 22).replace('class="moon-svg"', `class="moon-svg" data-x="${r.total}"`) : ""}</div>
       <div class="total-score" style="margin-top:14px"><span class="num" data-count="${r.total}">0</span><span class="denom"> / 100</span></div>
