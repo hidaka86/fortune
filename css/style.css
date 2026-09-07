@@ -2987,3 +2987,10 @@ a, button, .chip, .nav-btn, .spread-opt, .guide-card, .bento-card { transition-t
   .sound-toggle, .mypage-btn { order: 1; }
   .sound-toggle { margin-left: auto; }
 }
+/* 会員向けFV:スクロール誘導がCTAに重ならないよう下に余白を確保 */
+.hero.hero-member { min-height: min(56vh, 520px); }
+.hero-member .hero-content { padding: 56px 24px 130px; }
+@media (max-width: 720px) { .hero-member .hero-content { padding: 44px 20px 120px; } }
+/* ステータスバーのボタン(月の間・宙の窓・風のざわめき)はUA既定の白背景を消す */
+.status-bar button.status-item { background: none; border: none; padding: 0; font: inherit; color: var(--gold-bright); }
+.status-bar button.status-night { color: #a99bd6; }

@@ -644,6 +644,7 @@ function renderToday() {
     keywords: [`「${verdict.word}」`, `「${daily.dayStar.name}」の日`, `ラッキーカラーは${daily.luckyColor}`],
     score: daily.score100, scoreLabel: "今日の運気", scoreSuffix: "/100",
     sub: null,
+    scores: { total: Math.max(1, Math.min(5, Math.round(daily.score100 / 20))), love: daily.scores.love, work: daily.scores.work, money: daily.scores.money },
     x: `【MYOURISCOPE 今日の占い】「${verdict.word}」— ${mind.word}。今日の運気は${daily.score100}/100 ✦`,
   };
 
@@ -1076,16 +1077,50 @@ async function makeShareCard(p) {
   canvas.width = W; canvas.height = H;
   const ctx = canvas.getContext("2d");
   try {
-    await document.fonts.load('700 80px "Zen Old Mincho"');
+    await document.fonts.load('600 80px "Shippori Mincho B1"');
+    await document.fonts.load('500 40px "Noto Serif JP"');
     await document.fonts.load('600 40px "Cormorant Garamond"');
   } catch { /* fallback */ }
-  const serif = '"Zen Old Mincho", "Hiragino Mincho ProN", serif';
-  const latin = '"Cormorant Garamond", "Zen Old Mincho", serif';
+  const serif = '"Shippori Mincho B1", "Noto Serif JP", "Hiragino Mincho ProN", serif';
+  const latin = '"Cormorant Garamond", "Shippori Mincho B1", serif';
+  /* 文字列を幅に収めて折り返す(和文は1文字ずつ、句読点の直後を優先) */
+  const wrapText = (text, maxW, maxLines, balanced = false) => {
+    const str = String(text || "").trim();
+    // 見出しは「、」「。」に近い中央で2分割(「…続ける / 日」のような不格好な折返しを避ける)
+    if (balanced && maxLines >= 2 && ctx.measureText(str).width > maxW) {
+      const puncts = [...str].map((c, i) => (/[、。!?！？—]/.test(c) ? i : -1)).filter((i) => i > 0 && i < str.length - 1);
+      if (puncts.length) {
+        const mid = str.length / 2;
+        const cut = puncts.reduce((a, b) => (Math.abs(b + 1 - mid) < Math.abs(a + 1 - mid) ? b : a)) + 1;
+        const head = str.slice(0, cut), tail = str.slice(cut);
+        if (ctx.measureText(head).width <= maxW && ctx.measureText(tail).width <= maxW) return [head, tail];
+      }
+    }
+    const lines = []; let cur = "";
+    for (const ch of str) {
+      if (ctx.measureText(cur + ch).width > maxW && cur) { lines.push(cur); cur = ch; } else cur += ch;
+      if (/[、。!?！？]/.test(ch) && ctx.measureText(cur).width > maxW * 0.6 && lines.length < maxLines - 1) { lines.push(cur); cur = ""; }
+    }
+    if (cur) lines.push(cur);
+    if (lines.length > maxLines) { const cut = lines.slice(0, maxLines); cut[maxLines - 1] = cut[maxLines - 1].replace(/.{1}$/, "…"); return cut; }
+    return lines;
+  };
+  /* SVGアイコン(MysticIcons)をキャンバスに描く */
+  const iconImg = async (key, color, size) => {
+    const def = window.MysticIcons?.CATALOG[key];
+    if (!def) return null;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${def.vb}" width="${size}" height="${size}" style="color:${color}">${def.body}</svg>`;
+    return new Promise((res) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg); });
+  };
 
   // 深い紺の間
   const bg = ctx.createLinearGradient(0, 0, 0, H);
-  bg.addColorStop(0, "#0A1026"); bg.addColorStop(0.5, "#141B38"); bg.addColorStop(1, "#0A1026");
+  bg.addColorStop(0, "#070b22"); bg.addColorStop(0.5, "#121838"); bg.addColorStop(1, "#050817");
   ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+  // 紫の星雲
+  const neb = ctx.createRadialGradient(W * 0.5, H * 0.36, 40, W * 0.5, H * 0.36, 620);
+  neb.addColorStop(0, "rgba(107,74,140,.30)"); neb.addColorStop(1, "rgba(107,74,140,0)");
+  ctx.fillStyle = neb; ctx.fillRect(0, 0, W, H);
 
   // 静かな星粒(シードで固定)
   const rng = seededRng(p.title || "myouriscope");
@@ -1107,18 +1142,25 @@ async function makeShareCard(p) {
     ctx.stroke();
   }
 
-  // 金の枠
-  ctx.strokeStyle = "rgba(184,154,90,.75)"; ctx.lineWidth = 3;
+  // 金の枠(二重)と四隅の飾り(素材09のSVG)
+  ctx.strokeStyle = "rgba(212,175,55,.8)"; ctx.lineWidth = 3;
   ctx.strokeRect(44, 44, W - 88, H - 88);
-  ctx.strokeStyle = "rgba(184,154,90,.3)"; ctx.lineWidth = 1;
-  ctx.strokeRect(58, 58, W - 116, H - 116);
+  ctx.strokeStyle = "rgba(212,175,55,.32)"; ctx.lineWidth = 1;
+  ctx.strokeRect(60, 60, W - 120, H - 120);
+  const cornerIm = await iconImg("corner-top-left", "#d4af37", 200);
+  if (cornerIm) {
+    const cs = 190;
+    for (const [x, y, sx, sy] of [[50, 50, 1, 1], [W - 50, 50, -1, 1], [50, H - 50, 1, -1], [W - 50, H - 50, -1, -1]]) {
+      ctx.save(); ctx.translate(x, y); ctx.scale(sx, sy); ctx.globalAlpha = .9; ctx.drawImage(cornerIm, 0, 0, cs, cs); ctx.restore();
+    }
+  }
 
   // ヘッダー
   ctx.textAlign = "center";
-  ctx.fillStyle = "#B89A5A";
+  ctx.fillStyle = "#d4af37";
   ctx.font = `600 42px ${latin}`;
   ctx.fillText("M Y O U R I S C O P E", W / 2, 158);
-  ctx.fillStyle = "#9AA0B8";
+  ctx.fillStyle = "#9aa6c4";
   ctx.font = `500 30px ${latin}`;
   ctx.fillText(p.eyebrow || "", W / 2, 214);
 
@@ -1129,14 +1171,14 @@ async function makeShareCard(p) {
     im.onerror = () => res(null);
     im.src = src;
   });
-  const visTop = 280, visH = 830;
+  const visTop = 280, visH = p.scores ? 600 : 830; // 運勢の札を置くときは絵札を少し小さく
 
   if (p.cards?.length) {
     const shown = p.cards.slice(0, 3);
     const imgs = (await Promise.all(shown.map((c) => loadImg(tarotImg(c.n))))).map((im, i) => ({ im, c: shown[i] }));
     const ok = imgs.filter((x) => x.im);
     if (ok.length) {
-      const cw = ok.length === 1 ? 470 : 330;
+      const cw = ok.length === 1 ? (p.scores ? 340 : 470) : 330;
       const ch = cw * 244 / 152;
       const cy = visTop + visH / 2;
       const fan = ok.length === 1 ? [[0, 0]] : ok.length === 2 ? [[-0.09, 10], [0.09, 10]] : [[-0.14, 34], [0, 0], [0.14, 34]];
@@ -1166,7 +1208,7 @@ async function makeShareCard(p) {
       ctx.save();
       ctx.beginPath(); ctx.arc(W / 2, visTop + visH / 2, sz / 2, 0, Math.PI * 2);
       ctx.shadowColor = "rgba(217,192,138,.35)"; ctx.shadowBlur = 70;
-      ctx.fillStyle = "#FDFBF6"; ctx.fill();
+      ctx.fillStyle = "#121838"; ctx.fill();
       ctx.restore();
       ctx.drawImage(im, W / 2 - sz / 2, visTop + visH / 2 - sz / 2, sz, sz);
     }
@@ -1224,51 +1266,96 @@ async function makeShareCard(p) {
     }
   }
 
-  // 見出し(2行まで自動折返し)
-  const titleY = 1290;
-  ctx.fillStyle = "#EFE9DC";
-  ctx.font = `700 76px ${serif}`;
-  const words = String(p.title || "");
-  if (ctx.measureText(words).width > W - 200) {
-    const half = Math.ceil(words.length / 2);
-    let cut = half;
-    for (const sep of ["、", "。", "は", "の", "と"]) {
-      const idx = words.indexOf(sep, Math.max(2, half - 5));
-      if (idx > 1 && idx < words.length - 2) { cut = idx + 1; break; }
-    }
-    ctx.fillText(words.slice(0, cut), W / 2, titleY);
-    ctx.fillText(words.slice(cut), W / 2, titleY + 104);
-  } else {
-    ctx.fillText(words, W / 2, titleY + 50);
-  }
+  // 見出し(幅に収まるよう自動折返し・最大2行)
+  let y = visTop + visH + 100;
+  ctx.fillStyle = "#f5f7ff";
+  ctx.font = `600 72px ${serif}`;
+  const tLines = wrapText(p.title, W - 220, 2, true);
+  if (tLines.length === 1) y += 30;
+  tLines.forEach((ln, i) => ctx.fillText(ln, W / 2, y + i * 96));
+  y += tLines.length * 96 + 6;
 
-  // キーワード
+  // 星の仕切り(素材09のSVG)
+  const divIm = await iconImg("divider-star", "#d4af37", 400);
+  if (divIm) ctx.drawImage(divIm, W / 2 - 260, y - 30, 520, 52);
+  y += 70;
+
+  // キーワード(幅に収めて折返し・最大2行)
   if (p.keywords?.length) {
-    ctx.fillStyle = "#D9C08A";
-    ctx.font = `600 40px ${serif}`;
-    ctx.fillText(p.keywords.join("  ◉  "), W / 2, 1478);
-  }
-  // ひとこと or スコア
-  if (p.sub) {
-    ctx.fillStyle = "#9AA0B8";
+    ctx.fillStyle = "#e6c968";
     ctx.font = `500 36px ${serif}`;
-    ctx.fillText(p.sub, W / 2, 1560);
-  } else if (p.score != null && p.cards?.length) {
-    ctx.fillStyle = "#D9C08A";
-    ctx.font = `700 56px ${latin}`;
-    ctx.fillText(`${p.score}${p.scoreSuffix || "/100"}`, W / 2, 1560);
+    // 項目の途中で折れないよう、「◉」区切りの単位で行に詰める
+    const kLines = []; let cur = "";
+    for (const k of p.keywords) {
+      const next = cur ? `${cur}  ◉  ${k}` : k;
+      if (cur && ctx.measureText(next).width > W - 240) { kLines.push(cur); cur = k; } else cur = next;
+    }
+    if (cur) kLines.push(cur);
+    if (kLines.length > 2) { kLines.length = 2; }
+    kLines.forEach((ln, i) => ctx.fillText(ln, W / 2, y + i * 52));
+    y += kLines.length * 52 + 6;
+  }
+  // ひとこと(最大2行)
+  if (p.sub) {
+    ctx.fillStyle = "#c8d4e8";
+    ctx.font = `400 32px ${serif}`;
+    const sLines = wrapText(p.sub, W - 240, 2);
+    sLines.forEach((ln, i) => ctx.fillText(ln, W / 2, y + i * 48));
+    y += sLines.length * 48 + 6;
   }
 
-  // 仕切りとフッター
-  ctx.strokeStyle = "rgba(184,154,90,.5)"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(W / 2 - 130, 1650); ctx.lineTo(W / 2 + 130, 1650); ctx.stroke();
+  // 運勢の流れ(4つの札:総合・恋愛・仕事・金運)— UIキット07の構成
+  if (p.scores) {
+    const items = [["総合運", "total", "sun"], ["恋愛運", "love", "heart"], ["仕事運", "work", "sun2"], ["金運", "money", "gem"]];
+    const tw = 196, th = 196, gap = 20, x0 = W / 2 - (tw * 4 + gap * 3) / 2;
+    const ty = y + 16;
+    ctx.font = `500 30px ${serif}`;
+    ctx.fillStyle = "#d4af37";
+    ctx.fillText("— 運勢の流れ —", W / 2, ty - 2);
+    items.forEach(([label, key, icon], i) => {
+      const x = x0 + i * (tw + gap), yy = ty + 26;
+      ctx.fillStyle = "rgba(5,8,23,.55)";
+      ctx.strokeStyle = "rgba(212,175,55,.55)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.roundRect(x, yy, tw, th, 14); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = "#f5f7ff"; ctx.font = `500 28px ${serif}`;
+      ctx.fillText(label, x + tw / 2, yy + 44);
+      // アイコン(線画)
+      const cx = x + tw / 2, cy = yy + 100;
+      ctx.strokeStyle = "#e6c968"; ctx.lineWidth = 2.2; ctx.fillStyle = "#e6c968";
+      ctx.beginPath();
+      if (icon === "sun") { ctx.arc(cx, cy, 22, 0, Math.PI * 2); ctx.moveTo(cx - 8, cy); ctx.lineTo(cx + 8, cy); ctx.moveTo(cx, cy - 8); ctx.lineTo(cx, cy + 8); ctx.stroke(); }
+      else if (icon === "heart") { ctx.moveTo(cx, cy + 20); ctx.bezierCurveTo(cx - 34, cy - 4, cx - 22, cy - 30, cx, cy - 12); ctx.bezierCurveTo(cx + 22, cy - 30, cx + 34, cy - 4, cx, cy + 20); ctx.closePath(); ctx.stroke(); }
+      else if (icon === "sun2") { ctx.arc(cx, cy, 22, 0, Math.PI * 2); ctx.stroke(); ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill(); }
+      else { ctx.moveTo(cx - 26, cy - 8); ctx.lineTo(cx - 14, cy - 22); ctx.lineTo(cx + 14, cy - 22); ctx.lineTo(cx + 26, cy - 8); ctx.lineTo(cx, cy + 24); ctx.closePath(); ctx.moveTo(cx - 26, cy - 8); ctx.lineTo(cx + 26, cy - 8); ctx.moveTo(cx - 14, cy - 22); ctx.lineTo(cx - 8, cy - 8); ctx.lineTo(cx, cy + 24); ctx.moveTo(cx + 14, cy - 22); ctx.lineTo(cx + 8, cy - 8); ctx.stroke(); }
+      // 星5つ
+      const v = Math.max(0, Math.min(5, Number(p.scores[key]) || 0));
+      ctx.font = `500 26px ${serif}`;
+      for (let k = 0; k < 5; k++) {
+        ctx.fillStyle = k < v ? "#e6c968" : "rgba(200,212,232,.22)";
+        ctx.fillText("★", x + tw / 2 + (k - 2) * 30, yy + 168);
+      }
+    });
+    y = ty + 26 + th + 24;
+    if (p.score != null) {
+      ctx.fillStyle = "#e6c968"; ctx.font = `600 42px ${latin}`;
+      ctx.fillText(`${p.scoreLabel || "今日の運気"}  ${p.score}${p.scoreSuffix || "/100"}`, W / 2, y + 26);
+    }
+  } else if (p.score != null && p.cards?.length) {
+    ctx.fillStyle = "#e6c968";
+    ctx.font = `700 56px ${latin}`;
+    ctx.fillText(`${p.score}${p.scoreSuffix || "/100"}`, W / 2, y + 30);
+  }
+
+  // フッター
+  ctx.strokeStyle = "rgba(212,175,55,.5)"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(W / 2 - 130, H - 200); ctx.lineTo(W / 2 + 130, H - 200); ctx.stroke();
   const d = new Date();
-  ctx.fillStyle = "#B89A5A";
+  ctx.fillStyle = "#d4af37";
   ctx.font = `500 32px ${latin}`;
-  ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`, W / 2, 1716);
-  ctx.fillStyle = "#9AA0B8";
+  ctx.fillText(`${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()}`, W / 2, H - 140);
+  ctx.fillStyle = "#9aa6c4";
   ctx.font = `500 28px ${latin}`;
-  ctx.fillText("myouriscope.com", W / 2, 1772);
+  ctx.fillText("myouriscope.com", W / 2, H - 90);
 
   return new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
 }
