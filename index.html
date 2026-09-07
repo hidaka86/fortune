@@ -130,7 +130,7 @@
         <div class="hero-content">
           <p class="hero-eyebrow">Midnight Observatory</p>
           <h1 class="hero-wordmark">Myouriscope</h1>
-          <p class="hero-kicker">五つの観測</p>
+          <p class="hero-kicker">七つの観測</p>
           <p class="hero-tagline">深夜、静かに宇宙が語りかける。</p>
           <p class="hero-date" id="hero-date"></p>
           <div class="hero-cta">
@@ -147,8 +147,11 @@
 
       <div class="section-head" id="divinations">
         <p class="section-eyebrow">DIVINATIONS</p>
-        <h2 class="section-title">五つの観測</h2>
+        <h2 class="section-title">七つの観測</h2>
+        <p class="view-sub">なにを知りたいかを選ぶと、向いている占いが灯ります。</p>
       </div>
+
+      <div class="wants" id="wants" aria-label="知りたいことから占いを選ぶ"></div>
 
       <div class="bento">
         <button class="bento-card bento-main bento-art" data-nav="tarot" data-icon="moon" style="--hue:#d4af37" data-glyph="☽">
@@ -181,14 +184,20 @@
           <p>占術を横断して、運命の称号と今日の答えを。</p>
           <span class="bento-link">観測する</span>
         </button>
+        <button class="bento-card bento-today" data-nav="today" data-icon="moon" style="--hue:#d4af37" data-glyph="◉">
+          <img class="bento-icon" src="assets/site/icon_tarot.webp" alt="" loading="lazy" />
+          <h3>今日の占い</h3>
+          <p>四つの暦の合議で、今日を「攻めの日・整えの日」に。1日1回。</p>
+          <span class="bento-link">今日を観測する</span>
+        </button>
         <button class="bento-card bento-dice" data-nav="astrodice" data-icon="mars" style="--hue:#9b7cc4" data-glyph="⚄">
-          <span class="bento-icon bento-icon-svg" aria-hidden="true"></span>
+          <img class="bento-icon" src="assets/site/icon_astrodice.svg" alt="" loading="lazy" />
           <h3>アストロダイス</h3>
           <p>天体・星座・ハウスの三つのサイコロを振って、いまの問いに答えを。</p>
           <span class="bento-link">サイコロを振る</span>
         </button>
         <button class="bento-card bento-maya" data-nav="maya" data-icon="sun" style="--hue:#d4af37" data-glyph="☉">
-          <span class="bento-icon bento-icon-svg" aria-hidden="true"></span>
+          <img class="bento-icon" src="assets/site/icon_maya.svg" alt="" loading="lazy" />
           <h3>マヤ暦</h3>
           <p>260日の暦から、あなたのKIN・太陽の紋章・銀河の音を。</p>
           <span class="bento-link">KINを調べる</span>

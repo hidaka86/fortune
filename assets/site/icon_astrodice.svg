@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 340" width="300" height="340" fill="none">
+  <!-- 外環と四方の点(既存アイコンと同じ意匠) -->
+  <circle cx="150" cy="170" r="118" stroke="#262d5c" stroke-width="2"/>
+  <circle cx="150" cy="52" r="6" fill="#262d5c"/><circle cx="150" cy="288" r="6" fill="#262d5c"/>
+  <circle cx="32" cy="170" r="6" fill="#262d5c"/><circle cx="268" cy="170" r="6" fill="#262d5c"/>
+  <path d="M150 20v18M150 302v18M8 170h14M278 170h14" stroke="#262d5c" stroke-width="2" stroke-linecap="round"/>
+  <path d="M63 83l6 6M231 83l-6 6M63 257l6-6M231 257l-6-6" stroke="#262d5c" stroke-width="2" stroke-linecap="round"/>
+  <!-- 点線の軌道 -->
+  <circle cx="150" cy="170" r="98" stroke="#262d5c" stroke-width="1.5" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <!-- 十二面体:正面の五角形と、まわりの五つの面 -->
+  <g stroke="#262d5c" stroke-width="2.2" stroke-linejoin="round">
+    <polygon points="150,96 213,142 189,216 111,216 87,142"/>
+    <polygon points="150,126 186,152 172,196 128,196 114,152" fill="#262d5c" fill-opacity="0.06"/>
+    <path d="M150 96L150 126M213 142L186 152M189 216L172 196M111 216L128 196M87 142L114 152"/>
+    <path d="M150 96L128 72M213 142L244 134M189 216L212 242M111 216L88 242M87 142L56 134" stroke-width="1.6" stroke-dasharray="3 4"/>
+  </g>
+  <!-- 中心の星(金) -->
+  <g stroke="#c9a44a" stroke-width="1.6" stroke-linecap="round">
+    <path d="M150 156v20M140 166h20M143 159l14 14M157 159l-14 14"/>
+  </g>
+  <circle cx="150" cy="166" r="4" fill="#c9a44a"/>
+  <circle cx="244" cy="134" r="3.5" fill="#c9a44a"/><circle cx="56" cy="134" r="3.5" fill="#c9a44a"/>
+</svg>
