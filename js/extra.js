@@ -97,23 +97,42 @@
   const DIE_KINDS = ["planet", "sign", "house"];
   const DIE_ASK = { planet: "なにが", sign: "どのように", house: "どこで" };
 
+  /* ---------- 1日3回まで(端末に保存) ---------- */
+  const DICE_KEY = "fortuna:dice";
+  const DICE_MAX = 3;
+  function diceLog() {
+    try { const v = JSON.parse(localStorage.getItem(DICE_KEY)); if (v && v.date === todayKey()) return v; } catch { /* noop */ }
+    return { date: todayKey(), count: 0, last: null };
+  }
+  const diceLeft = () => Math.max(0, DICE_MAX - diceLog().count);
+  function consumeDice(picks, q) {
+    const v = diceLog(); v.count += 1; v.last = { picks, q };
+    try { localStorage.setItem(DICE_KEY, JSON.stringify(v)); } catch { /* noop */ }
+  }
+  const KANJI_N = ["零", "一", "二", "三"];
+
   /* ---------- ページ上の卓:静かに回る三つのダイス+入口 ---------- */
   function renderDiceStage() {
     const stage = document.getElementById("dice-stage");
     if (!stage) return;
     const L = diceLabels();
+    const left = diceLeft(), log = diceLog();
     stage.innerHTML = `
       <div class="dice-table dice-idle" id="dice-table" role="button" tabindex="0" aria-label="ダイスの間へ入る">
         ${DIE_KINDS.map((k) => dieHtml(k, L[k])).join("")}
-        <span class="dice-table-hint">触れて、ダイスの間へ</span>
+        <span class="dice-table-hint">${left ? "触れて、ダイスの間へ" : "今日の三度は、終わりました"}</span>
       </div>
       <p class="dice-caption"><span>天体</span><span>星座</span><span>ハウス</span></p>
       <div class="dice-cta">
-        <button class="btn btn-primary btn-lg" id="dice-enter" type="button">ダイスの間へ</button>
-        <p class="ritual-hint">問いを胸に置いて、扉をひらいてください。全画面の間で、あなたの手でダイスを振ります。</p>
+        <p class="dice-left"><span class="mo-label">TODAY</span>${left ? `一日に三度まで。今日は、あと<b>${KANJI_N[left]}</b>度。` : "今日の三度は終わりました。星の目は、明日ふたたび開きます。"}</p>
+        ${left
+          ? `<button class="btn btn-primary btn-lg" id="dice-enter" type="button">ダイスの間へ</button>
+             <p class="ritual-hint">問いを胸に置いて、扉をひらいてください。全画面の間で、あなたの手が三つの目を放ちます。</p>`
+          : `${log.last ? `<button class="btn btn-ghost" id="dice-last" type="button">今日、最後に出た目を見る</button>` : ""}`}
       </div>`;
     const enter = () => openDiceChamber();
-    document.getElementById("dice-enter").addEventListener("click", enter);
+    document.getElementById("dice-enter")?.addEventListener("click", enter);
+    document.getElementById("dice-last")?.addEventListener("click", () => showDiceReading(log.last.picks, log.last.q, true));
     const table = document.getElementById("dice-table");
     table.addEventListener("click", enter);
     table.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); enter(); } });
@@ -130,24 +149,99 @@
   function openDiceChamber() {
     const ov = overlayEl();
     if (!ov || chamber.open) return;
+    if (!diceLeft()) { renderDiceStage(); return; }
     chamber.q = (document.getElementById("dice-question")?.value || "").trim();
     chamber.open = true;
-    chamber.phase = "idle";
+    chamber.phase = "gate";
     chamber.picks = null;
     chamber.revealIdx = -1;
-    const L = diceLabels();
+    chamber.slowed = false; chamber.slowUntil = 0;
     ov.hidden = false;
     ov.classList.add("dice-chamber");
+    ov.classList.remove("dice-dim", "dice-slow");
     document.body.classList.add("ritual-open");
-    ov.innerHTML = `
-      <button class="ritual-close" id="dice-close" aria-label="ダイスの間を出る">×</button>
+    diceGate();
+    document.dispatchEvent(new CustomEvent("myouriscope:flip"));
+  }
+
+  function chamberShell(inner) {
+    const ov = overlayEl();
+    ov.innerHTML = `<button class="ritual-close" id="dice-close" aria-label="ダイスの間を出る">×</button>${inner}`;
+    document.getElementById("dice-close").addEventListener("click", closeDiceChamber);
+    ov.scrollTop = 0;
+  }
+
+  /* 一段目:扉。問いを記し、残りの度数を告げる */
+  function diceGate() {
+    const left = diceLeft();
+    chamberShell(`
+      <div class="dice-room dice-room-gate">
+        <div class="ritual-step dice-gate">
+          <p class="ritual-eyebrow emerge">ASTRO DICE — THE RITE</p>
+          <p class="ritual-title emerge" style="--ed:.15s">星の目に、問いを委ねる</p>
+          <div class="dice-gate-dice emerge" style="--ed:.3s" aria-hidden="true">${DIE_KINDS.map((k) => `<span class="dgd">${k === "house" ? `<i class="die-num">12</i>` : iconFor(k === "planet" ? "sun" : "aries", k === "planet" ? "☉" : "♈", 28)}</span>`).join("")}</div>
+          <p class="ritual-inst emerge" style="--ed:.45s">ここから先は、天体・星座・ハウスの三つの十二面体に、答えを求める場所です。<br>一日に三度まで。今日は、あと<strong>${KANJI_N[left]}度</strong>。</p>
+          <label class="dice-gate-q emerge" style="--ed:.6s">
+            <span class="mo-label">問い(任意)</span>
+            <input type="text" id="dice-gate-q" class="ritual-question" maxlength="60" placeholder="例:転職の話、進めていい?" value="${esc(chamber.q)}" />
+          </label>
+          <p class="ritual-hint emerge" style="--ed:.7s">問いは無くても構いません。あるほうが、目は定まります。</p>
+          <button class="btn btn-primary btn-lg emerge" style="--ed:.85s" id="dice-gate-go" type="button">扉をひらく</button>
+        </div>
+      </div>`);
+    document.getElementById("dice-gate-go").addEventListener("click", () => {
+      chamber.q = (document.getElementById("dice-gate-q").value || "").trim();
+      const qi = document.getElementById("dice-question"); if (qi) qi.value = chamber.q;
+      document.dispatchEvent(new CustomEvent("myouriscope:chime"));
+      vibrate(10);
+      diceFocus();
+    });
+  }
+
+  /* 二段目:問いを胸に。三度の呼吸のあいだ、問いをとなえる */
+  function diceFocus() {
+    chamber.phase = "focus";
+    chamberShell(`
+      <div class="dice-room dice-room-gate">
+        <div class="ritual-step dice-focus">
+          <p class="ritual-eyebrow emerge">BREATHE</p>
+          ${chamber.q ? `<p class="dice-room-q emerge" style="--ed:.1s">「${esc(chamber.q)}」</p>` : `<p class="dice-room-q emerge" style="--ed:.1s">いま、胸にあること</p>`}
+          <div class="dice-breath" id="dice-breath" aria-hidden="true"><i></i><i></i><span></span></div>
+          <p class="ritual-inst emerge" style="--ed:.3s" id="dice-focus-inst">息を深く吸って、ゆっくり吐きながら<br>問いを胸の内で<strong>三度</strong>となえてください</p>
+          <p class="dice-breath-count" id="dice-breath-count"><b></b><b></b><b></b></p>
+          <button class="btn btn-ghost emerge dice-focus-skip" id="dice-focus-go" type="button" hidden>となえました</button>
+        </div>
+      </div>`);
+    const dots = [...document.querySelectorAll("#dice-breath-count b")];
+    const go = document.getElementById("dice-focus-go");
+    const BREATH = REDUCED_MOTION ? 300 : 2600;
+    let n = 0;
+    const beat = () => {
+      if (chamber.phase !== "focus") return;
+      dots[n]?.classList.add("on");
+      vibrate(6);
+      n++;
+      if (n === 1) go.hidden = false;
+      if (n >= 3) { setTimeout(() => { if (chamber.phase === "focus") diceFelt(); }, REDUCED_MOTION ? 100 : 900); return; }
+      chamber.revealTimer = setTimeout(beat, BREATH);
+    };
+    chamber.revealTimer = setTimeout(beat, BREATH);
+    go.addEventListener("click", () => { clearTimeout(chamber.revealTimer); diceFelt(); });
+  }
+
+  /* 三段目:卓。手のひらで包み、祈りが満ちたら放つ */
+  function diceFelt() {
+    clearTimeout(chamber.revealTimer);
+    chamber.phase = "idle";
+    const L = diceLabels();
+    chamberShell(`
       <div class="dice-room">
         <div class="dice-room-head">
           <p class="ritual-eyebrow emerge">ASTRO DICE</p>
           ${chamber.q ? `<p class="dice-room-q emerge" style="--ed:.1s">「${esc(chamber.q)}」</p>` : ""}
-          <p class="ritual-inst emerge" style="--ed:.2s" id="dice-inst">卓を<strong>押さえて</strong>、ダイスを手に取ってください</p>
+          <p class="ritual-inst emerge" style="--ed:.2s" id="dice-inst">手のひらで卓を<strong>押さえ</strong>、三つの目を包んでください</p>
         </div>
-        <div class="dice-felt" id="dice-felt" aria-label="ダイスを振る卓">
+        <div class="dice-felt" id="dice-felt" aria-label="ダイスを放つ卓">
           <span class="dice-hand" id="dice-hand" hidden></span>
           ${DIE_KINDS.map((k) => dieHtml(k, L[k])).join("")}
           <div class="dice-captions" id="dice-captions">
@@ -156,10 +250,9 @@
           <div class="dice-verdict" id="dice-verdict" hidden></div>
         </div>
         <div class="dice-room-foot">
-          <button class="btn btn-ghost dice-alt" id="dice-throw-btn" type="button">手を使わずに振る</button>
+          <button class="dice-alt" id="dice-throw-btn" type="button">手が使えないときは、ここから放つ</button>
         </div>
-      </div>`;
-    document.getElementById("dice-close").addEventListener("click", closeDiceChamber);
+      </div>`);
     document.getElementById("dice-throw-btn").addEventListener("click", () => {
       if (chamber.phase === "idle" || chamber.phase === "hold") autoThrow();
     });
@@ -173,7 +266,7 @@
     cancelAnimationFrame(chamber.raf);
     clearTimeout(chamber.revealTimer);
     window.removeEventListener("resize", layoutFelt);
-    if (ov) { ov.hidden = true; ov.innerHTML = ""; ov.classList.remove("dice-chamber", "dice-dim"); }
+    if (ov) { ov.hidden = true; ov.innerHTML = ""; ov.classList.remove("dice-chamber", "dice-dim", "dice-slow"); }
     document.body.classList.remove("ritual-open");
   }
 
@@ -234,10 +327,10 @@
       const p = pos(e);
       samples = [p];
       chamber.pointer = p; chamber.hand = { x: p.x, y: p.y }; chamber.energy = 0;
-      chamber.phase = "hold";
+      chamber.phase = "hold"; chamber.holdT0 = performance.now(); chamber.charged = false;
       const hand = document.getElementById("dice-hand");
-      hand.hidden = false; hand.style.transform = `translate(${p.x}px, ${p.y}px)`;
-      setInst("そのまま<strong>振って</strong>……ここだ、と思ったら<strong>はなす</strong>");
+      hand.hidden = false; hand.style.transform = `translate(${p.x}px, ${p.y}px)`; hand.style.setProperty("--p", "0%"); hand.classList.remove("is-full");
+      setInst("そのまま……祈りが満ちるまで、包んでいてください");
       vibrate(10);
     });
     felt.addEventListener("pointermove", (e) => {
@@ -261,6 +354,12 @@
       // 直前 ~90ms の指の動きから投げる速さと向きを求める
       const now = p.t;
       const recent = samples.filter((s) => now - s.t <= 90);
+      if (!chamber.charged) { // 満ちる前に離した:目は手からこぼれず、卓に戻る
+        chamber.phase = "idle";
+        const hand = document.getElementById("dice-hand"); if (hand) hand.hidden = true;
+        setInst("まだ満ちていません。もう一度、手のひらで<strong>包んで</strong>ください");
+        return;
+      }
       let vx = 0, vy = 0;
       if (recent.length >= 2) {
         const a = recent[0], b = recent[recent.length - 1], dt = Math.max(8, b.t - a.t);
@@ -286,6 +385,7 @@
   /* ボタンから振る(キーボード・タップが難しい環境向け):中央から上向きに放る */
   function autoThrow() {
     const m = feltMetrics();
+    chamber.charged = true;
     chamber.hand = { x: m.W / 2, y: m.H * 0.72 };
     chamber.dice.forEach((d) => { d.x = chamber.hand.x + (rand(41) - 20); d.y = chamber.hand.y + (rand(41) - 20); });
     const ang = (-90 + (rand(61) - 30)) * Math.PI / 180;
@@ -307,6 +407,7 @@
     const ux = vx / Math.hypot(vx, vy), uy = vy / Math.hypot(vx, vy);
     // 出目は手をはなした瞬間の暗号乱数で決まる
     chamber.picks = { planet: rand(12), sign: rand(12), house: rand(12) };
+    consumeDice(chamber.picks, chamber.q);
     chamber.phase = "fly";
     setInst("");
     const alt = document.getElementById("dice-throw-btn"); if (alt) alt.hidden = true;
@@ -354,6 +455,16 @@
       // 手の中で、ころころ:指のまわりに集まって、振った勢いで震える
       const h = chamber.hand, e = chamber.energy;
       chamber.energy = Math.max(0, e - 0.02 * dt);
+      const held = t - chamber.holdT0, HOLD_MS = REDUCED_MOTION ? 200 : 1500;
+      const hand = document.getElementById("dice-hand");
+      if (hand) hand.style.setProperty("--p", `${Math.min(100, held / HOLD_MS * 100).toFixed(1)}%`);
+      if (!chamber.charged && held >= HOLD_MS) {
+        chamber.charged = true;
+        hand?.classList.add("is-full");
+        setInst("満ちました。<strong>振って</strong>、そして<strong>放って</strong>ください");
+        document.dispatchEvent(new CustomEvent("myouriscope:chime"));
+        vibrate([14, 60, 14]);
+      }
       ds.forEach((d, i) => {
         const ang = (t / 900 + i * 2.09), rr = m.r * 0.9;
         const tx = h.x + Math.cos(ang) * rr, ty = h.y + Math.sin(ang) * rr * 0.6;
@@ -367,8 +478,14 @@
     } else if (chamber.phase === "fly") {
       // 固定ステップで積分(フレームレートが落ちても、転がる速さと時間は同じに)
       let rem = Math.min(120, t - prevT);
+      if (chamber.slowUntil > t) rem *= 0.38; // 最初の目が定まる瞬間、時間がゆっくりになる
+      else overlayEl()?.classList.remove("dice-slow");
       while (rem > 0) { const h = Math.min(16, rem); stepPhysics(ds, m, h); rem -= h; }
       ds.forEach(paintDie);
+      if (!chamber.slowed && ds.some((d) => d.settle)) {
+        chamber.slowed = true;
+        if (!REDUCED_MOTION) { chamber.slowUntil = t + 1400; overlayEl()?.classList.add("dice-slow"); }
+      }
       if (ds.every((d) => d.settled)) {
         chamber.phase = "settled";
         document.dispatchEvent(new CustomEvent("myouriscope:chime"));
@@ -405,7 +522,7 @@
         d.rz += d.wz * dt; d.wz *= Math.pow(0.9, dt / 16);
         d.x += d.vx * dt; d.y += d.vy * dt;
         d.vx *= Math.pow(0.88, dt / 16); d.vy *= Math.pow(0.88, dt / 16);
-        if (p >= 1) { d.settled = true; d.el.classList.add("is-settled"); vibrate(6); }
+        if (p >= 1) { d.settled = true; d.el.classList.add("is-settled"); vibrate(6); document.dispatchEvent(new CustomEvent("myouriscope:flip")); }
         continue;
       }
       // 高さ(跳ねる)
@@ -521,15 +638,17 @@
     const capBottom = Math.max(...[...m.felt.querySelectorAll(".dice-cap")].map((c) => c.getBoundingClientRect().bottom - feltTop));
     v.style.top = `${Math.round(Math.max(capBottom + 22, slotPositions(m)[0].y + m.r * 1.35 + 96))}px`;
     v.hidden = false;
+    const left = diceLeft();
     v.innerHTML = `
-      <p class="dice-verdict-line emerge">${r.verdict}</p>
-      <div class="dice-verdict-actions emerge" style="--ed:.5s">
+      <p class="ritual-eyebrow emerge">ORACLE</p>
+      <p class="dice-verdict-line emerge" style="--ed:.2s">${r.verdict}</p>
+      <div class="dice-verdict-actions emerge" style="--ed:.7s">
         <button class="btn btn-primary btn-lg" id="dice-read" type="button">鑑定を読む</button>
-        <button class="btn btn-ghost" id="dice-again" type="button">もう一度振る</button>
+        ${left ? `<button class="btn btn-ghost" id="dice-again" type="button">もう一度放つ(あと${KANJI_N[left]}度)</button>` : `<span class="dice-verdict-note">今日の三度は、これで終わりです</span>`}
       </div>`;
     document.dispatchEvent(new CustomEvent("myouriscope:chime"));
-    document.getElementById("dice-read").addEventListener("click", () => { const picks = chamber.picks, q = chamber.q; closeDiceChamber(); showDiceReading(picks, q); });
-    document.getElementById("dice-again").addEventListener("click", () => { closeDiceChamber(); openDiceChamber(); });
+    document.getElementById("dice-read").addEventListener("click", () => { const picks = chamber.picks, q = chamber.q; closeDiceChamber(); renderDiceStage(); showDiceReading(picks, q); });
+    document.getElementById("dice-again")?.addEventListener("click", () => { closeDiceChamber(); openDiceChamber(); });
     document.getElementById("dice-inst").textContent = "";
   }
 
@@ -554,7 +673,7 @@
     return { p, s, h, el, verdict, story, action, ask: p.ask, tip: s.tip, q };
   }
 
-  function showDiceReading(picks, q) {
+  function showDiceReading(picks, q, replay = false) {
     const r = diceReading(picks, q);
     const { p, s, h } = r;
     const ic = (key, glyph, size) => iconFor(key, glyph, size);
@@ -565,7 +684,7 @@
       sub: r.verdict,
       x: `【MYOURISCOPE アストロダイス】${q ? `「${q}」の答えは、` : ""}${p.ja}・${s.name}・第${h.n}ハウス。${r.verdict} ✦`,
     };
-    recordHistory("アストロダイス", `${p.ja} × ${s.name} × 第${h.n}ハウス`, `${q ? `問い「${q}」。` : ""}${r.verdict}`);
+    if (!replay) recordHistory("アストロダイス", `${p.ja} × ${s.name} × 第${h.n}ハウス`, `${q ? `問い「${q}」。` : ""}${r.verdict}`);
     showResult(document.getElementById("astrodice-result"), `
       <div class="result-hero dice-hero">
         <p class="result-eyebrow">ASTRO DICE</p>
@@ -613,12 +732,12 @@
             <div><span class="mo-label">今日の一手</span><p>${r.action}</p></div>
             <div><span class="mo-label">自分への問い</span><p>${p.ja}からの問いかけ——「${r.ask}」</p></div>
           </div>
-          ${explainHtml("アストロダイスのしくみ", "アストロダイスは、天体(12面)・星座(12面)・ハウス(12面)の三つのサイコロを同時に振り、出た組み合わせを「なにが・どのように・どこで」として読む占いです。天体は動いているテーマ、星座はその進め方、ハウスは人生のどの領域かを示します。出目は、あなたが手をはなした瞬間に端末の暗号乱数(crypto.getRandomValues)で決まります。振るたびに違う答えになります。")}
+          ${explainHtml("アストロダイスのしくみ", "アストロダイスは、天体(12面)・星座(12面)・ハウス(12面)の三つのサイコロを同時に振り、出た組み合わせを「なにが・どのように・どこで」として読む占いです。天体は動いているテーマ、星座はその進め方、ハウスは人生のどの領域かを示します。出目は、あなたが手を放した瞬間に端末の暗号乱数(crypto.getRandomValues)で決まります。同じ問いを何度も振ると答えがぼやけるため、一日に三度までとしています。")}
         </div>
       </div>
       <div class="crosslinks">
         <span class="crosslinks-label">— 旅はつづく</span>
-        <button type="button" id="dice-reroll">もう一度、ダイスの間へ</button>
+        ${diceLeft() ? `<button type="button" id="dice-reroll">もう一度、ダイスの間へ(あと${KANJI_N[diceLeft()]}度)</button>` : ""}
         <button data-nav="tarot">タロットで深掘りする</button>
         <button data-nav="western">自分の出生図を見る</button>
         <button data-nav="maya">マヤ暦のKINを調べる</button>
