@@ -1512,16 +1512,83 @@
       </div>`), () => { renderSharePreview("maya"); if (partner) renderSharePreview("mayapair"); });
   }
 
+  /* ============================================================
+     3. 占いの選び方 — 「なにを知りたいか」から、向いている占いへ
+        七つの占いの特徴(わかること・必要なもの・所要時間・向いている人)を一か所にまとめ、
+        知りたいことを選ぶと、おすすめが灯る。
+     ============================================================ */
+  const DIVS = {
+    today:     { nav: "today",      name: "今日の占い",   en: "TODAY",      needs: "生年月日", time: "1分",  gives: "今日の結論(攻めの日・整えの日)と気流、ラッキー", fit: "毎朝の習慣にしたい人。まず一度、試したい人", icon: "◉", note: "四柱推命・九星・干支・月相の合議で、今日をひとことで決めます。1日1回。" },
+    tarot:     { nav: "tarot",      name: "タロット",     en: "TAROT",      needs: "問い(任意)", time: "3分",  gives: "いまの状況と、取るべき姿勢・行動", fit: "迷いや悩みがあって、答えの方向を知りたい人", icon: "☽", note: "78枚を自分の手でシャッフルして引く儀式。問いが具体的なほど、読みが鋭くなります。" },
+    astrodice: { nav: "astrodice",  name: "アストロダイス", en: "ASTRO DICE", needs: "問い(任意)", time: "2分",  gives: "「なにが・どのように・どこで」の三語の答え", fit: "Yes/Noより、動き方のヒントがほしい人。短い問いに", icon: "⚄", note: "三つの十二面体を自分の手で放つ儀式。1日3回まで。タロットより短く、端的です。" },
+    western:   { nav: "western",    name: "ホロスコープ", en: "HOROSCOPE",  needs: "生年月日(時刻・場所は任意)", time: "5分", gives: "出生図の性格、5年周期の流れ、今年のテーマ", fit: "自分の設計図と、これからの時期を知りたい人", icon: "☉", note: "10天体の配置から、性格と「いまどの章にいるか」を読みます。時期を知るならここ。" },
+    eastern:   { nav: "eastern",    name: "四柱推命",     en: "SHICHU",     needs: "生年月日", time: "4分",  gives: "生まれ持った器(五行のバランス)と、今月・今年の風向き", fit: "強みと弱みを言葉にしたい人。運気のリズムを掴みたい人", icon: "☿", note: "東洋の命術。九星気学の吉方位もあわせて出します。仕事や体調の傾向に強い占いです。" },
+    aisho:     { nav: "aisho",      name: "相性診断",     en: "AISHO",      needs: "二人の生年月日", time: "3分", gives: "四層の相性スコアと、あなたから・相手からの見え方", fit: "気になる人・パートナーとの縁を知りたい人", icon: "♀♂", note: "星座×五行×干支の三つの角度。点数の内訳をすべて見せます。" },
+    maya:      { nav: "maya",       name: "マヤ暦",       en: "MAYA",       needs: "生年月日(相手は任意)", time: "4分", gives: "KIN・太陽の紋章・銀河の音、人生のテーマ。二人なら間柄別スコア", fit: "自分の役割や使命を知りたい人。カップルで楽しみたい人", icon: "✦", note: "260日の暦。相手の生年月日を足すと、恋人・結婚・仕事・友人の4つの間柄で相性が出ます。" },
+    integrated:{ nav: "integrated", name: "統合鑑定",     en: "INTEGRATED", needs: "生年月日", time: "5分",  gives: "運命の称号(1080タイプ)と、占術横断のまとめ", fit: "全部まとめて一度に知りたい人。最初の一本に", icon: "✧", note: "西洋と東洋を重ねて、あなたを一言の称号にします。迷ったらこれ。" },
+  };
+  const WANTS = [
+    { key: "today", ja: "今日をどう過ごすか", picks: [["today", "今日の結論と気流を、ひとことで"], ["tarot", "今日の一枚で、今日の姿勢を"]] },
+    { key: "decide", ja: "迷っていることの答え", picks: [["tarot", "状況と、取るべき姿勢を読む"], ["astrodice", "「なにが・どのように・どこで」を短く"]] },
+    { key: "self", ja: "自分の性格・才能", picks: [["integrated", "まず全体像を一言の称号で"], ["eastern", "五行の器と強み・弱み"], ["maya", "人生の役割と使命"]] },
+    { key: "love", ja: "恋愛・相性", picks: [["aisho", "四層スコアと、お互いの見え方"], ["maya", "恋人・結婚・仕事・友人の間柄別に"], ["tarot", "恋愛テーマで一枚"]] },
+    { key: "flow", ja: "これからの流れ・時期", picks: [["western", "5年周期と今年のテーマ"], ["eastern", "今月・12ヶ月の風向き"]] },
+    { key: "quick", ja: "手軽に、いますぐ", picks: [["today", "生年月日だけ、1分"], ["astrodice", "問いを胸に、放つだけ"]] },
+    { key: "all", ja: "全部まとめて", picks: [["integrated", "占術を横断して一通の鑑定書に"]] },
+  ];
+  function renderWants() {
+    const root = document.getElementById("wants");
+    if (!root) return;
+    root.innerHTML = `
+      <p class="wants-q"><span class="mo-label">START HERE</span>なにを、知りたいですか?</p>
+      <div class="wants-chips" role="tablist">
+        ${WANTS.map((w) => `<button class="wants-chip" role="tab" aria-selected="false" data-want="${w.key}" type="button">${w.ja}</button>`).join("")}
+      </div>
+      <div class="wants-panel" id="wants-panel" hidden></div>
+      <details class="wants-table">
+        <summary>七つの占いの違いを、一覧で見る</summary>
+        <div class="wants-table-scroll">
+          <table>
+            <thead><tr><th>占い</th><th>わかること</th><th>必要なもの</th><th>時間</th><th>向いている人</th></tr></thead>
+            <tbody>
+              ${Object.values(DIVS).map((d) => `<tr><th><button type="button" data-nav="${d.nav}"><span class="wt-icon">${d.icon}</span>${d.name}</button></th><td>${d.gives}</td><td>${d.needs}</td><td>${d.time}</td><td>${d.fit}</td></tr>`).join("")}
+            </tbody>
+          </table>
+        </div>
+      </details>`;
+    const panel = document.getElementById("wants-panel");
+    const bento = document.querySelector(".bento");
+    const select = (key) => {
+      const w = WANTS.find((x) => x.key === key);
+      root.querySelectorAll(".wants-chip").forEach((c) => { const on = c.dataset.want === key; c.classList.toggle("is-on", on); c.setAttribute("aria-selected", String(on)); });
+      if (!w) { panel.hidden = true; bento?.classList.remove("is-guided"); bento?.querySelectorAll(".bento-card").forEach((b) => b.classList.remove("is-reco")); return; }
+      const navs = w.picks.map(([n]) => n);
+      panel.hidden = false;
+      panel.innerHTML = `
+        <p class="wants-panel-head">「${w.ja}」なら</p>
+        <div class="wants-recos">
+          ${w.picks.map(([n, why], i) => { const d = DIVS[n]; return `
+            <button class="wants-reco ${i === 0 ? "is-first" : ""}" type="button" data-nav="${d.nav}">
+              <span class="wr-rank">${i === 0 ? "おすすめ" : `${i + 1}番目`}</span>
+              <span class="wr-icon">${d.icon}</span>
+              <strong>${d.name}</strong>
+              <span class="wr-why">${why}</span>
+              <span class="wr-meta"><em>${d.needs}</em><em>約${d.time}</em></span>
+              <span class="wr-note">${d.note}</span>
+            </button>`; }).join("")}
+        </div>`;
+      bento?.classList.add("is-guided");
+      bento?.querySelectorAll(".bento-card").forEach((b) => b.classList.toggle("is-reco", navs.includes(b.dataset.nav)));
+    };
+    root.querySelectorAll(".wants-chip").forEach((c) => c.addEventListener("click", () => select(c.classList.contains("is-on") ? null : c.dataset.want)));
+  }
+
   /* ---------- 起動 ---------- */
   function boot() {
     if (typeof OBS_STEPS === "object") OBS_STEPS.maya = ["260日の暦を巻き戻しています……", "太陽の紋章と銀河の音を照合しています……", "あなたのウェイブスペルを探しています……"];
     renderDiceStage();
     document.querySelectorAll(".bd-optional select").forEach((sel) => sel.removeAttribute("required"));
-    const MI = window.MysticIcons;
-    if (MI) {
-      const bi = (nav, key) => { const el = document.querySelector(`.bento-card[data-nav="${nav}"] .bento-icon-svg`); if (el) el.innerHTML = MI.mysticIcon(key, { size: 54, label: "" }); };
-      bi("astrodice", "sagittarius"); bi("maya", "sun");
-    }
+    renderWants();
     document.getElementById("maya-form")?.addEventListener("submit", (e) => {
       e.preventDefault();
       const fd = new FormData(e.target);

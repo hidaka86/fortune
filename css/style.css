@@ -3113,6 +3113,53 @@ a, button, .chip, .nav-btn, .spread-opt, .guide-card, .bento-card { transition-t
   .dice-breath { width: 140px; height: 140px; }
 }
 
+/* 八枚の並び:3段目は 今日・ダイス・マヤ(横長)で4列を埋める */
+.bento-maya { grid-column: span 2; }
+.bento-maya p { max-width: 46ch; }
+@media (max-width: 720px) { .bento-maya { grid-column: span 1; } }
+
+/* --- 占いの選び方:なにを知りたいか → 向いている占い --- */
+.wants { max-width: 960px; margin: 0 auto 30px; padding: 22px 24px 18px; border-radius: 18px; border: 1px solid rgba(212, 175, 55, 0.28); background: linear-gradient(180deg, rgba(212, 175, 55, 0.05), rgba(5, 8, 23, 0.35)); }
+.wants-q { display: flex; align-items: baseline; gap: 12px; font-family: var(--serif); font-size: clamp(17px, 2.6vw, 20px); color: var(--star-white); letter-spacing: .08em; margin-bottom: 12px; }
+.wants-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.wants-chip { padding: 8px 14px; border-radius: 999px; border: 1px solid var(--hairline); background: rgba(5, 8, 23, 0.45); color: var(--moonlight-silver); font: inherit; font-size: 13.5px; letter-spacing: .06em; cursor: pointer; transition: all var(--dur-1) var(--ease-expo); }
+.wants-chip:hover { border-color: rgba(212, 175, 55, 0.6); color: var(--gold-bright); }
+.wants-chip.is-on { border-color: var(--gold); background: rgba(212, 175, 55, 0.14); color: var(--gold-bright); box-shadow: 0 0 16px rgba(212, 175, 55, 0.25); }
+.wants-panel { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--hairline); animation: viewIn .45s ease; }
+.wants-panel[hidden] { display: none; }
+.wants-panel-head { font-family: var(--serif); color: var(--gold-bright); letter-spacing: .1em; margin-bottom: 10px; }
+.wants-recos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.wants-reco { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--hairline); background: rgba(5, 8, 23, 0.45); color: var(--ink); font: inherit; cursor: pointer; transition: all var(--dur-1) var(--ease-expo); }
+.wants-reco:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: var(--shadow-soft); }
+.wants-reco.is-first { border-color: rgba(212, 175, 55, 0.6); background: rgba(212, 175, 55, 0.08); }
+.wr-rank { font-family: var(--latin); font-size: 10.5px; letter-spacing: .3em; color: var(--divine-gold); text-transform: uppercase; }
+.wr-icon { font-size: 22px; color: var(--gold-bright); line-height: 1; }
+.wants-reco strong { font-family: var(--serif); font-weight: 500; font-size: 17px; color: var(--star-white); letter-spacing: .08em; }
+.wr-why { font-size: 13.5px; color: var(--moonlight-silver); line-height: 1.7; }
+.wr-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.wr-meta em { font-style: normal; font-size: 11px; letter-spacing: .08em; padding: 2px 8px; border-radius: 999px; border: 1px solid rgba(200, 212, 232, 0.2); color: var(--muted); }
+.wr-note { font-size: 12.5px; color: var(--muted); line-height: 1.7; margin-top: 4px; }
+.wants-table { margin-top: 14px; }
+.wants-table summary { cursor: pointer; font-size: 13px; letter-spacing: .1em; color: var(--muted); list-style: none; }
+.wants-table summary::before { content: "▸ "; color: var(--gold); }
+.wants-table[open] summary::before { content: "▾ "; }
+.wants-table-scroll { overflow-x: auto; margin-top: 10px; }
+.wants-table table { width: 100%; min-width: 640px; border-collapse: collapse; font-size: 13px; line-height: 1.7; }
+.wants-table th, .wants-table td { padding: 9px 10px; border-bottom: 1px solid var(--hairline); text-align: left; vertical-align: top; color: var(--moonlight-silver); }
+.wants-table thead th { font-family: var(--latin); font-size: 11px; letter-spacing: .2em; color: var(--divine-gold); text-transform: uppercase; font-weight: 500; }
+.wants-table tbody th { white-space: nowrap; }
+.wants-table tbody th button { background: none; border: none; padding: 0; font: inherit; font-family: var(--serif); color: var(--star-white); letter-spacing: .06em; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.wants-table tbody th button:hover { color: var(--gold-bright); }
+.wt-icon { color: var(--gold-bright); }
+/* おすすめが灯る:選ぶと、向いているカードだけ明るく */
+.bento.is-guided .bento-card { opacity: .38; filter: saturate(.6); transition: opacity var(--dur-2) ease, filter var(--dur-2) ease; }
+.bento.is-guided .bento-card.is-reco { opacity: 1; filter: none; box-shadow: 0 0 0 1px rgba(212, 175, 55, 0.55), 0 0 34px rgba(212, 175, 55, 0.25); }
+.bento.is-guided .bento-card.is-reco::before { border-color: rgba(212, 175, 55, 0.5); }
+@media (max-width: 720px) {
+  .wants { padding: 18px 16px 14px; margin-inline: 4px; }
+  .wants-chip { font-size: 12.5px; padding: 7px 12px; }
+}
+
 /* --- 二人のツォルキン(カップル) --- */
 .pair-card { border-color: rgba(212, 175, 55, 0.35); }
 .pair-hero { text-align: center; }
