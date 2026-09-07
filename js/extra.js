@@ -1052,6 +1052,121 @@
         <p class="sub oracle-side-note">${hit ? `${whoOther}の${other.seal.name}は、${whoMe}の<strong>${hit[0]}キン</strong>の位置。` : me.seal.n === other.seal.n ? `${whoOther}も同じ${me.seal.name}。中心が重なります。` : `${whoOther}の${other.seal.name}は、${whoMe}のオラクルの外側。関係名はつきません。`}</p>
       </div>`;
   }
+  /* ---------- 間柄別スコア:恋人 / 結婚・長い関係 / 仕事仲間 / 友人 ----------
+     同じ組み合わせでも、間柄が変わると点が変わる(反対キンは恋人だと控えめ、仕事仲間だと高い、など)。
+     加点は固定ルール(関係名・色・音のリズム)で、内訳を画面に出す。 */
+  const SCENES = [
+    { key: "love", ja: "恋人", en: "LOVER" },
+    { key: "life", ja: "結婚・長い関係", short: "結婚", en: "PARTNER" },
+    { key: "work", ja: "仕事仲間", en: "BUSINESS" },
+    { key: "friend", ja: "友人", en: "FRIEND" },
+  ];
+  /* 関係名 → 間柄ごとの加点と、その間柄での一言 */
+  const REL_SCENE = {
+    "同じKIN":            { pt: { love: 15, life: 20, work: 5,  friend: 18 }, love: "鏡を見ているような安心感。", life: "価値観が同じなので、長く一緒にいても摩耗しにくい。", work: "同じ得意・同じ苦手。役割が完全にかぶるので、外に補う人が要る。", friend: "説明のいらない親友になれる。" },
+    "同じ紋章":           { pt: { love: 12, life: 15, work: 8,  friend: 15 }, love: "根っこが同じで安心。音の違いがときめきになる。", life: "土台が同じなので、生活のルールで揉めにくい。", work: "強みがかぶる。担当を分けないと張り合いになる。", friend: "趣味や価値観が合い、長く続く友情。" },
+    "ガイドキン":         { pt: { love: 15, life: 18, work: 22, friend: 12 }, love: "相手に導かれる心地よさ。尊敬が恋になる。", life: "迷ったときの舵取り役がいる関係。長い航海向き。", work: "上司と部下、師匠と弟子として最強クラス。方向が合う。", friend: "相談相手として頼れる先輩のような友人。" },
+    "類似キン":           { pt: { love: 18, life: 25, work: 20, friend: 20 }, love: "自然体でいられる。安心が愛情に変わる。", life: "補い合いが自然に起きる、結婚向きの筆頭。", work: "背中を預けられる相棒。分業がうまくいく。", friend: "気を使わない、いちばん楽な友人。" },
+    "反対キン":           { pt: { love: 8,  life: 5,  work: 28, friend: 10 }, love: "惹かれるけれど、価値観の衝突が多い。刺激重視の人向き。", life: "生活を共にすると違いが毎日出る。歩み寄りの技術が要る。", work: "自分にない視点を持つ相手。ビジネスパートナーとして最良。", friend: "たまに会うと面白い。四六時中は疲れる。" },
+    "神秘キン":           { pt: { love: 25, life: 10, work: 12, friend: 10 }, love: "理屈のない引力。恋の始まりとして最強。", life: "引力が強いぶん、日常に落とすと燃え尽きやすい。距離の工夫を。", work: "隠れた力を引き出し合うが、安定した分業には向きにくい。", friend: "不思議と縁が続く、運命的な友人。" },
+    "絶対反対キン":       { pt: { love: 22, life: 8,  work: 25, friend: 8 },  love: "強く惹かれ、強くぶつかる。ドラマのような恋。", life: "衝突を成長に変えられるかが、続く条件。", work: "正反対の力を合わせると、一人では届かない成果に。", friend: "友人としては距離がちょうどよい。" },
+    "鏡の向こうのKIN":     { pt: { love: 12, life: 12, work: 15, friend: 14 }, love: "相手を通して自分を知る恋。深いが、図星が痛い。", life: "お互いを映し続ける関係。正直でいられるなら長い。", work: "自分の死角を指摘してくれる相手。参謀向き。", friend: "本音を言い合える、成長し合う友人。" },
+    "同じウェイブスペル":   { pt: { love: 10, life: 15, work: 18, friend: 16 }, love: "目指す方向が同じ。落ち着いた恋。", life: "人生のテーマが同じで、同じ場所に向かえる。", work: "同じ目標に向かう仲間。プロジェクト向き。", friend: "同じ夢を語れる同志。" },
+    "同じ音":             { pt: { love: 8,  life: 8,  work: 10, friend: 18 }, love: "タイミングが合う。ただし役割がかぶりやすい。", life: "同じリズムで暮らせるが、決め手に欠ける。", work: "同じポジションを取りたがる。担当を分ければ速い。", friend: "テンポが合う遊び仲間として最高。" },
+    "名前のつく関係はなし": { pt: { love: 6,  life: 6,  work: 6,  friend: 6 },  love: "型にはまらない自由な恋。", life: "自分たちで形を作る関係。", work: "先入観なく組める。", friend: "気楽なつきあい。" },
+  };
+  /* 色の組み合わせ → 間柄ごとの加点 */
+  const COLOR_SCENE = {
+    same:           { love: 3, life: 8, work: 0, friend: 8 },
+    "red-white":    { love: 6, life: 6, work: 8, friend: 4 },
+    "red-blue":     { love: 8, life: 2, work: 5, friend: 6 },
+    "red-yellow":   { love: 5, life: 8, work: 9, friend: 5 },
+    "white-blue":   { love: 7, life: 5, work: 4, friend: 6 },
+    "white-yellow": { love: 4, life: 7, work: 9, friend: 4 },
+    "blue-yellow":  { love: 6, life: 6, work: 8, friend: 5 },
+  };
+  const colorScene = (a, b) => a === b ? COLOR_SCENE.same : (COLOR_SCENE[`${a}-${b}`] || COLOR_SCENE[`${b}-${a}`]);
+  /* 音のリズム → 間柄ごとの加点 */
+  const RHYTHM_SCENE = {
+    "同じリズム":     { love: 5, life: 6, work: 3, friend: 9 },
+    "神秘の音":       { love: 10, life: 4, work: 6, friend: 5 },
+    "同じ導き":       { love: 5, life: 7, work: 7, friend: 6 },
+    "隣り合う音":     { love: 4, life: 5, work: 8, friend: 5 },
+    "はじまりと終わり": { love: 6, life: 7, work: 9, friend: 4 },
+    "同じ段階":       { love: 3, life: 4, work: 3, friend: 6 },
+    "違う段階":       { love: 3, life: 5, work: 7, friend: 3 },
+  };
+  const SCENE_TIER = (v) => v >= 85 ? "抜群" : v >= 72 ? "良い" : v >= 58 ? "育てがい" : "工夫しだい";
+  function sceneScores(primary, secondary, a, b, rhythm) {
+    const BASE = 42;
+    return SCENES.map((sc) => {
+      const r1 = REL_SCENE[primary.name].pt[sc.key];
+      const r2 = secondary ? REL_SCENE[secondary.name].pt[sc.key] : null;
+      const rel = r2 == null ? r1 : Math.round((r1 + r2) / 2);
+      const col = colorScene(a.seal.color, b.seal.color)[sc.key];
+      const rh = RHYTHM_SCENE[rhythm.name][sc.key];
+      const v = Math.max(30, Math.min(98, BASE + rel + col + rh));
+      const parts = [
+        { label: `紋章の関係「${primary.name}」${secondary ? `+「${secondary.name}」` : ""}`, v: rel },
+        { label: `色 ${SEAL_COLOR[a.seal.color].ja}×${SEAL_COLOR[b.seal.color].ja}`, v: col },
+        { label: `音のリズム「${rhythm.name}」`, v: rh },
+      ];
+      return { ...sc, v, tier: SCENE_TIER(v), parts, note: REL_SCENE[primary.name][sc.key] };
+    });
+  }
+  /* 4軸レーダー(恋人・結婚・仕事・友人) */
+  function sceneRadarSvg(scores, ca, cb) {
+    const CX = 150, CY = 110, R = 80, n = scores.length;
+    const ang = (i) => -Math.PI / 2 + (i / n) * Math.PI * 2;
+    const pt = (i, r) => ({ x: CX + Math.cos(ang(i)) * r, y: CY + Math.sin(ang(i)) * r });
+    const grid = [0.25, 0.5, 0.75, 1].map((k) => `<polygon points="${scores.map((_, i) => { const p = pt(i, R * k); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(" ")}" fill="none" stroke="rgba(200,212,232,${k === 1 ? 0.28 : 0.12})"/>`).join("");
+    const axes = scores.map((_, i) => { const p = pt(i, R); return `<line x1="${CX}" y1="${CY}" x2="${p.x.toFixed(1)}" y2="${p.y.toFixed(1)}" stroke="rgba(200,212,232,.14)"/>`; }).join("");
+    const poly = scores.map((s, i) => { const p = pt(i, R * s.v / 100); return `${p.x.toFixed(1)},${p.y.toFixed(1)}`; }).join(" ");
+    const dots = scores.map((s, i) => { const p = pt(i, R * s.v / 100); return `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="4" fill="#e6c968" stroke="#05081a" stroke-width="1.5"/>`; }).join("");
+    const labels = scores.map((s, i) => { const p = pt(i, R + 24); return `<text x="${p.x.toFixed(1)}" y="${p.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="11.5" fill="#c8d4e8" letter-spacing=".08em">${s.short || s.ja}</text>`; }).join("");
+    return `
+      <svg class="scene-radar" viewBox="0 0 300 220" role="img" aria-label="間柄別の相性レーダー">
+        <defs><linearGradient id="scgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ca}" stop-opacity=".55"/><stop offset="1" stop-color="${cb}" stop-opacity=".55"/></linearGradient></defs>
+        ${grid}${axes}
+        <polygon points="${poly}" fill="url(#scgrad)" stroke="#e6c968" stroke-width="1.5" stroke-linejoin="round"/>
+        ${dots}${labels}
+      </svg>`;
+  }
+  function sceneHeadline(scores) {
+    const sorted = [...scores].sort((x, y) => y.v - x.v);
+    const best = sorted[0], love = scores.find((s) => s.key === "love"), work = scores.find((s) => s.key === "work"), life = scores.find((s) => s.key === "life");
+    const spread = sorted[0].v - sorted[sorted.length - 1].v;
+    if (spread <= 6) return `どの間柄でも点が近い、オールラウンドな二人。いちばん高いのは「${best.ja}」。`;
+    if (best.key === "work" && work.v - love.v >= 10) return `恋人としてより、仕事仲間として光る組み合わせ。違いが成果に変わる二人。`;
+    if (best.key === "love" && love.v - life.v >= 12) return `恋の始まりに強い二人。長く続けるなら、安心をつくる工夫が鍵。`;
+    if (best.key === "life") return `結婚・長い関係にいちばん向く二人。派手さより、続く強さ。`;
+    if (best.key === "friend") return `友人としていちばん自然な二人。恋にするなら、役割を分けてみて。`;
+    return `いちばん向くのは「${best.ja}」の間柄。${best.note}`;
+  }
+  function sceneHtml(scores, ca, cb) {
+    const best = [...scores].sort((x, y) => y.v - x.v)[0];
+    return `
+      <div class="scene-block">
+        <p class="scene-headline">${sceneHeadline(scores)}</p>
+        <div class="scene-grid">
+          ${sceneRadarSvg(scores, ca, cb)}
+          <div class="scene-tiles">
+            ${scores.map((s) => `
+              <div class="scene-tile ${s.key === best.key ? "is-best" : ""}">
+                <span class="mo-label">${s.en}</span>
+                <b class="scene-num" data-count="${s.v}">0</b>
+                <span class="scene-ja">${s.ja}<em>${s.tier}</em></span>
+                <p>${s.note}</p>
+                <details class="scene-why"><summary>内訳</summary>
+                  <ul>${s.parts.map((pt) => `<li><span>${pt.label}</span><b>+${pt.v}</b></li>`).join("")}<li><span>基礎点</span><b>+42</b></li></ul>
+                </details>
+              </div>`).join("")}
+          </div>
+        </div>
+        <p class="sub">点は「紋章の関係」「色」「銀河の音のリズム」の固定ルールで加点した、この占いの見立てです。間柄によって同じ二人でも点が変わります。低い間柄は「合わない」ではなく、工夫のしどころです。</p>
+      </div>`;
+  }
+
   const RELATION_TITLE = {
     "同じKIN": "ふたつの同じ星", "同じ紋章": "同じ根、ちがう音", "ガイドキン": "導く星と、導かれる星", "類似キン": "背中を預け合う二人", "反対キン": "正反対で、惹かれ合う", "神秘キン": "理屈のない引力", "絶対反対キン": "環の向こうの運命", "鏡の向こうのKIN": "鏡合わせの二人", "同じウェイブスペル": "同じ章を生きる二人", "同じ音": "同じ拍子で歩く二人", "名前のつく関係はなし": "自分たちで書く物語",
   };
@@ -1074,6 +1189,8 @@
     const secondary = rel.name !== NONE && relBack.name !== NONE && rel.name !== relBack.name ? relBack : null;
     const love = REL_LOVE[primary.name], loveBack = secondary ? REL_LOVE[secondary.name] : null;
     const title = secondary ? pairTitle(primary, secondary) : RELATION_TITLE[primary.name];
+    const scenes = sceneScores(primary, secondary, p, q, rhythm);
+    const bestScene = [...scenes].sort((x, y) => y.v - x.v)[0];
     const tp = relationOf(p, today, true), tq = relationOf(q, today, true);
     const todayWind = tp.name !== "名前のつく関係はなし" && tq.name !== "名前のつく関係はなし" ? "今日は二人とも、今日のKINと名前のつく関係。二人で何かをするのに向いた日です。"
       : tp.name !== "名前のつく関係はなし" ? `今日はあなたにとって「${tp.name}」の日。あなたがリードすると流れがよくなります。`
@@ -1082,9 +1199,10 @@
     lastShare.mayapair = {
       eyebrow: "MAYAN CALENDAR — TWO KINS",
       title,
-      keywords: [`KIN ${p.kin} × KIN ${q.kin}`, rel.name, `関係KIN ${rk} ${rkSeal.name}`],
-      sub: `二人でいると「${rkSeal.name}・音${rkTone.n}」のエネルギー。${rkSeal.kw}。`,
-      x: `【MYOURISCOPE マヤ暦】二人の縁は「${title}」。KIN ${p.kin} × KIN ${q.kin}、関係KINは ${rk}(${rkSeal.name}) ✦`,
+      keywords: [`KIN ${p.kin} × KIN ${q.kin}`, primary.name, ...scenes.map((s) => `${s.ja} ${s.v}`)],
+      score: bestScene.v, scoreLabel: `${bestScene.ja}として`,
+      sub: `二人でいると「${rkSeal.name}・音${rkTone.n}」のエネルギー。いちばん向くのは「${bestScene.ja}」。`,
+      x: `【MYOURISCOPE マヤ暦】二人の縁は「${title}」。恋人${scenes[0].v}・結婚${scenes[1].v}・仕事${scenes[2].v}・友人${scenes[3].v}点、いちばん向くのは「${bestScene.ja}」 ✦`,
     };
     return `
       <div class="result-card span-all pair-card" style="--ecp:${cp.ec};--ecq:${cq.ec};--ec:${cr.ec}">
@@ -1098,6 +1216,7 @@
           </div>
           <p class="pair-lead">${primary.note}</p>
         </div>
+        ${sceneHtml(scenes, cp.ec, cq.ec)}
         <div class="pair-grid">
           <div class="pair-ring">
             ${tzolkinRingSvg(p, q, rk)}
