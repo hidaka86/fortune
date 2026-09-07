@@ -885,6 +885,289 @@
       </div>`;
   }
 
+  /* ---------- 二人のツォルキン(カップル向け) ----------
+     材料:紋章の関係(11種・双方向)× 色の組み合わせ(7)× 音のリズム(6)× 段階の分担(3)
+          × 二人の関係KIN(260)= 組み合わせで文章が変わる。根拠は必ず添える。 */
+  const SEAL_DATE = [
+    "新しくオープンした店や、どちらかの原点(地元・母校)を訪ねる日。二人の「はじまり」を確かめるデート。",
+    "風の通る高台や海辺で、ゆっくり話す日。言いそびれていたことを、深呼吸してひとつ伝えてみて。",
+    "夜景、プラネタリウム、静かなバー。多くを語らず、同じ夜を眺めるだけで満ちる時間。",
+    "植物園や庭いじり、じっくり系の学び(工房体験・講座)。すぐ結果が出ないことを一緒に育てる日。",
+    "体を動かすデート。ハイキング、サウナ、スポーツ観戦。頭より体で「楽しい」を共有して。",
+    "はじめての場所に二人で飛び込む日。誰かを紹介する、紹介される、そんな橋渡しの予定も吉。",
+    "手を動かす日。料理、陶芸、DIY、部屋の模様替え。一緒に何かを作り上げると絆が形になります。",
+    "美術館、きれいな服、整った空間。「美しいね」と言い合える場所で、感性を合わせる日。",
+    "水辺へ。温泉、川、雨の日の映画。溜まったものを流して、二人の空気をきれいにする日。",
+    "家族や友人を交えた食事、ペットと過ごす日。「身内」の輪の中で、素の二人を確かめて。",
+    "遊園地、ゲーム、くだらない話で笑う日。真面目な話は横に置いて、とにかく面白がって。",
+    "行き先をその場で決める旅。二人がそれぞれ「自分で選ぶ」ことを楽しむ、自由なデート。",
+    "少し遠出の探検。知らない街を歩く、道を決めずに動く。動きながら、いい発見があります。",
+    "「いま、ここ」を味わう日。予定を詰めず、公園でぼんやり。受け入れ合う時間が魔法になります。",
+    "展望台や飛行機、高いところから景色を見る日。二人の「これから」を大きな絵で話して。",
+    "初めての料理、難しいゲーム、少し怖いアトラクション。一緒に挑戦すると、距離が縮まります。",
+    "自然の中へ。山、森、農園。土に触れ、風を読む一日。偶然出会ったものが二人の合図です。",
+    "鏡のように本音を映し合う日。落ち着いた喫茶店で、お互いの「本当のところ」を聞いてみて。",
+    "思い切った予定を。引っ越しの下見、大きな買い物、初めての告白めいた話。変化を恐れずに。",
+    "日なたを歩く日。朝から出かけて、感謝を言葉にして、まわりの人にも光を分けるデート。",
+  ];
+  /* 関係KINの紋章:二人でいるときの空気(20) */
+  const SEAL_DUO = [
+    "何かを一緒に「はじめる」二人。片方が守り、片方が育てる。家庭的で、大きなものを一緒に背負える空気になります。",
+    "言葉と空気を大切にする二人。沈黙も心地よく、気持ちを伝え合うことで関係が整っていきます。",
+    "静かに夢を育てる二人。派手さはなくても、内側に大きな計画を抱え、安心できる場所で豊かさを分け合います。",
+    "じっくり時間をかけて花ひらく二人。焦らず、納得しながら進む。年を重ねるほどよくなる関係です。",
+    "熱量の高い二人。体感で「好き」がわかり、情熱が原動力。エネルギーの放出先を一緒に持つと安定します。",
+    "人と人をつなぐ二人。二人でいると交友関係が広がり、手放すことで次の縁が入ってくる、風通しのよい空気。",
+    "手を動かして何かを作る二人。料理や部屋づくり、共同作業で絆が形になる。癒しの空気もあります。",
+    "美しいものを愛でる二人。センスが合い、一緒にいる空間が自然と整う。完璧より心地よさを。",
+    "浄化の空気を持つ二人。一緒にいるとモヤモヤが流れ、使命感が共有される。休む日も意識して。",
+    "家族のような二人。忠実で、仲間思い。信じる力が強く、素の自分でいられる安心の空気です。",
+    "笑いの絶えない二人。遊び心で困難を軽くし、深刻になりすぎないことが二人の魔法になります。",
+    "お互いの自由を尊重する二人。束縛せず、それぞれが自分で選ぶ。対等さが心地よい空気です。",
+    "動きながら深まる二人。旅や探検、新しい場所で関係が育つ。じっとしているより出かけて。",
+    "「いま、ここ」を一緒に味わう二人。無理にコントロールせず、受け入れ合うことで魔法のような時間が流れます。",
+    "先を見る二人。ビジョンを語り合い、大きな絵を一緒に描く。心が曇ると視界も曇るので、気分の共有を。",
+    "一緒に挑戦する二人。難しいことに向かうほど絆が強まる。問いを立て合う、知的な空気もあります。",
+    "流れを読む二人。偶然の一致(シンクロ)が多く、「今だ」の感覚が合う。自然の中で深まります。",
+    "本音を映し合う二人。ごまかしがきかず、筋を通す。正直さが信頼の土台になる、透明な空気です。",
+    "変化を恐れない二人。一緒にいると大きな転機が起きやすく、壊して生み直す力があります。晴れ間も大切に。",
+    "光の空気を持つ二人。周囲を明るくし、人が集まってくる。与えるほど満ちる、あたたかい関係です。",
+  ];
+  /* 紋章の関係(11種)を、恋愛の場面で読む:見え方・火種・仲直り */
+  const REL_LOVE = {
+    "同じKIN": { love: "同じKINは260日に1人の確率。似すぎていて最初は「自分を見ているよう」で戸惑うかもしれませんが、深い安心感のある関係です。", friction: "同じ弱点を持つので、お互い同じ場面でつまずき、慰め合いが傷のなめ合いになりがち。", repair: "どちらかが「先に一歩」動くと決めること。同じ迷い方をするので、動いた方が流れを変えます。" },
+    "同じ紋章": { love: "根っこの価値観が同じで、「わかる」が多い関係。音が違うので、同じものを別のリズムで扱います。", friction: "似ているぶん、相手の欠点が自分の欠点として刺さります。音の違い(急ぐ・待つ)が衝突に。", repair: "「同じ紋章で、音が違う」と思い出すこと。目指す場所は同じ、歩き方が違うだけです。" },
+    "ガイドキン": { love: "相手があなたの「進む方向」を体現している関係。一緒にいると、迷いが減り、視界がひらけます。", friction: "頼りすぎて、自分の判断を手放してしまうことがあります。導かれる側が受け身になりやすい。", repair: "相手の選び方を「参考」にして、決めるのは自分で。ガイドは道しるべであって、運転手ではありません。" },
+    "類似キン": { love: "自然に補い合う、いちばん安心できる組み合わせ。無理に合わせなくても、そばにいるだけで力が出ます。", friction: "居心地がよすぎて、刺激が減り「空気のような存在」に。感謝が言葉にならなくなりがち。", repair: "当たり前になっていることを、あえて言葉にすること。「いてくれて助かってる」の一言で戻ります。" },
+    "反対キン": { love: "正反対だからこそ、強く惹かれる関係。相手に自分にないものを見つけ、世界が倍に広がります。", friction: "価値観のぶつかりは避けられません。正しさで争うと、どちらも譲れなくなります。", repair: "「違う」を「間違い」にしないこと。相手のやり方を一度そのまま真似してみると、理由がわかります。" },
+    "神秘キン": { love: "理屈で説明できない引力。「なぜか惹かれる」から始まりやすく、一緒にいると自分でも知らなかった面が出てきます。", friction: "引き出される力が強すぎて、疲れたり、自分が変わっていくことに戸惑ったりします。", repair: "距離をゼロにしないこと。少し離れる時間があるほど、引力はちょうどよく働きます。" },
+    "絶対反対キン": { love: "260日暦のちょうど反対側。運命的な出会いとして語られることが多い、強い縁の組み合わせです。", friction: "惹かれる力と反発する力が同じだけ強い。近づきすぎると激しくぶつかります。", repair: "ぶつかったあとに必ず「学んだこと」をひとつ言葉にする。この関係は、成長でしか着地しません。" },
+    "鏡の向こうのKIN": { love: "自分の裏側を映す相手。相手を見ていると、自分のことがわかっていく不思議な関係です。", friction: "相手の言葉が「図星」で刺さりやすい。責められた気がして、防御に回りがち。", repair: "刺さった言葉は、鏡に映った自分。相手を責める前に、自分の中の同じ部分を見てみて。" },
+    "同じウェイブスペル": { love: "同じ13日のテーマを生きる仲間。人生で目指す方向が近く、長い目で見て同じ場所に向かえます。", friction: "同じテーマに向かうぶん、進み方の速さの差(音の差)が焦りになります。", repair: "ゴールが同じことを確認して、ペースの違いは「役割の違い」と捉え直すこと。" },
+    "同じ音": { love: "同じリズムで動く二人。「今だ」「まだ」の感覚が一致していて、行動のタイミングが合います。", friction: "同じポジションを取りたがるので、役割がかぶって譲り合いや張り合いに。", repair: "担当を分けること。同じ音でも紋章が違うので、「何を」で分ければぶつかりません。" },
+    "名前のつく関係はなし": { love: "特別な名前がつかないぶん、型にはまらない自由な関係。二人で関係の形をゼロから作れます。", friction: "「運命」の物語がないぶん、迷ったときに拠り所を外に求めがちです。", repair: "関係KIN(二人でいるときのエネルギー)を、二人の合言葉にすること。物語は自分たちで作れます。" },
+  };
+  /* 銀河の音の相性(リズム) */
+  function toneRhythm(a, b) {
+    const ta = a.tone.n, tb = b.tone.n;
+    if (ta === tb) return { name: "同じリズム", stars: 4, note: "「今だ」「まだ」の感覚が一致する二人。行動のタイミングで揉めることが少なく、一緒に動くと速い。" };
+    if (ta + tb === 14) return { name: "神秘の音", stars: 5, note: `音${ta}と音${tb}は足すと14になる「神秘の音」の組み合わせ。ドリームスペルでは、隠れた力を引き出し合う音とされます。相手といると、自分の知らない一面が出てきます。` };
+    if (Math.abs(ta - tb) % 5 === 0) return { name: "同じ導き", stars: 4, note: `音${ta}と音${tb}は5つおきの仲間。ガイドキンの決まり方が同じグループで、迷ったときの「向き直り方」が似ています。` };
+    if (Math.abs(ta - tb) === 1) return { name: "隣り合う音", stars: 3, note: `音${ta}と音${tb}は13日の流れの隣どうし。片方がやったことを、もう片方が受け取って次に進める、バトンリレーのような関係。` };
+    if (Math.abs(ta - tb) === 12) return { name: "はじまりと終わり", stars: 4, note: "音1と音13、サイクルの両端。一方が始め、一方が締めくくる。二人そろってひとつの流れが完成します。" };
+    const pa = TONE_PHASE(ta), pb = TONE_PHASE(tb);
+    if (pa === pb) return { name: "同じ段階", stars: 3, note: `二人とも「${pa}」段階の音。物事への関わり方が近く、同じ場面で力が出ます。同じ場面で疲れるのも一緒。` };
+    return { name: "違う段階", stars: 3, note: `あなたは「${pa}」、お相手は「${pb}」の段階の音。関わる場面が違うので、一つのことを最初から最後まで二人で運べます。` };
+  }
+  /* 段階と色から、二人の分担を決める */
+  function pairRoles(a, b) {
+    const first = a.tone.n <= b.tone.n ? a : b, last = first === a ? b : a;
+    const who = (x) => x === a ? "あなた" : "お相手";
+    const roleOf = { red: "火をつける", white: "整える", blue: "変える", yellow: "実らせる" };
+    if (a.tone.n === b.tone.n) return `音が同じなので、どちらかが「言い出す係」になる決まりはありません。色で分けると、${who(a)}が${roleOf[a.seal.color]}役、${who(b)}が${roleOf[b.seal.color]}役。`;
+    return `音の小さい${who(first)}(音${first.tone.n})が「言い出す係」、音の大きい${who(last)}(音${last.tone.n})が「仕上げる係」。色で見ると、${who(a)}が${roleOf[a.seal.color]}役、${who(b)}が${roleOf[b.seal.color]}役です。`;
+  }
+  /* 二人の関係KIN:KINの和を260で折り返す(日本のマヤ暦で広く使われる読み方) */
+  const relationKin = (a, b) => ((a.kin + b.kin - 1) % 260) + 1;
+  function nextKinDate(kin, from) {
+    for (let i = 0; i < 261; i++) {
+      const d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i);
+      if (kinOf(d.getFullYear(), d.getMonth() + 1, d.getDate()) === kin) return { date: d, days: i };
+    }
+    return null;
+  }
+  /* 4つの視点:根拠つきの星(1〜5) */
+  function pairScores(a, b, rel, relBack, rhythm) {
+    const named = rel.name !== "名前のつく関係はなし";
+    const same = (a.seal.color === b.seal.color);
+    const anshin = { "類似キン": 5, "同じKIN": 5, "ガイドキン": 4, "同じ紋章": 4, "同じウェイブスペル": 4, "同じ音": 3, "神秘キン": 3, "鏡の向こうのKIN": 3, "反対キン": 2, "絶対反対キン": 2 }[rel.name] ?? (same ? 3 : 3);
+    const shigeki = { "反対キン": 5, "絶対反対キン": 5, "神秘キン": 5, "鏡の向こうのKIN": 4, "ガイドキン": 3, "同じ音": 3, "同じウェイブスペル": 3, "同じ紋章": 2, "類似キン": 2, "同じKIN": 1 }[rel.name] ?? (same ? 2 : 3);
+    const hacho = rhythm.stars;
+    const buntan = a.tone.n === b.tone.n ? (same ? 2 : 3) : (same ? 3 : (rel.name === "類似キン" || rel.name === "ガイドキン" ? 5 : 4));
+    return [
+      { key: "安心感", v: anshin, why: named ? `紋章の関係「${rel.name}」から。` : `紋章に特別な関係名がなく、${same ? "同じ色" : "違う色"}の組み合わせから。` },
+      { key: "刺激", v: shigeki, why: named ? `「${rel.name}」は${shigeki >= 4 ? "違いが大きく、学びの多い" : "似ていて、落ち着く"}関係。` : "型にはまらない自由な関係。刺激は二人しだい。" },
+      { key: "波長", v: hacho, why: `銀河の音のリズム「${rhythm.name}」(音${a.tone.n}×音${b.tone.n})から。` },
+      { key: "分担", v: buntan, why: a.tone.n === b.tone.n ? "音が同じで役割がかぶりやすい。" : `音が違い、「言い出す係」と「仕上げる係」に分かれる。${same ? "色が同じで役割は近め。" : "色も違い、役目が分かれる。"}` },
+    ];
+  }
+  /* ツォルキンの環:260日を円に並べ、二人と関係KINを置く */
+  function tzolkinRingSvg(a, b, rk) {
+    const R = 150, C = 170, ang = (kin) => ((kin - 1) / 260) * Math.PI * 2 - Math.PI / 2;
+    const pt = (kin, r) => ({ x: C + Math.cos(ang(kin)) * r, y: C + Math.sin(ang(kin)) * r });
+    let ticks = "";
+    for (let k = 1; k <= 260; k++) {
+      const p1 = pt(k, R - (k % 13 === 1 ? 10 : 5)), p2 = pt(k, R);
+      ticks += `<line x1="${p1.x.toFixed(1)}" y1="${p1.y.toFixed(1)}" x2="${p2.x.toFixed(1)}" y2="${p2.y.toFixed(1)}" stroke="${SEAL_COLOR[sealOf(k).color].ec}" stroke-opacity="${k % 13 === 1 ? 0.7 : 0.28}" stroke-width="1"/>`;
+    }
+    const arc = (k1, k2, r, color) => {
+      const d = ((k2 - k1) % 260 + 260) % 260;
+      const s = pt(k1, r), e = pt(k2, r);
+      return `<path d="M${s.x.toFixed(1)} ${s.y.toFixed(1)} A${r} ${r} 0 ${d > 130 ? 1 : 0} 1 ${e.x.toFixed(1)} ${e.y.toFixed(1)}" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-opacity=".8"/>`;
+    };
+    const dist = ((b.kin - a.kin) % 260 + 260) % 260, short = Math.min(dist, 260 - dist);
+    const marker = (kin, label, color, big) => { const p = pt(kin, R - 24); const t = pt(kin, R - 50); return `
+      <circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${big ? 9 : 7}" fill="${color}" stroke="#05081a" stroke-width="2"><title>${label} KIN ${kin}</title></circle>
+      <text x="${t.x.toFixed(1)}" y="${t.y.toFixed(1)}" text-anchor="middle" dominant-baseline="middle" font-size="11" fill="${color}" font-family="var(--latin)" letter-spacing=".08em">${label}</text>`; };
+    const ca = SEAL_COLOR[a.seal.color].ec, cb = SEAL_COLOR[b.seal.color].ec, cr = SEAL_COLOR[sealOf(rk).color].ec;
+    return `
+      <svg class="tz-ring" viewBox="0 0 340 340" role="img" aria-label="ツォルキンの環に置いた二人のKIN">
+        <circle cx="${C}" cy="${C}" r="${R - 24}" fill="none" stroke="rgba(200,212,232,.12)"/>
+        ${ticks}
+        ${dist <= 130 ? arc(a.kin, b.kin, R - 24, "url(#tzgrad)") : arc(b.kin, a.kin, R - 24, "url(#tzgrad)")}
+        <defs><linearGradient id="tzgrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="${ca}"/><stop offset="1" stop-color="${cb}"/></linearGradient></defs>
+        ${marker(rk, "二人", cr, false)}
+        ${marker(a.kin, "あなた", ca, true)}
+        ${marker(b.kin, "相手", cb, true)}
+        <text x="${C}" y="${C - 14}" text-anchor="middle" font-size="11" fill="#9aa6c4" letter-spacing=".3em" font-family="var(--latin)">DISTANCE</text>
+        <text x="${C}" y="${C + 22}" text-anchor="middle" font-size="40" fill="#f5f7ff" font-family="var(--num-display)" font-weight="600">${short}</text>
+        <text x="${C}" y="${C + 44}" text-anchor="middle" font-size="11" fill="#9aa6c4" letter-spacing=".2em">日 はなれた誕生KIN</text>
+      </svg>`;
+  }
+  function distanceNote(a, b) {
+    const dist = ((b.kin - a.kin) % 260 + 260) % 260, short = Math.min(dist, 260 - dist);
+    if (short === 0) return "同じKIN。260日の環の同じ場所に立っています。";
+    if (short === 130) return "環のちょうど反対側(絶対反対キン)。いちばん遠く、いちばん強く引き合う位置です。";
+    if (short <= 6) return "環のすぐ隣。同じウェイブスペルの中にいる可能性が高く、同じ章を生きる二人です。";
+    if (short % 13 === 0) return `${short}日=ウェイブスペル${short / 13}つぶんの距離。音が同じで、リズムがそろう位置です。`;
+    if (short % 20 === 0) return `${short}日=紋章の周期${short / 20}回ぶんの距離。同じ紋章で、根っこがそろう位置です。`;
+    if (short > 100) return "環の向こう側。世界の見え方がかなり違い、そのぶん互いに新しい景色を見せ合えます。";
+    return "環の同じ側。見え方に共通点が多く、話が合いやすい位置です。";
+  }
+  /* 二人のオラクル:相手の紋章が、自分のオラクルのどこに当たるか */
+  function oracleHitHtml(me, other, whoMe, whoOther) {
+    const cells = [
+      ["ガイド", me.guide, "mo-top"], ["反対", me.antipode, "mo-left"], ["類似", me.analog, "mo-right"], ["神秘", me.occult.seal, "mo-bottom"],
+    ];
+    const hit = cells.find(([, s]) => s.n === other.seal.n);
+    const cell = ([label, seal, cls]) => `<div class="mo-cell ${cls} ${seal.n === other.seal.n ? "mo-hit" : ""}" style="--ec:${SEAL_COLOR[seal.color].ec}"><span class="mo-label">${label}</span><b>${seal.name}</b>${seal.n === other.seal.n ? `<small>← ${whoOther}</small>` : ""}</div>`;
+    return `
+      <div class="oracle-side">
+        <p class="oracle-side-title">${whoMe}のオラクル</p>
+        <div class="maya-oracle maya-oracle-sm">
+          ${cell(cells[0])}${cell(cells[1])}
+          <div class="mo-cell mo-center" style="--ec:${SEAL_COLOR[me.seal.color].ec}"><span class="mo-label">${whoMe}</span><b>${me.seal.name}</b></div>
+          ${cell(cells[2])}${cell(cells[3])}
+        </div>
+        <p class="sub oracle-side-note">${hit ? `${whoOther}の${other.seal.name}は、${whoMe}の<strong>${hit[0]}キン</strong>の位置。` : me.seal.n === other.seal.n ? `${whoOther}も同じ${me.seal.name}。中心が重なります。` : `${whoOther}の${other.seal.name}は、${whoMe}のオラクルの外側。関係名はつきません。`}</p>
+      </div>`;
+  }
+  const RELATION_TITLE = {
+    "同じKIN": "ふたつの同じ星", "同じ紋章": "同じ根、ちがう音", "ガイドキン": "導く星と、導かれる星", "類似キン": "背中を預け合う二人", "反対キン": "正反対で、惹かれ合う", "神秘キン": "理屈のない引力", "絶対反対キン": "環の向こうの運命", "鏡の向こうのKIN": "鏡合わせの二人", "同じウェイブスペル": "同じ章を生きる二人", "同じ音": "同じ拍子で歩く二人", "名前のつく関係はなし": "自分たちで書く物語",
+  };
+  function pairTitle(rel, relBack) {
+    if (rel.name === relBack.name) return RELATION_TITLE[rel.name];
+    // 非対称(あなた→ガイド、相手→神秘 など)は両方を並べる
+    return `${RELATION_TITLE[rel.name]}、そして${RELATION_TITLE[relBack.name].replace(/二人$/, "縁")}`;
+  }
+
+  function pairHtml(p, q, now, today) {
+    const rel = relationOf(p, q), relBack = relationOf(q, p);
+    const rhythm = toneRhythm(p, q);
+    const scores = pairScores(p, q, rel, relBack, rhythm);
+    const rk = relationKin(p, q), rkSeal = sealOf(rk), rkTone = toneOf(rk);
+    const next = nextKinDate(rk, now);
+    const cp = SEAL_COLOR[p.seal.color], cq = SEAL_COLOR[q.seal.color], cr = SEAL_COLOR[rkSeal.color];
+    // 片側にだけ関係名がつく場合は、名前のあるほうを主役にして語る(「名前なし」の文を混ぜない)
+    const NONE = "名前のつく関係はなし";
+    const primary = rel.name !== NONE ? rel : relBack;
+    const secondary = rel.name !== NONE && relBack.name !== NONE && rel.name !== relBack.name ? relBack : null;
+    const love = REL_LOVE[primary.name], loveBack = secondary ? REL_LOVE[secondary.name] : null;
+    const title = secondary ? pairTitle(primary, secondary) : RELATION_TITLE[primary.name];
+    const tp = relationOf(p, today, true), tq = relationOf(q, today, true);
+    const todayWind = tp.name !== "名前のつく関係はなし" && tq.name !== "名前のつく関係はなし" ? "今日は二人とも、今日のKINと名前のつく関係。二人で何かをするのに向いた日です。"
+      : tp.name !== "名前のつく関係はなし" ? `今日はあなたにとって「${tp.name}」の日。あなたがリードすると流れがよくなります。`
+      : tq.name !== "名前のつく関係はなし" ? `今日はお相手にとって「${tq.name}」の日。今日はお相手に任せてみると吉。` : "今日はどちらにも特別な関係名がつかない、ふだんの日。関係KINの合言葉で過ごしてみて。";
+    const total = scores.reduce((s, x) => s + x.v, 0);
+    lastShare.mayapair = {
+      eyebrow: "MAYAN CALENDAR — TWO KINS",
+      title,
+      keywords: [`KIN ${p.kin} × KIN ${q.kin}`, rel.name, `関係KIN ${rk} ${rkSeal.name}`],
+      sub: `二人でいると「${rkSeal.name}・音${rkTone.n}」のエネルギー。${rkSeal.kw}。`,
+      x: `【MYOURISCOPE マヤ暦】二人の縁は「${title}」。KIN ${p.kin} × KIN ${q.kin}、関係KINは ${rk}(${rkSeal.name}) ✦`,
+    };
+    return `
+      <div class="result-card span-all pair-card" style="--ecp:${cp.ec};--ecq:${cq.ec};--ec:${cr.ec}">
+        ${cardH4("TWO KINS", "二人のツォルキン")}
+        <div class="pair-hero">
+          <p class="pair-title">${title}</p>
+          <div class="maya-pair">
+            <div class="mp-side" style="--ec:${cp.ec}"><span class="mo-label">あなた</span><b>KIN ${p.kin}</b><small>${p.seal.name}・音${p.tone.n}</small></div>
+            <div class="mp-rel"><span class="mo-label">二人でいると</span><b>KIN ${rk}</b><small style="color:${cr.ec}">${rkSeal.name}・音${rkTone.n}</small></div>
+            <div class="mp-side" style="--ec:${cq.ec}"><span class="mo-label">お相手</span><b>KIN ${q.kin}</b><small>${q.seal.name}・音${q.tone.n}</small></div>
+          </div>
+          <p class="pair-lead">${primary.note}</p>
+        </div>
+        <div class="pair-grid">
+          <div class="pair-ring">
+            ${tzolkinRingSvg(p, q, rk)}
+            <p class="sub">${distanceNote(p, q)}</p>
+          </div>
+          <div class="pair-scores">
+            <p class="pair-scores-head"><span class="mo-label">四つの視点</span><span class="pair-total"><b>${total}</b><small>/20</small></span></p>
+            <div class="meter-list">
+              ${scores.map((s) => `
+                <div class="meter pair-meter">
+                  <span class="meter-label">${s.key}</span>
+                  <div class="meter-track"><div class="meter-fill ${s.v >= 4 ? "hi" : s.v >= 3 ? "mid" : "lo"}" data-w="${s.v * 20}"></div></div>
+                  <span class="meter-value ${s.v >= 4 ? "hi" : s.v >= 3 ? "mid" : "lo"}">${s.v}.0</span>
+                  <p class="pair-why">${s.why}</p>
+                </div>`).join("")}
+            </div>
+            <p class="sub" style="margin-top:8px">点は優劣ではなく、関係の「かたち」です。安心が高い二人は刺激を、刺激が高い二人は安心を、意識的に足すと長く続きます。</p>
+          </div>
+        </div>
+
+        <div class="pair-section">
+          <p class="pair-h"><span class="mo-label">紋章の関係</span>あなたから見て「${rel.name}」${relBack.name !== rel.name ? ` / お相手から見て「${relBack.name}」` : ""}</p>
+          ${relBack.name !== rel.name ? `<p>お相手の側から見ると「${relBack.name}」。${relBack.note}</p>` : ""}
+          <div class="pair-trio">
+            <div><span class="pt-tag">恋のかたち</span><p>${love.love}${loveBack ? `<br>${loveBack.love}` : ""}</p></div>
+            <div><span class="pt-tag warn">ケンカの火種</span><p>${love.friction}${loveBack ? `<br>${loveBack.friction}` : ""}</p></div>
+            <div><span class="pt-tag ok">仲直りのコツ</span><p>${love.repair}${loveBack ? `<br>${loveBack.repair}` : ""}</p></div>
+          </div>
+        </div>
+
+        <div class="pair-section">
+          <p class="pair-h"><span class="mo-label">二人のオラクル</span>相手が、自分のどの位置にいるか</p>
+          <div class="pair-oracles">
+            ${oracleHitHtml(p, q, "あなた", "お相手")}
+            ${oracleHitHtml(q, p, "お相手", "あなた")}
+          </div>
+        </div>
+
+        <div class="pair-section pair-two">
+          <div>
+            <p class="pair-h"><span class="mo-label">リズム</span>${rhythm.name} <span class="stars">${"★".repeat(rhythm.stars)}<span class="off">${"★".repeat(5 - rhythm.stars)}</span></span></p>
+            <p>${rhythm.note}</p>
+            <p class="sub" style="margin-top:8px"><strong>分担</strong> — ${pairRoles(p, q)}</p>
+          </div>
+          <div>
+            <p class="pair-h"><span class="mo-label">色</span>${cp.ja}×${cq.ja}</p>
+            <p>${colorPairText(p.seal.color, q.seal.color)}</p>
+          </div>
+        </div>
+
+        <div class="pair-section pair-day" style="--ec:${cr.ec}">
+          <p class="pair-h"><span class="mo-label">関係KIN</span>二人でいるときのエネルギー</p>
+          <div class="pair-day-grid">
+            <div class="pair-day-kin"><span class="mo-label">KIN ${p.kin} + KIN ${q.kin}</span><b>KIN ${rk}</b><small>${rkSeal.name}・音${rkTone.n}「${rkTone.name}」</small></div>
+            <div>
+              <p>二人のKINを足して260で折り返した数を「関係KIN」と呼びます。二人が一緒にいるときに生まれるエネルギーの読み方です。二人でいると、<strong>${rkSeal.name}</strong>(${rkSeal.kw})の空気になり、音${rkTone.n}「${rkTone.kw}」のリズムで物事が進みます。</p>
+              <p style="margin-top:8px">${SEAL_DUO[rkSeal.n - 1]}</p>
+              <p style="margin-top:8px"><span class="pt-tag">二人の合言葉</span>「${rkSeal.kw.split("・").join("、")}」</p>
+            </div>
+          </div>
+          <div class="pair-trio" style="margin-top:14px">
+            <div><span class="pt-tag">次の「二人の日」</span><p>${next ? `<b class="pair-date">${next.date.getMonth() + 1}月${next.date.getDate()}日</b>${next.days === 0 ? "今日がその日です。" : `あと${next.days}日。`}260日に一度、関係KINがめぐってくる日。二人の記念日にどうぞ。` : "計算できませんでした。"}</p></div>
+            <div><span class="pt-tag">二人で過ごすなら</span><p>${SEAL_DATE[rkSeal.n - 1]}</p></div>
+            <div><span class="pt-tag">今日の二人</span><p>${todayWind}</p></div>
+          </div>
+        </div>
+        ${shareRowHtml("mayapair")}
+      </div>`;
+  }
+
   /* ヒーローのひとこと:紋章の色と音の段階で言い回しを変える */
   function mayaLead(p) {
     const phase = TONE_PHASE(p.tone.n);
@@ -908,25 +1191,7 @@
     const today = mayaProfile(now.getFullYear(), now.getMonth() + 1, now.getDate());
     const relToday = relationOf(p, today, true);
     const c = SEAL_COLOR[p.seal.color];
-    let partnerHtml = "";
-    if (partner) {
-      const q = mayaProfile(partner.y, partner.m, partner.d);
-      const rel = relationOf(p, q), relBack = relationOf(q, p);
-      partnerHtml = `
-        <div class="result-card span-all">
-          ${cardH4("PARTNER", "お相手との関係")}
-          <div class="maya-pair">
-            <div class="mp-side" style="--ec:${c.ec}"><span class="mo-label">あなた</span><b>KIN ${p.kin}</b><small>${p.seal.name}・音${p.tone.n}</small></div>
-            <span class="pair-x">×</span>
-            <div class="mp-side" style="--ec:${SEAL_COLOR[q.seal.color].ec}"><span class="mo-label">お相手</span><b>KIN ${q.kin}</b><small>${q.seal.name}・音${q.tone.n}</small></div>
-          </div>
-          <p><strong style="color:var(--gold-bright)">あなたから見て「${rel.name}」</strong></p>
-          <p style="margin-top:6px">${rel.note}</p>
-          ${relBack.name !== rel.name ? `<p style="margin-top:12px"><strong style="color:var(--gold-bright)">お相手から見て「${relBack.name}」</strong></p><p style="margin-top:6px">${relBack.note}</p>` : ""}
-          <p class="sub" style="margin-top:12px"><strong>色の組み合わせ</strong> — ${colorPairText(p.seal.color, q.seal.color)}</p>
-          <p class="sub" style="margin-top:8px">お相手は${q.seal.name}(${q.seal.kw})の資質を、音${q.tone.n}「${q.tone.name}」のリズムで生きる人。${q.seal.gift}</p>
-        </div>`;
-    }
+    const partnerHtml = partner ? pairHtml(p, mayaProfile(partner.y, partner.m, partner.d), now, today) : "";
     const lead = mayaLead(p);
     lastShare.maya = {
       eyebrow: "MAYAN CALENDAR",
@@ -954,6 +1219,7 @@
         ${shareRowHtml("maya")}
       </div>
       <div class="result-grid">
+        ${partnerHtml}
         <div class="result-card span-all card-night">
           ${cardH4("PORTRAIT", "あなたという人")}
           <p class="tv-word">${p.seal.trait}</p>
@@ -991,7 +1257,6 @@
           </div>
           <p class="sub" style="margin-top:12px">ほかに、絶対反対キンは KIN ${p.absOpposite}(${sealOf(p.absOpposite).name}・音${toneOf(p.absOpposite).n})、鏡の向こうのKINは KIN ${p.mirror}(${sealOf(p.mirror).name}・音${toneOf(p.mirror).n})。この日に生まれた人とは、強く惹かれ合う縁になります。</p>
         </div>
-        ${partnerHtml}
         <div class="result-card span-all card-night">
           ${cardH4("TODAY", `今日のKIN — ${now.getMonth() + 1}月${now.getDate()}日`)}
           <p class="tv-word">今日は KIN ${today.kin}、${today.seal.name}・音${today.tone.n}「${today.tone.name}」の日。</p>
@@ -1006,7 +1271,7 @@
         <button data-nav="integrated">統合鑑定を受ける</button>
         <button data-nav="aisho">気になる人との相性をみる</button>
         <button data-nav="astrodice">アストロダイスを振る</button>
-      </div>`));
+      </div>`), () => { renderSharePreview("maya"); if (partner) renderSharePreview("mayapair"); });
   }
 
   /* ---------- 起動 ---------- */
